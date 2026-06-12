@@ -1,5 +1,8 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios"
+import axios, { AxiosError } from "axios"
+
 import { API_BASE_URL, API_TIMEOUT_MS } from "./env"
+
+import type { InternalAxiosRequestConfig } from "axios"
 
 type ApiErrorPayload = {
   message?: string

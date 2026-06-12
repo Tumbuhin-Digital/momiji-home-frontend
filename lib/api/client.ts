@@ -46,11 +46,11 @@ async function del<TResponse>(
 }
 
 const apiClient = {
+  del,
   get,
+  patch,
   post,
   put,
-  patch,
-  del,
 }
 
 export { apiClient }
