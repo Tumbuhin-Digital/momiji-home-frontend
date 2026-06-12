@@ -2,8 +2,10 @@
 
 import { useState } from "react"
 
+import Link from "next/link"
+
 import { format } from "date-fns"
-import { Pencil } from "lucide-react"
+import { Eye, Pencil } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -166,15 +168,28 @@ export function OrderManagementTable({
                     </div>
                   </TableCell>
                   <TableCell className="py-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 rounded-full border-gray-300 shadow-sm"
-                      onClick={() => setSelectedOrder(order)}
-                    >
-                      <Pencil className="h-3 w-3 text-gray-500" />
-                      <span>Manage</span>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 rounded-full border-gray-300 shadow-sm"
+                        asChild
+                      >
+                        <Link href={`/order-management/${order.id}`}>
+                          <Eye className="h-3 w-3 text-gray-500" />
+                          <span>View Detail</span>
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 rounded-full border-gray-300 shadow-sm"
+                        onClick={() => setSelectedOrder(order)}
+                      >
+                        <Pencil className="h-3 w-3 text-gray-500" />
+                        <span>Manage</span>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               )
