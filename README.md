@@ -102,21 +102,24 @@ To get a local copy up and running follow these simple steps.
 ## Project Structure
 
 * `app/(admin)` - Admin dashboard routes for inventory, pricing, and synchronization.
-* `app/(public)` - Public-facing shop catalog and product pages.
+* `app/(public)` - Public-facing shop catalog, cart, and checkout flow.
+* `components/features` - Complex domain-specific React components.
+* `components/ui` - Shadcn base UI components.
 * `components/global` - Reusable UI components used across the entire application.
-* `components/catalog` - Specialized components for product listing and pagination.
-* `lib/stores` - State management using Zustand.
-* `lib/mocks` - Mock data and simulation logic for local development.
+* `components/layouts` & `components/providers` - Application wrappers and layout shells.
+* `lib/` - Core utilities, Zustand state stores, services, and API configurations.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- KEY FEATURES -->
 ## Key Features
 
+* **Strict Clean Code Architecture**: Engineered with a strict 6-block import hierarchy and 8-step internal component logic for ultra-maintainable code.
 * **Advanced Catalog Management**: Specialized workflows for "Ship-Ready" and "Pre-Order" designs.
-* **Shopify Synchronization**: Integrated sync status tracking for inventory and pricing.
-* **Responsive Grid System**: Dynamic product display (4/6/8 items) based on breakpoints.
-* **Modern UI/UX**: Built with Radix UI, Framer Motion, and a custom OKLCH color system.
+* **Admin Operations Dashboard**: Comprehensive tools for managing customer histories, order fulfillment steps, and pre-order settlements.
+* **Seamless Checkout Flow**: Integrated guest-mode cart, shipping calculations, and address validation bridging to Shopify hosted checkout.
+* **Shopify Synchronization**: Integrated sync status tracking for inventory, product dimensions, and pricing.
+* **Modern UI/UX**: Built with Radix UI, Framer Motion, and a custom tailored design system.
 * **Localization**: Multi-language support using `i18next`.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -124,10 +127,11 @@ To get a local copy up and running follow these simple steps.
 <!-- ROADMAP -->
 ## Roadmap
 
-- [x] Refactor Shop Catalog into reusable components
-- [x] Implement responsive pagination triggers
-- [ ] Add real-time Shopify API integration
-- [ ] Implement advanced filtering and sorting
+- [x] Wave 1: Cart Architecture Refactoring
+- [x] Wave 2: Implement Checkout Flow & Shipping Methods
+- [x] Wave 3: Admin Features (Order Mgmt, Customers, Preorders, CSV Dimensions)
+- [x] Wave 4: Architecture & Clean Code Standardization (Strict 6-block hierarchy)
+- [ ] Wave 5: Advanced Analytics & Sales Report integrations
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
