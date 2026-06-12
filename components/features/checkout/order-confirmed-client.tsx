@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect } from "react"
 
 import { Check, Loader2 } from "lucide-react"
 
@@ -21,14 +20,6 @@ export default function OrderConfirmedClient({
   const { data, isLoading, error } = useCheckoutConfirm(checkoutReference)
   const clearCart = useClearCart()
   const setSessionId = useCartStore((state) => state.setSessionId)
-
-  useEffect(() => {
-    if (data?.status && data.status !== "failed") {
-      clearCart.mutate()
-      setSessionId(null, null)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.status])
 
   if (isLoading) {
     return (
@@ -106,7 +97,13 @@ export default function OrderConfirmedClient({
               type="button"
               className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
             >
-              <Link href="/">
+              <Link
+                href="/"
+                onClick={() => {
+                  clearCart.mutate()
+                  setSessionId(null, null)
+                }}
+              >
                 <span className="text-base font-medium uppercase">
                   Continue Shopping
                 </span>
