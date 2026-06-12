@@ -12,6 +12,7 @@ import {
   Filter,
   Loader2,
   Search,
+  X,
 } from "lucide-react"
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs"
 
@@ -56,11 +57,13 @@ function effectivePrice(product: Product) {
 
 const searchParser = parseAsString.withDefault("")
 const filterParser = parseAsString.withDefault("all")
+const sortParser = parseAsString.withDefault("")
 const pageParser = parseAsInteger.withDefault(1)
 
 export default function ProductsPageClient() {
   const [search, setSearch] = useQueryState("search", searchParser)
   const [filter, setFilter] = useQueryState("filter", filterParser)
+  const [sort, setSort] = useQueryState("sort", sortParser)
   const [page, setPage] = useQueryState("page", pageParser)
 
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -84,11 +87,14 @@ export default function ProductsPageClient() {
         : filter === "pre-order"
           ? "pre_order"
           : undefined,
+    sort: sort || undefined,
     page,
     limit: 10,
   })
 
   const totalPages = productsQuery.data?.totalPages ?? 1
+
+  const isFilterActive = search !== "" || filter !== "all" || sort !== ""
 
   const rows = useMemo(() => {
     const list = productsQuery.data?.data ?? []
@@ -199,31 +205,62 @@ export default function ProductsPageClient() {
                 className="w-48 rounded-xl bg-white shadow-lg"
               >
                 <DropdownMenuCheckboxItem
-                  checked={filter === "all"}
-                  onCheckedChange={() => setFilter("all")}
+                  checked={sort === "name_asc"}
+                  onCheckedChange={() =>
+                    setSort(sort === "name_asc" ? "" : "name_asc")
+                  }
                 >
                   A-Z
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
                   checked={filter === "ship-ready"}
-                  onCheckedChange={() => setFilter("ship-ready")}
+                  onCheckedChange={() =>
+                    setFilter(filter === "ship-ready" ? "all" : "ship-ready")
+                  }
                 >
                   Ship Ready
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
                   checked={filter === "pre-order"}
-                  onCheckedChange={() => setFilter("pre-order")}
+                  onCheckedChange={() =>
+                    setFilter(filter === "pre-order" ? "all" : "pre-order")
+                  }
                 >
                   Pre-Order
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={sort === "stock_asc"}
+                  onCheckedChange={() =>
+                    setSort(sort === "stock_asc" ? "" : "stock_asc")
+                  }
+                >
                   Stock: low-high
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={sort === "stock_desc"}
+                  onCheckedChange={() =>
+                    setSort(sort === "stock_desc" ? "" : "stock_desc")
+                  }
+                >
                   Stock: high-low
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {isFilterActive && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSearch(null)
+                  setFilter("all")
+                  setSort(null)
+                  setPage(1)
+                }}
+                className="h-11 gap-2 rounded-[8px] px-4 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+              >
+                <X className="size-4" /> Reset
+              </Button>
+            )}
           </div>
 
           <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
