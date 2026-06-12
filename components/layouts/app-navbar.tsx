@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 
 import { useCart } from "@/hooks"
 import { useCartStore } from "@/lib/stores/cart.store"
-
 import { IconBag } from "@/public/icons/icon-bag"
 
 export function AppNavbar() {

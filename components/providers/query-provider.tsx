@@ -3,11 +3,12 @@
 import * as React from "react"
 
 import {
+  MutationCache,
+  QueryCache,
   QueryClient,
   QueryClientProvider,
-  QueryCache,
-  MutationCache,
 } from "@tanstack/react-query"
+
 import { handleApiError } from "@/lib/handle-error"
 
 function QueryProvider({ children }: { children: React.ReactNode }) {

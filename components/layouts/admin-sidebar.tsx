@@ -1,17 +1,17 @@
 "use client"
 
-import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useState } from "react"
 
-import { LogoutConfirmModal } from "@/components/layouts/logout-confirm-modal"
 import { Separator } from "@/components/ui/separator"
 
-import { navItems } from "@/constants/navigation"
-import { IconlyLogout } from "@/public/icons/iconly-logout"
+import { LogoutConfirmModal } from "@/components/layouts/logout-confirm-modal"
 
+import { navItems } from "@/constants/navigation"
 import { cn } from "@/lib/utils"
+import { IconlyLogout } from "@/public/icons/iconly-logout"
 
 interface AdminSidebarProps {
   className?: string
