@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+
 import { Construction } from "lucide-react"
 
 import { Button } from "@/components/ui/button"

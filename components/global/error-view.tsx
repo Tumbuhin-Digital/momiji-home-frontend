@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Lock, ShieldAlert, FileQuestion, Wrench } from "lucide-react"
+
+import { FileQuestion, Lock, ShieldAlert, Wrench } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
