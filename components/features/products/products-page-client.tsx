@@ -1,19 +1,19 @@
 "use client"
 
-import { Fragment, Suspense, useMemo, useState } from "react"
 import Image from "next/image"
+import { Fragment, Suspense, useMemo, useState } from "react"
 
+import { format } from "date-fns"
 import {
-  Search,
-  Filter,
-  Edit2,
-  Loader2,
   Boxes,
   ChevronDown,
   ChevronRight,
+  Edit2,
+  Filter,
+  Loader2,
+  Search,
 } from "lucide-react"
-import { parseAsString, parseAsInteger, useQueryState } from "nuqs"
-import { format } from "date-fns"
+import { parseAsInteger, parseAsString, useQueryState } from "nuqs"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -30,6 +30,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { Input } from "@/components/ui/input"
 import {
   Pagination,
   PaginationContent,
@@ -38,11 +39,10 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { Input } from "@/components/ui/input"
 
+import { DimensionsCsvSection } from "@/components/features/products/dimensions-csv-section"
 import { EditPriceModal } from "@/components/features/products/edit-price-modal"
 import { UpdateBatchModal } from "@/components/features/products/update-batch-modal"
-import { DimensionsCsvSection } from "@/components/features/products/dimensions-csv-section"
 
 import { useProducts, useUpdateProductStatus } from "@/hooks"
 import { formatCurrency } from "@/lib/utils"
@@ -90,13 +90,6 @@ export default function ProductsPageClient() {
 
   const totalPages = productsQuery.data?.totalPages ?? 1
 
-  const toggleExpand = (productId: string) => {
-    setExpandedProducts((prev) => ({
-      ...prev,
-      [productId]: !prev[productId],
-    }))
-  }
-
   const rows = useMemo(() => {
     const list = productsQuery.data?.data ?? []
     const groups: Record<
@@ -129,6 +122,17 @@ export default function ProductsPageClient() {
     return Object.values(groups)
   }, [productsQuery.data])
 
+  const lastSyncDate = productsQuery.dataUpdatedAt
+    ? format(new Date(productsQuery.dataUpdatedAt), "EEEE, hh:mm a")
+    : format(new Date(), "EEEE, hh:mm a")
+
+  const toggleExpand = (productId: string) => {
+    setExpandedProducts((prev) => ({
+      ...prev,
+      [productId]: !prev[productId],
+    }))
+  }
+
   const handleSearchChange = (val: string) => {
     setSearch(val || null, { throttleMs: 300 })
   }
@@ -142,10 +146,6 @@ export default function ProductsPageClient() {
     setSelectedBatchProduct(product)
     setBatchModalOpen(true)
   }
-
-  const lastSyncDate = productsQuery.dataUpdatedAt
-    ? format(new Date(productsQuery.dataUpdatedAt), "EEEE, hh:mm a")
-    : format(new Date(), "EEEE, hh:mm a")
 
   return (
     <Suspense
@@ -245,13 +245,11 @@ export default function ProductsPageClient() {
                     const isExpanded =
                       !!expandedProducts[group.shopifyProductId]
 
-                    // Summary info
                     const totalStock = group.variants.reduce(
                       (sum, v) => sum + v.inventory.quantity,
                       0
                     )
 
-                    // Helper to format prices
                     const minPrice = Math.min(
                       ...group.variants.map((v) => effectivePrice(v))
                     )

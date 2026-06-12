@@ -1,11 +1,14 @@
 "use client"
 
-import { useOrderById } from "@/hooks/use-orders"
-import { CustomerOrderCard } from "../checkout/customer-order-card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Package, Truck, CheckCircle2, Clock } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CheckCircle2, Clock, Package, Truck } from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+
+import { CustomerOrderCard } from "@/components/features/checkout/customer-order-card"
+
+import { useOrderById } from "@/hooks/use-orders"
 
 export default function CustomerTrackingClient({
   orderId,

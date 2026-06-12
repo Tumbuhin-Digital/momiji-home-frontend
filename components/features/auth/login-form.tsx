@@ -1,10 +1,11 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useState, useEffect, type FormEvent } from "react"
+
+import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -13,6 +14,8 @@ import { Label } from "@/components/ui/label"
 
 import { authService } from "@/lib/services/auth.service"
 import { useAuthStore } from "@/lib/stores/auth.store"
+
+import type { FormEvent } from "react"
 
 const loginSchema = z.object({
   email: z
@@ -27,12 +30,6 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 export function LoginForm() {
   const router = useRouter()
-  const setUser = useAuthStore((state) => state.setUser)
-
-  const [serverError, setServerError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-
   const form = useForm<LoginFormValues>({
     defaultValues: {
       email: "",
@@ -41,6 +38,11 @@ export function LoginForm() {
     },
     mode: "onSubmit",
   })
+
+  const setUser = useAuthStore((state) => state.setUser)
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const {
     register,
@@ -100,7 +102,6 @@ export function LoginForm() {
         document.cookie = "remember_email=; path=/; max-age=0"
       }
 
-      // Handle redirect
       const searchParams = new URLSearchParams(window.location.search)
       const from = searchParams.get("from") || "/dashboard"
       router.replace(from)

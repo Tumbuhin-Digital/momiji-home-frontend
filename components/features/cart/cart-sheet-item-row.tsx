@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
+import { useEffect, useRef, useState } from "react"
+
 import { Boxes } from "lucide-react"
 
-import { cn } from "@/lib/utils"
-
 import { QuantitySelector } from "@/components/global/quantity-selector"
+
+import { cn } from "@/lib/utils"
 
 import type { CartItemDto } from "@/types/cart"
 
@@ -40,6 +41,9 @@ export function CartSheetItemRow({
   const [resetKey, setResetKey] = useState(0)
   const debounceTimer = useRef<NodeJS.Timeout | null>(null)
 
+  const price = parseFloat(unit_price || "0")
+  const deposit = parseFloat(deposit_amount || "0")
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalQuantity(quantity)
@@ -72,9 +76,6 @@ export function CartSheetItemRow({
     }
     handleUpdate(localQuantity + 1)
   }
-
-  const price = parseFloat(unit_price || "0")
-  const deposit = parseFloat(deposit_amount || "0")
 
   return (
     <div

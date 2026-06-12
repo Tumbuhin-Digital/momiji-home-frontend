@@ -31,6 +31,7 @@ import {
   useUpdateItemTracking,
 } from "@/hooks/use-orders"
 import { formatCurrency } from "@/lib/utils"
+
 import type { OrderLineItem } from "@/types/orders/entities"
 
 const AcceptOrderModal = dynamic(
@@ -141,6 +142,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               <h1 className="text-3xl font-bold tracking-tight">
                 {order.orderNumber}
               </h1>
+
               {order.paymentStatus === "paid" ? (
                 <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20">
                   Paid
@@ -153,8 +155,10 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                   Pending
                 </Badge>
               )}
+
               {isPreOrder && <Badge variant="secondary">Pre-Order</Badge>}
             </div>
+
             <p className="mt-1 text-sm text-muted-foreground">
               Placed on{" "}
               {new Date(order.orderDate).toLocaleDateString("en-US", {
@@ -180,6 +184,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               </a>
             </Button>
           )}
+
           {order.fulfillmentStatus !== "cancelled" && (
             <Button
               variant="outline"
@@ -190,6 +195,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               Cancel Order
             </Button>
           )}
+
           {order.preOrderState === "DP_PAID" && (
             <Button onClick={handleAccept} disabled={acceptOrder.isPending}>
               Accept Pre-Order
@@ -218,6 +224,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                         <div className="flex h-16 w-16 items-center justify-center rounded-md bg-muted">
                           <Package className="h-6 w-6 text-muted-foreground/50" />
                         </div>
+
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{item.title}</p>
@@ -240,11 +247,13 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                               </Badge>
                             ) : null}
                           </div>
+
                           <p className="text-sm text-muted-foreground">
                             SKU: {item.sku}
                           </p>
                         </div>
                       </div>
+
                       <div className="text-right">
                         <p className="font-medium">
                           {formatCurrency(item.unitPrice)} × {item.quantity}
@@ -254,6 +263,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                         </p>
                       </div>
                     </div>
+
                     {/* Item Actions */}
                     <div className="mt-4 flex flex-wrap items-center gap-3">
                       <div className="flex flex-1 items-center justify-between rounded-md border bg-muted/20 p-3 sm:flex-initial sm:justify-start sm:gap-4">

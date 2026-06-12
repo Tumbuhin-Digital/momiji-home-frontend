@@ -2,9 +2,8 @@
 "use client"
 
 import { useState } from "react"
-import { CheckCircle, Loader2, AlertCircle } from "lucide-react"
 
-import { usePaidSettlement } from "@/hooks/use-preorders"
+import { AlertCircle, CheckCircle, Loader2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,6 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+
+import { usePaidSettlement } from "@/hooks/use-preorders"
 
 interface PaidSettlementModalProps {
   settlementId: string
@@ -32,6 +33,8 @@ export function PaidSettlementModal({
 }: PaidSettlementModalProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const paidMutation = usePaidSettlement()
+
+  const isConfirming = paidMutation.isPending
 
   const handleConfirm = async () => {
     setErrorMsg(null)
@@ -50,8 +53,6 @@ export function PaidSettlementModal({
       }
     }
   }
-
-  const isConfirming = paidMutation.isPending
 
   return (
     <Dialog

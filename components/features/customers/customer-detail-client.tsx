@@ -1,18 +1,17 @@
 "use client"
 
 import Link from "next/link"
+
 import {
   ArrowLeft,
-  Mail,
-  Phone,
   Calendar,
-  ShoppingBag,
+  Mail,
   MapPin,
+  Phone,
+  ShoppingBag,
 } from "lucide-react"
 
-import { useCustomerById, useCustomerOrders } from "@/hooks/use-customers"
-import { formatCurrency } from "@/lib/utils"
-
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -23,7 +22,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+
+import { useCustomerById, useCustomerOrders } from "@/hooks/use-customers"
+import { formatCurrency } from "@/lib/utils"
 
 export function CustomerDetailClient({ customerId }: { customerId: string }) {
   const {

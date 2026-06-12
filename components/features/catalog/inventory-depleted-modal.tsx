@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+
 import { Boxes } from "lucide-react"
 
 import { Button } from "@/components/ui/button"

@@ -2,7 +2,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { Boxes } from "lucide-react"
 import { motion } from "motion/react"
@@ -17,6 +17,7 @@ import {
 
 import { ProductCatalogCard } from "@/components/features/catalog/product-catalog-card"
 import { ProductCatalogSkeleton } from "@/components/features/catalog/product-catalog-skeleton"
+
 import { useProducts } from "@/hooks"
 
 import type { ProductCatalogPageClientProps } from "@/types/products"
@@ -55,6 +56,13 @@ export function ProductCatalogPageClient({
     limit: itemsPerPage,
   })
 
+  const totalPages = productsResponse?.totalPages ?? 1
+  const hasMoreApi = apiPage < totalPages
+  const requiredVariants = uiPage * itemsPerPage
+
+  const accumulatedProducts = allVariants.slice(0, requiredVariants)
+  const hasMoreUi = allVariants.length > requiredVariants || hasMoreApi
+
   useEffect(() => {
     if (productsResponse?.data) {
       if (apiPage === 1) {
@@ -70,10 +78,6 @@ export function ProductCatalogPageClient({
       }
     }
   }, [productsResponse?.data, apiPage])
-
-  const totalPages = productsResponse?.totalPages ?? 1
-  const hasMoreApi = apiPage < totalPages
-  const requiredVariants = uiPage * itemsPerPage
 
   useEffect(() => {
     if (
@@ -92,9 +96,6 @@ export function ProductCatalogPageClient({
     isFetching,
     isInitialized,
   ])
-
-  const accumulatedProducts = allVariants.slice(0, requiredVariants)
-  const hasMoreUi = allVariants.length > requiredVariants || hasMoreApi
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -156,6 +157,7 @@ export function ProductCatalogPageClient({
           {title}
         </h1>
       </header>
+
       {accumulatedProducts.length === 0 && !isLoading ? (
         <div className="flex w-full items-center justify-center px-4 py-12">
           <Empty className="max-w-2xl animate-in border-none bg-transparent text-center duration-700 ease-out fade-in slide-in-from-bottom-8">
@@ -195,6 +197,7 @@ export function ProductCatalogPageClient({
               </div>
             </motion.div>
           ))}
+
           {isFetching && apiPage >= 1 && (
             <>
               {Array.from({ length: windowWidth >= 768 ? 3 : 2 }).map(
@@ -206,6 +209,7 @@ export function ProductCatalogPageClient({
           )}
         </div>
       )}
+
       {hasMoreUi && (
         <div
           ref={observerTarget}
@@ -214,6 +218,7 @@ export function ProductCatalogPageClient({
           <div className="h-4" />
         </div>
       )}
+
       <div className="flex items-center justify-center pb-2">
         <Button
           asChild

@@ -1,12 +1,14 @@
 "use client"
 
-import { useOrders } from "@/hooks/use-orders"
-import { useForceSync } from "@/hooks/use-sync"
-import { Iconsax3dRotate } from "@/public/icons/iconsax-3d-rotate"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { OrderManagementTable } from "./order-management-table"
+
+import { OrderManagementTable } from "@/components/features/orders/order-management-table"
+import { Iconsax3dRotate } from "@/public/icons/iconsax-3d-rotate"
+
+import { useOrders } from "@/hooks/use-orders"
+import { useForceSync } from "@/hooks/use-sync"
 
 export function OrderManagementClient() {
   const { data: orders, isLoading, isFetching, isError, refetch } = useOrders()
@@ -39,6 +41,7 @@ export function OrderManagementClient() {
             })}
           </p>
         </div>
+
         <Button
           type="button"
           onClick={handleSync}
@@ -51,6 +54,7 @@ export function OrderManagementClient() {
           <span className="text-sm font-medium">Syncing Shopify Product</span>
         </Button>
       </div>
+
       {isError ? (
         <div className="flex h-64 flex-col items-center justify-center rounded-xl border border-destructive/20 bg-destructive/5 text-center">
           <p className="mb-2 font-medium text-destructive">

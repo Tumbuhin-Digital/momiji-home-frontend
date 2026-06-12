@@ -1,31 +1,26 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
+import { useState } from "react"
+
 import { format } from "date-fns"
-import { ArrowLeft, Mail, CheckCircle, Clock, ExternalLink } from "lucide-react"
+import { ArrowLeft, CheckCircle, Clock, ExternalLink, Mail } from "lucide-react"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+
+import { InvoiceSettlementModal } from "@/components/features/preorders/invoice-settlement-modal"
+import { PaidSettlementModal } from "@/components/features/preorders/paid-settlement-modal"
 
 import { usePreorderDetail } from "@/hooks/use-preorders"
 import { formatCurrency } from "@/lib/utils"
-
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
-import { InvoiceSettlementModal } from "./invoice-settlement-modal"
-import { PaidSettlementModal } from "./paid-settlement-modal"
 
 export function PreorderDetailClient({
   settlementId,
 }: {
   settlementId: string
 }) {
-  const {
-    data: settlement,
-    isLoading,
-    isError,
-    refetch,
-  } = usePreorderDetail(settlementId)
-
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean
     type: "invoice" | "paid" | null
@@ -33,6 +28,13 @@ export function PreorderDetailClient({
     isOpen: false,
     type: null,
   })
+
+  const {
+    data: settlement,
+    isLoading,
+    isError,
+    refetch,
+  } = usePreorderDetail(settlementId)
 
   const renderStatusBadge = (status: string) => {
     switch (status) {

@@ -1,10 +1,9 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
-import { Search } from "lucide-react"
+import { useState } from "react"
 
-import { useCustomers } from "@/hooks/use-customers"
+import { Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,10 +17,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+import { useCustomers } from "@/hooks/use-customers"
+
 export function CustomerListClient() {
   const [search, setSearch] = useState("")
 
-  // Custom hook usage
   const {
     data: customers,
     isLoading,

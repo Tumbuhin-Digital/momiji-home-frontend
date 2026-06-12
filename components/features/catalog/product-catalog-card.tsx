@@ -6,10 +6,13 @@ import { useEffect, useRef, useState } from "react"
 
 import { Boxes } from "lucide-react"
 
-import { InventoryDepletedModal } from "@/components/features/catalog/inventory-depleted-modal"
-import { QuantitySelector } from "@/components/global/quantity-selector"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+
+import { InventoryDepletedModal } from "@/components/features/catalog/inventory-depleted-modal"
+import { QuantitySelector } from "@/components/global/quantity-selector"
+import { IconBag } from "@/public/icons/icon-bag"
+
 import {
   useAddCartItem,
   useCart,
@@ -19,12 +22,16 @@ import {
 } from "@/hooks"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
-import { IconBag } from "@/public/icons/icon-bag"
 
 import type { ProductCatalogCardProps } from "@/types/products"
 
 export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
   const { market, sessionId, expiresAt, setSessionId } = useCartStore()
+
+  const [localQuantity, setLocalQuantity] = useState(0)
+  const [showDepletedModal, setShowDepletedModal] = useState(false)
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null)
+
   const { data: cartData } = useCart()
   const addCartItem = useAddCartItem()
   const updateCartItem = useUpdateCartItem()
@@ -49,11 +56,6 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
   const marketPricing = product.pricing.markets[market]
   const price = marketPricing?.price ?? product.pricing.basePrice
   const rpp = product.retailPrice ?? 0
-
-  const [localQuantity, setLocalQuantity] = useState(quantity)
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null)
-
-  const [showDepletedModal, setShowDepletedModal] = useState(false)
 
   const isConvertedToPreorder =
     isShipReady &&
@@ -104,12 +106,10 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         targetShipReadyQty = Math.min(newTotal, maxShipReady)
         targetPreOrderQty = Math.max(0, newTotal - maxShipReady)
       } else if (!isShipReady || maxShipReady === 0) {
-        // If entirely pre-order from the start
         targetShipReadyQty = 0
         targetPreOrderQty = newTotal
       }
 
-      // Handle Ship-Ready item updates
       if (targetShipReadyQty <= 0 && shipReadyCartItem) {
         removeCartItem.mutate(shipReadyCartItem.id)
       } else if (targetShipReadyQty > 0 && shipReadyCartItem) {
@@ -126,7 +126,6 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         })
       }
 
-      // Handle Pre-Order item updates
       if (targetPreOrderQty <= 0 && preOrderCartItem) {
         removeCartItem.mutate(preOrderCartItem.id)
       } else if (targetPreOrderQty > 0 && preOrderCartItem) {

@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Pencil } from "lucide-react"
+
 import { format } from "date-fns"
+import { Pencil } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,9 +15,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ManageOrderModal } from "./manage-order-modal"
-import { OrderManagementTableSkeleton } from "./order-management-table-skeleton"
-import { OrderManagementTableEmpty } from "./order-management-table-empty"
+
+import { ManageOrderModal } from "@/components/features/orders/manage-order-modal"
+import { OrderManagementTableEmpty } from "@/components/features/orders/order-management-table-empty"
+import { OrderManagementTableSkeleton } from "@/components/features/orders/order-management-table-skeleton"
 
 import type { Order } from "@/types/orders"
 

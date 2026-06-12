@@ -1,18 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
 import { usePathname } from "next/navigation"
+import { useState } from "react"
 
 import { X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
 import {
   Empty,
   EmptyContent,
@@ -20,29 +14,34 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 
 import { CartSheetItemRow } from "@/components/features/cart/cart-sheet-item-row"
 import { RemoveItemModal } from "@/components/features/cart/remove-item-modal"
 import { InventoryDepletedModal } from "@/components/features/catalog/inventory-depleted-modal"
+import { IconBag } from "@/public/icons/icon-bag"
 
-import { formatCurrency } from "@/lib/utils"
 import {
-  useCart,
   useAddCartItem,
+  useCart,
   useRemoveCartItem,
   useUpdateCartItem,
 } from "@/hooks"
 import { useCartStore } from "@/lib/stores/cart.store"
-import { IconBag } from "@/public/icons/icon-bag"
+import { formatCurrency } from "@/lib/utils"
 
 export function CartSheet() {
+  const pathname = usePathname()
+
   const isOpen = useCartStore((state) => state.isOpen)
   const setIsOpen = useCartStore((state) => state.setIsOpen)
 
-  const pathname = usePathname()
-
   const [itemToRemove, setItemToRemove] = useState<string | null>(null)
-
   const [depletedProduct, setDepletedProduct] = useState<{
     title: string
     imageUrl?: string
@@ -73,7 +72,6 @@ export function CartSheet() {
   }
 
   const allItemsLength = shipReadyItems.length + preOrderItems.length
-
   const isPending = updateCartItem.isPending || removeCartItem.isPending
 
   return (

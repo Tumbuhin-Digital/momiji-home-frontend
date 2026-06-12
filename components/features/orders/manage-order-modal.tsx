@@ -1,7 +1,6 @@
 "use client"
 
 import { format } from "date-fns"
-
 import { XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -11,7 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { OrderFulfillmentPanel } from "./order-fulfillment-panel"
+
+import { OrderFulfillmentPanel } from "@/components/features/orders/order-fulfillment-panel"
+
+import { useOrderById } from "@/hooks/use-orders"
 
 import type { Order } from "@/types/orders"
 
@@ -20,8 +22,6 @@ interface ManageOrderModalProps {
   isOpen: boolean
   onClose: () => void
 }
-
-import { useOrderById } from "@/hooks/use-orders"
 
 export function ManageOrderModal({
   order,

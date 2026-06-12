@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect } from "react"
 import Link from "next/link"
+import { useEffect } from "react"
+
 import { Check, Loader2 } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 
 import { useClearCart } from "@/hooks"
 import { useCheckoutConfirm } from "@/hooks/use-checkout"
@@ -26,7 +27,6 @@ export default function OrderConfirmedClient({
       clearCart.mutate()
       setSessionId(null, null)
     }
-    // Only run once when order is confirmed
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.status])
 

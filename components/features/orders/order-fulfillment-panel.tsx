@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
+
 import { Check, Truck } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+
 import {
   useAcceptOrder,
   useCancelOrder,
@@ -22,10 +24,6 @@ export function OrderFulfillmentPanel({
   order,
   type,
 }: OrderFulfillmentPanelProps) {
-  const acceptOrder = useAcceptOrder()
-  const cancelOrder = useCancelOrder()
-  const updateStep = useUpdateItemStep()
-
   const [trackingNumber, setTrackingNumber] = useState(
     order.fulfillment?.trackingNumber || ""
   )
@@ -33,6 +31,10 @@ export function OrderFulfillmentPanel({
   const [isEditingTracking, setIsEditingTracking] = useState(
     !order.fulfillment?.trackingNumber
   )
+
+  const acceptOrder = useAcceptOrder()
+  const cancelOrder = useCancelOrder()
+  const updateStep = useUpdateItemStep()
 
   const items = order.lineItems.filter(
     (item) => item.type === type || (!item.type && order.type === type)
@@ -55,7 +57,6 @@ export function OrderFulfillmentPanel({
   }
 
   const handleReadyToShip = () => {
-    // Usually Stock Ready is step 2
     if (items.length > 0) {
       updateStep.mutate({
         orderId: order.id,
@@ -66,9 +67,7 @@ export function OrderFulfillmentPanel({
   }
 
   const handleSaveTracking = () => {
-    // In real app, call API to save tracking
     setIsEditingTracking(false)
-    // also update step to shipped (3)
     if (items.length > 0) {
       updateStep.mutate({
         orderId: order.id,
@@ -85,7 +84,6 @@ export function OrderFulfillmentPanel({
     }).format(amount)
   }
 
-  // Get current max step from items
   const currentStep = items.reduce(
     (max, item) => Math.max(max, item.fulfillmentStep || 1),
     1

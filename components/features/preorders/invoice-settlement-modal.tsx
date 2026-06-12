@@ -2,9 +2,8 @@
 "use client"
 
 import { useState } from "react"
-import { Mail, Loader2, AlertCircle } from "lucide-react"
 
-import { useInvoiceSettlement } from "@/hooks/use-preorders"
+import { AlertCircle, Loader2, Mail } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,6 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+
+import { useInvoiceSettlement } from "@/hooks/use-preorders"
 
 interface InvoiceSettlementModalProps {
   settlementId: string
@@ -32,6 +33,8 @@ export function InvoiceSettlementModal({
 }: InvoiceSettlementModalProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const invoiceMutation = useInvoiceSettlement()
+
+  const isConfirming = invoiceMutation.isPending
 
   const handleConfirm = async () => {
     setErrorMsg(null)
@@ -51,8 +54,6 @@ export function InvoiceSettlementModal({
       }
     }
   }
-
-  const isConfirming = invoiceMutation.isPending
 
   return (
     <Dialog

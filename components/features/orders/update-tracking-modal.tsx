@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -10,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
+
 import type { OrderLineItem } from "@/types/orders/entities"
 
 interface UpdateTrackingModalProps {
@@ -42,6 +44,7 @@ export function UpdateTrackingModal({
             Add tracking details for {item.title}
           </DialogDescription>
         </DialogHeader>
+
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <label className="text-sm leading-none font-medium">
@@ -64,6 +67,7 @@ export function UpdateTrackingModal({
             />
           </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isConfirming}>
             Cancel

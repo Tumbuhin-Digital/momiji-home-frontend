@@ -1,29 +1,22 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
+
 import { format } from "date-fns"
 import {
-  usePreorders,
-  useInvoiceSettlement,
-  usePaidSettlement,
-} from "@/hooks/use-preorders"
-import { formatCurrency } from "@/lib/utils"
-
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Loader2,
-  Mail,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
   Download,
+  Loader2,
+  Mail,
   Search,
   SlidersHorizontal,
 } from "lucide-react"
-import Link from "next/link"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -38,6 +31,15 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
+
+import {
+  useInvoiceSettlement,
+  usePaidSettlement,
+  usePreorders,
+} from "@/hooks/use-preorders"
+import { formatCurrency } from "@/lib/utils"
 
 export function PreorderListClient() {
   const [page, setPage] = useState(1)
@@ -49,15 +51,6 @@ export function PreorderListClient() {
     "A-Z" | "Qty: low-high" | "Qty: high-low" | null
   >(null)
 
-  const { data: preorders, isLoading } = usePreorders({
-    page,
-    limit: 10,
-    status: statusFilter,
-  })
-
-  const invoiceMutation = useInvoiceSettlement()
-  const paidMutation = usePaidSettlement()
-
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean
     type: "invoice" | "paid" | null
@@ -68,21 +61,14 @@ export function PreorderListClient() {
     id: null,
   })
 
-  const handleAction = () => {
-    if (!confirmModal.type) return
+  const { data: preorders, isLoading } = usePreorders({
+    page,
+    limit: 10,
+    status: statusFilter,
+  })
 
-    if (confirmModal.type === "invoice" && confirmModal.id) {
-      invoiceMutation.mutate(confirmModal.id, {
-        onSuccess: () =>
-          setConfirmModal({ isOpen: false, type: null, id: null }),
-      })
-    } else if (confirmModal.type === "paid" && confirmModal.id) {
-      paidMutation.mutate(confirmModal.id, {
-        onSuccess: () =>
-          setConfirmModal({ isOpen: false, type: null, id: null }),
-      })
-    }
-  }
+  const invoiceMutation = useInvoiceSettlement()
+  const paidMutation = usePaidSettlement()
 
   const currentDateStr = format(new Date(), "EEEE, MMM d yyyy")
 
@@ -100,6 +86,22 @@ export function PreorderListClient() {
       return 0
     })
 
+  const handleAction = () => {
+    if (!confirmModal.type) return
+
+    if (confirmModal.type === "invoice" && confirmModal.id) {
+      invoiceMutation.mutate(confirmModal.id, {
+        onSuccess: () =>
+          setConfirmModal({ isOpen: false, type: null, id: null }),
+      })
+    } else if (confirmModal.type === "paid" && confirmModal.id) {
+      paidMutation.mutate(confirmModal.id, {
+        onSuccess: () =>
+          setConfirmModal({ isOpen: false, type: null, id: null }),
+      })
+    }
+  }
+
   return (
     <div className="flex w-full flex-col gap-6 pb-10">
       {/* Header section matching design */}
@@ -112,6 +114,7 @@ export function PreorderListClient() {
             {currentDateStr} - All System Running
           </p>
         </div>
+
         <Button
           variant="secondary"
           className="bg-[#7EA4B3] font-medium text-white hover:bg-[#688A98]"
@@ -132,7 +135,9 @@ export function PreorderListClient() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+
         <div className="mx-2 hidden h-8 w-px bg-slate-200 sm:block"></div>
+
         <div className="flex shrink-0 gap-2 overflow-x-auto px-2">
           {/* Quick filters mapped as alternative to "Sort By" or in addition */}
           <Button
@@ -180,7 +185,9 @@ export function PreorderListClient() {
             Paid
           </Button>
         </div>
+
         <div className="mx-2 hidden h-8 w-px bg-slate-200 sm:block"></div>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

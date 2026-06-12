@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+
 import type { RemoveItemModalProps } from "@/types/cart"
 
 export function RemoveItemModal({

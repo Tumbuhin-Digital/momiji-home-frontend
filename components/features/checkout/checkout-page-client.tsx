@@ -3,27 +3,17 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useState, useEffect } from "react"
-import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { ChevronLeft, Boxes, Loader2 } from "lucide-react"
+import { useEffect, useState } from "react"
 
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Boxes, ChevronLeft, Loader2 } from "lucide-react"
+import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
+import { z } from "zod"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { PhoneInput } from "@/components/ui/phone-input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Separator } from "@/components/ui/separator"
 import {
   Empty,
   EmptyContent,
@@ -31,23 +21,34 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty"
-
-import { formatCurrency } from "@/lib/utils"
-import { useCart } from "@/hooks"
+import { Input } from "@/components/ui/input"
+import { PhoneInput } from "@/components/ui/phone-input"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
-  useShippingMethods,
-  useCalculateShipping,
-  useValidateAddress,
-} from "@/hooks/use-shipping"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
+
+import { CheckoutSkeleton } from "@/components/features/checkout/checkout-skeleton"
+import { WaitingPaymentOverlay } from "@/components/features/checkout/waiting-payment-overlay"
+import { IconBag } from "@/public/icons/icon-bag"
+
+import { useCart } from "@/hooks"
 import {
   useCheckoutSummaryMutation,
   useCreateCheckout,
 } from "@/hooks/use-checkout"
+import {
+  useCalculateShipping,
+  useShippingMethods,
+  useValidateAddress,
+} from "@/hooks/use-shipping"
 import { checkoutService } from "@/lib/services/checkout.service"
-
-import { IconBag } from "@/public/icons/icon-bag"
-import { WaitingPaymentOverlay } from "./waiting-payment-overlay"
-import { CheckoutSkeleton } from "./checkout-skeleton"
+import { formatCurrency } from "@/lib/utils"
 
 const checkoutSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email address"),
@@ -69,49 +70,6 @@ const checkoutSchema = z.object({
 type CheckoutFormValues = z.infer<typeof checkoutSchema>
 
 export default function CheckoutPageClient() {
-  const { data: cartData, isLoading: isCartLoading } = useCart()
-
-  const shipReadyItems = cartData?.ship_ready || []
-  const preOrderItems = cartData?.pre_order || []
-  const allItemsLength = shipReadyItems.length + preOrderItems.length
-
-  const { data: shippingMethodsResponse, isPending: isLoadingShipping } =
-    useShippingMethods({ enabled: allItemsLength > 0 })
-  const shippingMethods = shippingMethodsResponse?.methods || []
-
-  const calculateShippingMutation = useCalculateShipping()
-  const checkoutSummaryMutation = useCheckoutSummaryMutation()
-  const createCheckoutMutation = useCreateCheckout()
-  const validateAddressMutation = useValidateAddress()
-
-  const [isWaitingForPayment, setIsWaitingForPayment] = useState(false)
-  const [currentCheckoutUrl, setCurrentCheckoutUrl] = useState("")
-  const [checkoutReference, setCheckoutReference] = useState("")
-  const [paymentExpiresAt, setPaymentExpiresAt] = useState<number | null>(null)
-
-  const [summaryState, setSummaryState] = useState({
-    shippingCost: "0",
-    shipReadyTotal: "0",
-    preorderDeposit: "0",
-    totalDueNow: "0",
-    preorderBalance: "0",
-    shippingPreorder: "0",
-    totalDueLater: "0",
-  })
-
-  useEffect(() => {
-    if (cartData?.summary) {
-      setSummaryState((prev) => ({
-        ...prev,
-        shipReadyTotal: cartData.summary?.total_ship_ready || "0",
-        preorderDeposit: cartData.summary?.total_deposit || "0",
-        totalDueNow: cartData.summary?.total_charged_now || "0",
-        preorderBalance: cartData.summary?.total_balance_due || "0",
-        totalDueLater: cartData.summary?.total_balance_due || "0",
-      }))
-    }
-  }, [cartData])
-
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema as any),
     defaultValues: {
@@ -141,6 +99,51 @@ export default function CheckoutPageClient() {
   } = form
   // eslint-disable-next-line react-hooks/incompatible-library
   const formValues = watch()
+
+  const [isWaitingForPayment, setIsWaitingForPayment] = useState(false)
+  const [currentCheckoutUrl, setCurrentCheckoutUrl] = useState("")
+  const [checkoutReference, setCheckoutReference] = useState("")
+  const [paymentExpiresAt, setPaymentExpiresAt] = useState<number | null>(null)
+
+  const [summaryState, setSummaryState] = useState({
+    shippingCost: "0",
+    shipReadyTotal: "0",
+    preorderDeposit: "0",
+    totalDueNow: "0",
+    preorderBalance: "0",
+    shippingPreorder: "0",
+    totalDueLater: "0",
+  })
+
+  const { data: cartData, isLoading: isCartLoading } = useCart()
+
+  const calculateShippingMutation = useCalculateShipping()
+  const checkoutSummaryMutation = useCheckoutSummaryMutation()
+  const createCheckoutMutation = useCreateCheckout()
+  const validateAddressMutation = useValidateAddress()
+
+  const shipReadyItems = cartData?.ship_ready || []
+  const preOrderItems = cartData?.pre_order || []
+  const allItemsLength = shipReadyItems.length + preOrderItems.length
+
+  const { data: shippingMethodsResponse, isPending: isLoadingShipping } =
+    useShippingMethods({ enabled: allItemsLength > 0 })
+  const shippingMethods = shippingMethodsResponse?.methods || []
+
+  const isInitialLoading = isCartLoading
+
+  useEffect(() => {
+    if (cartData?.summary) {
+      setSummaryState((prev) => ({
+        ...prev,
+        shipReadyTotal: cartData.summary?.total_ship_ready || "0",
+        preorderDeposit: cartData.summary?.total_deposit || "0",
+        totalDueNow: cartData.summary?.total_charged_now || "0",
+        preorderBalance: cartData.summary?.total_balance_due || "0",
+        totalDueLater: cartData.summary?.total_balance_due || "0",
+      }))
+    }
+  }, [cartData])
 
   useEffect(() => {
     if (
@@ -250,8 +253,6 @@ export default function CheckoutPageClient() {
     }
     return () => clearInterval(interval)
   }, [isWaitingForPayment, checkoutReference])
-
-  const isInitialLoading = isCartLoading
 
   if (isInitialLoading) {
     return <CheckoutSkeleton />
@@ -677,6 +678,7 @@ export default function CheckoutPageClient() {
                     </div>
                   </CardContent>
                 </Card>
+
                 <Card className="gap-1 rounded-[12px] border-l-4 border-black/20 bg-muted shadow-none">
                   <CardContent className="space-y-2 p-4">
                     <p className="text-xs font-black tracking-widest text-muted-foreground uppercase">
@@ -716,6 +718,7 @@ export default function CheckoutPageClient() {
                   </CardContent>
                 </Card>
               </div>
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-2xl font-black tracking-tight text-alternate">
@@ -733,10 +736,12 @@ export default function CheckoutPageClient() {
                     </span>
                   </div>
                 </div>
+
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   Charged today only. Total due August will be invoiced in upon
                   Pre-Order settlement — includes remaining balance + shipping.
                 </p>
+
                 <div className="space-y-4 pt-4">
                   <Button
                     type="submit"
