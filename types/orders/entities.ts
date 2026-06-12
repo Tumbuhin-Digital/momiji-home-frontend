@@ -16,30 +16,48 @@ export type PreOrderState =
 export type OrderType = "ready" | "pre-order" | "mixed"
 
 export interface OrderLineItem {
-  productId: string
-  shopifyProductId: string
-  title: string
-  sku: string
-  quantity: number
-  unitPrice: number
   currency: CurrencyCode
   fulfillmentStep?: number
   itemsReceived?: number
+  productId: string
+  quantity: number
+  shopifyProductId: string
+  sku: string
+  title: string
   trackingNumber?: string
   trackingUrl?: string
   type?: string
+  unitPrice: number
 }
 
 export interface Order {
-  id: string
-  shopifyOrderId: string
-  shopifyDraftOrderId?: string
-  orderNumber: string
-  type: OrderType
+  currency: CurrencyCode
   customer: {
-    name: string
     email: string
+    name: string
   } | null
+  fulfillment: {
+    carrier: string | null
+    deliveredAt: string | null
+    shippedAt: string | null
+    trackingNumber: string | null
+    trackingUrl: string | null
+  }
+  fulfillmentStatus: FulfillmentStatus
+  id: string
+  lineItems: OrderLineItem[]
+  orderDate: string
+  orderNumber: string
+  parentOrderId?: string
+  paymentStatus: PaymentStatus
+  preOrderInfo?: {
+    batch?: string
+    dpAmount: number
+    dpPaidAt?: string
+    remainingAmount: number
+    remainingPaidAt?: string
+  }
+  preOrderState?: PreOrderState
   shippingAddress: {
     address1: string
     address2?: string
@@ -51,28 +69,10 @@ export interface Order {
     province: string
     zip: string
   } | null
-  lineItems: OrderLineItem[]
+  shopifyDraftOrderId?: string
+  shopifyOrderId: string
   totalPrice: number
-  currency: CurrencyCode
-  paymentStatus: PaymentStatus
-  fulfillmentStatus: FulfillmentStatus
-  preOrderState?: PreOrderState
-  preOrderInfo?: {
-    dpAmount: number
-    remainingAmount: number
-    batch?: string
-    dpPaidAt?: string
-    remainingPaidAt?: string
-  }
-  parentOrderId?: string
-  fulfillment: {
-    trackingNumber: string | null
-    trackingUrl: string | null
-    carrier: string | null
-    shippedAt: string | null
-    deliveredAt: string | null
-  }
-  orderDate: string
+  type: OrderType
 }
 
 import type { OrderResponseDto } from "./dtos"

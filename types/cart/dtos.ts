@@ -3,12 +3,12 @@ export interface CartItemDto {
   deposit_amount?: string
   id: string
   image_src: string
+  inventory_quantity: number
   quantity: number
   subtotal: string
   title: string
   unit_price: string
   variant_id: string
-  inventory_quantity: number
 }
 
 export interface CartSummaryDto {
@@ -21,15 +21,15 @@ export interface CartSummaryDto {
 }
 
 export interface CartResponseDto {
+  pre_order: CartItemDto[]
   session_id: string
   ship_ready: CartItemDto[]
-  pre_order: CartItemDto[]
   summary: CartSummaryDto
 }
 
 export interface AddCartItemInput {
-  variant_id: string
   quantity: number
+  variant_id: string
 }
 
 export interface UpdateCartItemInput {
@@ -37,8 +37,8 @@ export interface UpdateCartItemInput {
 }
 
 export interface CartSessionDto {
-  session_id: string
   expires_at: string
+  session_id: string
 }
 
 export interface MergeCartInput {

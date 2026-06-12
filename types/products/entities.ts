@@ -4,36 +4,36 @@ export type ProductCategory = "pre-order" | "ship-ready"
 export type SyncStatus = "synced" | "pending" | "failed"
 
 export interface Product {
-  id: string
-  originalId: string
-  shopifyProductId: string
-  title: string
-  sku: string
-  description: string
-  imageUrl: string
   category: ProductCategory
-  status: string
+  description: string
+  id: string
+  imageUrl: string
   inventory: {
+    batchAvailable?: number
+    batchQuota?: number
     quantity: number
     reserved: number
-    batchQuota?: number
-    batchAvailable?: number
-    warehouseLocation: string
     syncStatus: SyncStatus
+    warehouseLocation: string
   }
+  originalId: string
   pricing: {
     basePrice: number
     currency: CurrencyCode
-    syncToShopify: boolean
     markets: Record<
       CurrencyCode,
       {
-        price: number
         compareAtPrice: number | null
         isAutoCalculated: boolean
+        price: number
       }
     >
+    syncToShopify: boolean
   }
-  updatedAt: string
   retailPrice?: number
+  shopifyProductId: string
+  sku: string
+  status: string
+  title: string
+  updatedAt: string
 }

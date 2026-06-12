@@ -1,8 +1,8 @@
 export interface ShippingMethodDto {
-  id: string
-  label: string
   cost: string
   estimated_arrival: string
+  id: string
+  label: string
 }
 
 export interface ShippingMethodsResultDto {

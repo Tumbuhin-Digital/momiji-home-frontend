@@ -1,35 +1,35 @@
 export interface CheckoutItem {
+  balanceDue: string
+  depositAmount: string
   id: string
-  variantId: string
-  title: string
   imageSrc: string
   quantity: number
-  unitPrice: string
   subtotal: string
-  depositAmount: string
-  balanceDue: string
+  title: string
+  unitPrice: string
+  variantId: string
 }
 
 export interface CheckoutSummary {
   currency: string
-  dueNow: {
-    shipReadyTotal: string
-    preorderDeposit: string
-    shipping: string
-    total: string
-  }
   dueAugust: {
     preorderBalance: string
     shippingPreorder: string
     total: string
   }
-  shipReady: { items: CheckoutItem[]; subtotal: string }
-  preOrder: {
-    items: CheckoutItem[]
-    depositSubtotal: string
-    balanceSubtotal: string
+  dueNow: {
+    preorderDeposit: string
+    shipReadyTotal: string
+    shipping: string
+    total: string
   }
-  shipping: { method: string; cost: string; estimatedArrival: string }
+  preOrder: {
+    balanceSubtotal: string
+    depositSubtotal: string
+    items: CheckoutItem[]
+  }
+  shipReady: { items: CheckoutItem[]; subtotal: string }
+  shipping: { cost: string; estimatedArrival: string; method: string }
 }
 
 export interface CheckoutSummaryInput {

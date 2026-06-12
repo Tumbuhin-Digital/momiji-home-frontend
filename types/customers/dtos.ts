@@ -1,31 +1,31 @@
 export interface CustomerQueryParams {
-  search?: string
-  page?: number
   limit?: number
+  page?: number
+  search?: string
 }
 
 export interface CustomerResponseDto {
-  id: string
+  created_at: string
   email: string
   first_name: string
+  id: string
   last_name: string
-  phone?: string
   orders_count: number
-  created_at: string
+  phone?: string
 }
 
 export interface AddressResponseDto {
-  id: string
-  first_name: string
-  last_name: string
   address1: string
   address2?: string
   city: string
-  province: string
   country: string
-  zip: string
-  phone?: string
+  first_name: string
+  id: string
   is_default: boolean
+  last_name: string
+  phone?: string
+  province: string
+  zip: string
 }
 
 export interface CustomerDetailResponseDto extends CustomerResponseDto {
@@ -33,8 +33,8 @@ export interface CustomerDetailResponseDto extends CustomerResponseDto {
 }
 
 export interface CustomerOrderResponseDto {
-  id: string
   aggregate_status: string
-  total_price: number
   created_at: string
+  id: string
+  total_price: number
 }

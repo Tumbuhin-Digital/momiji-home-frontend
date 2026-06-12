@@ -7,12 +7,12 @@ export interface PaginatedResult<T> {
 }
 
 export interface BaseResponse<T = undefined> {
-  status: string
-  message: string
   data?: T
-  timestamp: string
   error?: {
     code: string
     details: string
   }
+  message: string
+  status: string
+  timestamp: string
 }

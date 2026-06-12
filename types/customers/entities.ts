@@ -1,31 +1,31 @@
 export interface Customer {
-  id: string
+  addresses?: Address[]
+  createdAt: string
   email: string
   firstName: string
+  id: string
   lastName: string
-  phone?: string
   ordersCount: number
-  createdAt: string
-  addresses?: Address[]
+  phone?: string
 }
 
 export interface Address {
-  id: string
-  firstName: string
-  lastName: string
   address1: string
   address2?: string
   city: string
-  province: string
   country: string
-  zip: string
-  phone?: string
+  firstName: string
+  id: string
   isDefault: boolean
+  lastName: string
+  phone?: string
+  province: string
+  zip: string
 }
 
 export interface CustomerOrder {
-  id: string
   aggregateStatus: string
-  totalPrice: number
   createdAt: string
+  id: string
+  totalPrice: number
 }

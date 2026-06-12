@@ -1,40 +1,40 @@
 export interface CheckoutItemDto {
+  balance_due: string
+  deposit_amount: string
   id: string
-  variant_id: string
-  title: string
   image_src: string
   quantity: number
-  unit_price: string
   subtotal: string
-  deposit_amount: string
-  balance_due: string
+  title: string
+  unit_price: string
+  variant_id: string
 }
 
 export interface CheckoutSummaryDto {
   currency: string
-  due_now: {
-    ship_ready_total: string
-    preorder_deposit: string
-    shipping: string
-    total: string
-  }
   due_august: {
     preorder_balance: string
     shipping_preorder: string
     total: string
   }
-  ship_ready: { items: CheckoutItemDto[]; subtotal: string }
-  pre_order: {
-    items: CheckoutItemDto[]
-    deposit_subtotal: string
-    balance_subtotal: string
+  due_now: {
+    preorder_deposit: string
+    ship_ready_total: string
+    shipping: string
+    total: string
   }
-  shipping: { method: string; cost: string; estimated_arrival: string }
+  pre_order: {
+    balance_subtotal: string
+    deposit_subtotal: string
+    items: CheckoutItemDto[]
+  }
+  ship_ready: { items: CheckoutItemDto[]; subtotal: string }
+  shipping: { cost: string; estimated_arrival: string; method: string }
 }
 
 export interface CheckoutCreateResponseDto {
-  checkout_url: string
   checkout_reference?: string
+  checkout_url: string
 }
 
 export interface CheckoutConfirmResponseDto {

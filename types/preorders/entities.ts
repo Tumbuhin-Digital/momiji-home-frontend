@@ -1,13 +1,13 @@
 export type SettlementStatus = "pending" | "invoiced" | "paid"
 
 export interface PreorderSettlement {
-  id: string
-  orderId: string
-  orderLineItemId: string
   balanceAmount: number
-  status: SettlementStatus
   createdAt: string
   dueDate: string
+  id: string
   invoicedAt: string | null
+  orderId: string
+  orderLineItemId: string
   paidAt: string | null
+  status: SettlementStatus
 }

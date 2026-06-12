@@ -1,47 +1,47 @@
 export interface VariantDto {
-  id: string
-  title: string
-  image_src: string
-  retail_price: string
-  ws_price: string
   fulfillment_type: "ship_ready" | "pre_order"
+  id: string
+  image_src: string
   inventory_quantity?: number
+  retail_price: string
+  title: string
+  ws_price: string
 }
 
 export interface ProductImageDto {
-  id: string
-  src: string
   alt: string
+  id: string
   position: number
+  src: string
 }
 
 export interface ProductDto {
-  id: string
-  shopify_id: string
-  title: string
-  description: string
   body_html: string
+  description: string
+  expected_ship_date: string
   handle: string
-  vendor: string
+  id: string
+  images: ProductImageDto[]
+  preorder_batch_label: string
   product_type: string
+  shopify_id: string
   status: string
   tags: string
-  preorder_batch_label: string
-  expected_ship_date: string
-  images: ProductImageDto[]
+  title: string
   variants: VariantDto[]
+  vendor: string
 }
 
 import type { ProductCategory } from "./entities"
 import type { CurrencyCode } from "@/types/core"
 
 export interface ProductQueryParams {
-  search?: string
   category?: ProductCategory | "all"
+  fulfillment_type?: "ship_ready" | "pre_order"
   limit?: number
   page?: number
+  search?: string
   sort?: string
-  fulfillment_type?: "ship_ready" | "pre_order"
 }
 
 export interface UpdateInventoryInput {
@@ -51,22 +51,22 @@ export interface UpdateInventoryInput {
 
 export interface UpdatePricingInput {
   basePrice?: number
-  retailPrice?: number
   currency?: CurrencyCode
-  syncToShopify?: boolean
   markets?: Record<
     CurrencyCode,
     {
-      price: number
       compareAtPrice: number | null
       isAutoCalculated: boolean
+      price: number
     }
   >
+  retailPrice?: number
+  syncToShopify?: boolean
 }
 
 export interface UpdateVariantBatchLabelRequest {
-  preorder_batch_label: string
   expected_ship_date?: string
+  preorder_batch_label: string
 }
 
 export interface UpdateProductStatusRequest {
