@@ -45,7 +45,9 @@ function SheetOverlay({
   )
 }
 
-import { cva, type VariantProps } from "class-variance-authority"
+import { cva } from "class-variance-authority"
+
+import type { VariantProps } from "class-variance-authority"
 
 const sheetVariants = cva(
   "fixed z-50 flex flex-col bg-popover bg-clip-padding text-sm text-popover-foreground shadow-xl transition duration-200 ease-in-out data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
