@@ -28,7 +28,6 @@ async function onRequest(config: InternalAxiosRequestConfig) {
     config.headers.set("Content-Type", "application/json")
   }
 
-  // Inject session ID from cart store for guest cart functionality
   if (typeof window !== "undefined") {
     try {
       const { useCartStore } = await import("@/lib/stores/cart.store")
@@ -37,8 +36,12 @@ async function onRequest(config: InternalAxiosRequestConfig) {
       const expiresAt = state.expiresAt
 
       if (sessionId) {
-        if (expiresAt && new Date(expiresAt).getTime() < Date.now()) {
-          // Proactively clear expired session
+        const isCheckoutPath = config.url?.includes("/checkout")
+        if (
+          expiresAt &&
+          new Date(expiresAt).getTime() < Date.now() &&
+          !isCheckoutPath
+        ) {
           state.setSessionId(null, null)
         } else {
           config.headers.set("x-session-id", sessionId)
@@ -144,7 +147,12 @@ async function onResponseError(error: AxiosError<ApiErrorPayload>) {
   ) {
     try {
       const { useCartStore } = await import("@/lib/stores/cart.store")
-      useCartStore.getState().setSessionId(null, null)
+      const isCheckoutPath = originalRequest.url?.includes("/checkout")
+
+      // Prevent clearing session ID during checkout flow
+      if (!isCheckoutPath) {
+        useCartStore.getState().setSessionId(null, null)
+      }
 
       const isGetRequest = originalRequest.method?.toLowerCase() === "get"
       const isCartPath = originalRequest.url?.includes("/cart")

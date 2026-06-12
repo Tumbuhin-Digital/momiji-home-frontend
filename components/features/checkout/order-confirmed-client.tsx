@@ -1,7 +1,5 @@
 "use client"
 
-import Link from "next/link"
-
 import { Check, Loader2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -40,15 +38,17 @@ export default function OrderConfirmedClient({
           We couldn&apos;t retrieve the details for this order.
         </p>
         <Button
-          asChild
           type="button"
           className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.location.href = "/"
+            }
+          }}
         >
-          <Link href="/">
-            <span className="text-base font-medium uppercase">
-              Return to Home
-            </span>
-          </Link>
+          <span className="text-base font-medium uppercase">
+            Return to Home
+          </span>
         </Button>
       </main>
     )
@@ -93,21 +93,20 @@ export default function OrderConfirmedClient({
 
           <div className="mt-12 flex justify-center">
             <Button
-              asChild
               type="button"
               className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
+              onClick={() => {
+                clearCart.mutate()
+                setSessionId(null, null)
+                if (typeof window !== "undefined") {
+                  localStorage.removeItem("momiji-cart-session")
+                  window.location.href = "/"
+                }
+              }}
             >
-              <Link
-                href="/"
-                onClick={() => {
-                  clearCart.mutate()
-                  setSessionId(null, null)
-                }}
-              >
-                <span className="text-base font-medium uppercase">
-                  Continue Shopping
-                </span>
-              </Link>
+              <span className="text-base font-medium uppercase">
+                Continue Shopping
+              </span>
             </Button>
           </div>
         </CardContent>
