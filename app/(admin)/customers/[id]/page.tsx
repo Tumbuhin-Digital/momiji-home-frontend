@@ -1,4 +1,5 @@
 import { CustomerDetailClient } from "@/components/features/customers/customer-detail-client"
+
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {

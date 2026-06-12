@@ -1,4 +1,5 @@
 import { PreorderDetailClient } from "@/components/features/preorders/preorder-detail-client"
+
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {

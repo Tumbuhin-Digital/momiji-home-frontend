@@ -1,6 +1,6 @@
-import { Metadata } from "next"
-
 import OrderConfirmedClient from "@/components/features/checkout/order-confirmed-client"
+
+import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Order Confirmed",

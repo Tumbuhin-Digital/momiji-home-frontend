@@ -1,7 +1,7 @@
 "use client"
 
-import { Lock, AlignLeft, BarChart3, ArrowRight } from "lucide-react"
 import { format } from "date-fns"
+import { AlignLeft, ArrowRight, BarChart3, Lock } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
 

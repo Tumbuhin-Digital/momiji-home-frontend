@@ -1,6 +1,6 @@
-import { Metadata } from "next"
-
 import OrderDetailClient from "@/components/features/orders/order-detail-client"
+
+import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Order Details",
