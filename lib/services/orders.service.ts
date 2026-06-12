@@ -102,9 +102,9 @@ async function updateItemTracking(
 export const ordersService = {
   acceptOrder,
   cancelOrder,
+  createOrder,
   getOrderById,
   getOrders,
-  createOrder,
   updateItemReceived,
   updateItemStep,
   updateItemTracking,

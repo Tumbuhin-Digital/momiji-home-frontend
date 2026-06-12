@@ -1,18 +1,12 @@
-import { useQuery, useMutation } from "@tanstack/react-query"
-import { checkoutService } from "@/lib/services/checkout.service"
-import { queryKeys } from "@/lib/query/query-keys"
-import type {
-  CheckoutSummaryInput,
-  CheckoutCreateInput,
-} from "@/types/checkout"
+import { useMutation, useQuery } from "@tanstack/react-query"
 
-export function useCheckoutSummary(input: CheckoutSummaryInput) {
-  return useQuery({
-    queryKey: queryKeys.checkout.summary(input),
-    queryFn: () => checkoutService.getSummary(input),
-    enabled: true,
-  })
-}
+import { queryKeys } from "@/lib/query/query-keys"
+import { checkoutService } from "@/lib/services/checkout.service"
+
+import type {
+  CheckoutCreateInput,
+  CheckoutSummaryInput,
+} from "@/types/checkout"
 
 export function useCheckoutConfirm(checkoutReference: string | undefined) {
   return useQuery({
@@ -20,6 +14,14 @@ export function useCheckoutConfirm(checkoutReference: string | undefined) {
     queryFn: () =>
       checkoutService.getCheckoutConfirm(checkoutReference as string),
     enabled: !!checkoutReference,
+  })
+}
+
+export function useCheckoutSummary(input: CheckoutSummaryInput) {
+  return useQuery({
+    queryKey: queryKeys.checkout.summary(input),
+    queryFn: () => checkoutService.getSummary(input),
+    enabled: true,
   })
 }
 

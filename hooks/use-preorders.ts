@@ -1,22 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { preorderService } from "@/lib/services/preorder.service"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+
 import { queryKeys } from "@/lib/query/query-keys"
+import { preorderService } from "@/lib/services/preorder.service"
+
 import type { PreorderQueryParams } from "@/types/preorders"
-
-export function usePreorders(params: PreorderQueryParams) {
-  return useQuery({
-    queryKey: queryKeys.preorders.list(params),
-    queryFn: () => preorderService.getSettlements(params),
-  })
-}
-
-export function usePreorderDetail(id: string) {
-  return useQuery({
-    queryKey: queryKeys.preorders.detail(id),
-    queryFn: () => preorderService.getSettlementById(id),
-    enabled: !!id,
-  })
-}
 
 export function useInvoiceSettlement() {
   const queryClient = useQueryClient()
@@ -39,5 +26,20 @@ export function usePaidSettlement() {
       queryClient.invalidateQueries({ queryKey: queryKeys.preorders.all })
       queryClient.setQueryData(queryKeys.preorders.detail(data.id), data)
     },
+  })
+}
+
+export function usePreorderDetail(id: string) {
+  return useQuery({
+    queryKey: queryKeys.preorders.detail(id),
+    queryFn: () => preorderService.getSettlementById(id),
+    enabled: !!id,
+  })
+}
+
+export function usePreorders(params: PreorderQueryParams) {
+  return useQuery({
+    queryKey: queryKeys.preorders.list(params),
+    queryFn: () => preorderService.getSettlements(params),
   })
 }

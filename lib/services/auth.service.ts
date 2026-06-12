@@ -1,7 +1,6 @@
 import { apiClient } from "@/lib/api"
 
 import type { AuthUser } from "@/lib/stores/auth.store"
-
 import type { BaseResponse } from "@/types/core"
 
 export interface LoginInput {

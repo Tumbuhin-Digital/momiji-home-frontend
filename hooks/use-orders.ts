@@ -7,29 +7,12 @@ import { ordersService } from "@/lib/services"
 
 import type { UseQueryOptions } from "@tanstack/react-query"
 import type { Order, OrderQueryParams } from "@/types/orders"
-
-export function useOrders(
-  params: OrderQueryParams = {},
-  options?: Omit<UseQueryOptions<Order[]>, "queryKey" | "queryFn">
-) {
-  return useQuery({
-    queryKey: queryKeys.orders.list(params),
-    queryFn: () => ordersService.getOrders(params),
-    ...options,
-  })
-}
-
-export function useOrderById(
-  orderId: string,
-  options?: Omit<UseQueryOptions<Order | null>, "queryKey" | "queryFn">
-) {
-  return useQuery({
-    queryKey: queryKeys.orders.detail(orderId),
-    queryFn: () => ordersService.getOrderById(orderId),
-    enabled: orderId.length > 0,
-    ...options,
-  })
-}
+import type {
+  CreateOrderInput,
+  UpdateReceivedDto,
+  UpdateStepDto,
+  UpdateTrackingDto,
+} from "@/types/orders/dtos"
 
 export function useAcceptOrder() {
   const queryClient = useQueryClient()
@@ -78,8 +61,6 @@ export function useCancelOrder() {
   })
 }
 
-import type { CreateOrderInput } from "@/types/orders/dtos"
-
 export function useCreateOrder() {
   const queryClient = useQueryClient()
 
@@ -91,11 +72,28 @@ export function useCreateOrder() {
   })
 }
 
-import type {
-  UpdateReceivedDto,
-  UpdateStepDto,
-  UpdateTrackingDto,
-} from "@/types/orders/dtos"
+export function useOrderById(
+  orderId: string,
+  options?: Omit<UseQueryOptions<Order | null>, "queryKey" | "queryFn">
+) {
+  return useQuery({
+    queryKey: queryKeys.orders.detail(orderId),
+    queryFn: () => ordersService.getOrderById(orderId),
+    enabled: orderId.length > 0,
+    ...options,
+  })
+}
+
+export function useOrders(
+  params: OrderQueryParams = {},
+  options?: Omit<UseQueryOptions<Order[]>, "queryKey" | "queryFn">
+) {
+  return useQuery({
+    queryKey: queryKeys.orders.list(params),
+    queryFn: () => ordersService.getOrders(params),
+    ...options,
+  })
+}
 
 export function useUpdateItemReceived() {
   const queryClient = useQueryClient()

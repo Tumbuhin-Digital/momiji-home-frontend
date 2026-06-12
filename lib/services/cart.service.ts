@@ -60,12 +60,12 @@ async function getSummary(): Promise<CartSummaryDto> {
 }
 
 export const cartService = {
-  getCart,
-  clearCart,
   addItem,
+  clearCart,
+  createSession,
+  getCart,
+  getSummary,
+  mergeSession,
   removeItem,
   updateItem,
-  createSession,
-  mergeSession,
-  getSummary,
 }

@@ -108,7 +108,7 @@ async function getCheckoutConfirm(
 }
 
 export const checkoutService = {
-  getSummary,
   createCheckout,
   getCheckoutConfirm,
+  getSummary,
 }

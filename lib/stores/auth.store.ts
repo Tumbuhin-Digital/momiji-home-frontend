@@ -1,36 +1,36 @@
 import { create } from "zustand"
 
 export type AuthUser = {
-  id: string
   email: string
+  id: string
   name: string
   role: string
   shopify_customer_id?: string
 }
 
 type AuthState = {
-  user: AuthUser | null
   isAuthenticated: boolean
   isLoading: boolean
+  user: AuthUser | null
 }
 
 type AuthActions = {
-  setUser: (user: AuthUser) => void
   clearUser: () => void
   setLoading: (loading: boolean) => void
+  setUser: (user: AuthUser) => void
 }
 
 const useAuthStore = create<AuthState & AuthActions>((set) => ({
   // State
-  user: null,
   isAuthenticated: false,
   isLoading: true,
+  user: null,
 
   // Actions
-  setUser: (user) => set({ user, isAuthenticated: true, isLoading: false }),
   clearUser: () =>
     set({ user: null, isAuthenticated: false, isLoading: false }),
   setLoading: (loading) => set({ isLoading: loading }),
+  setUser: (user) => set({ user, isAuthenticated: true, isLoading: false }),
 }))
 
 export { useAuthStore }

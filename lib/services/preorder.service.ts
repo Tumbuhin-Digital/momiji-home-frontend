@@ -82,8 +82,8 @@ async function paidSettlement(id: string): Promise<PreorderSettlement> {
 }
 
 export const preorderService = {
-  getSettlements,
   getSettlementById,
+  getSettlements,
   invoiceSettlement,
   paidSettlement,
 }

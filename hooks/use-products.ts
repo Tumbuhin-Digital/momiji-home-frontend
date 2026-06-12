@@ -16,18 +16,19 @@ import type {
   UpdateVariantPriceRequest,
 } from "@/types/products"
 
-export function useProducts(
-  params: ProductQueryParams = {},
-  options?: Omit<
-    UseQueryOptions<PaginatedResult<Product>>,
-    "queryKey" | "queryFn"
-  >
-) {
-  return useQuery({
-    queryKey: queryKeys.products.list(params),
-    queryFn: () => productsService.getProducts(params),
-    refetchInterval: 10 * 60 * 1000,
-    ...options,
+export function useDownloadDimensionsTemplate() {
+  return useMutation({
+    mutationFn: productsService.downloadDimensionsTemplate,
+  })
+}
+
+export function useImportDimensions() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: productsService.importDimensions,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+    },
   })
 }
 
@@ -52,6 +53,38 @@ export function useProductVariants(
     queryFn: () => productsService.getProductVariants(productId),
     enabled: productId.length > 0,
     ...options,
+  })
+}
+
+export function useProducts(
+  params: ProductQueryParams = {},
+  options?: Omit<
+    UseQueryOptions<PaginatedResult<Product>>,
+    "queryKey" | "queryFn"
+  >
+) {
+  return useQuery({
+    queryKey: queryKeys.products.list(params),
+    queryFn: () => productsService.getProducts(params),
+    refetchInterval: 10 * 60 * 1000,
+    ...options,
+  })
+}
+
+export function useUpdatePricing() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      productId,
+      input,
+    }: {
+      productId: string
+      input: UpdatePricingInput
+    }) => pricingService.updatePricing(productId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+    },
   })
 }
 
@@ -103,39 +136,6 @@ export function useUpdateVariantPrice() {
       variantId: string
       input: UpdateVariantPriceRequest
     }) => productsService.updateVariantPrice(variantId, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
-    },
-  })
-}
-
-export function useUpdatePricing() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({
-      productId,
-      input,
-    }: {
-      productId: string
-      input: UpdatePricingInput
-    }) => pricingService.updatePricing(productId, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
-    },
-  })
-}
-
-export function useDownloadDimensionsTemplate() {
-  return useMutation({
-    mutationFn: productsService.downloadDimensionsTemplate,
-  })
-}
-
-export function useImportDimensions() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: productsService.importDimensions,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
     },

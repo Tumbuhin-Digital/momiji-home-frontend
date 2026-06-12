@@ -97,12 +97,12 @@ async function importDimensions(file: File): Promise<void> {
 }
 
 export const productsService = {
+  downloadDimensionsTemplate,
   getProductById,
+  getProductVariants,
   getProducts,
+  importDimensions,
   updateProductBatch,
   updateProductStatus,
   updateVariantPrice,
-  getProductVariants,
-  downloadDimensionsTemplate,
-  importDimensions,
 }

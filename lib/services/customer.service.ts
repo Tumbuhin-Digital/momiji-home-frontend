@@ -22,14 +22,6 @@ function mapCustomerDto(dto: CustomerResponseDto): Customer {
 }
 
 export const customerService = {
-  async getCustomers(params: CustomerQueryParams = {}): Promise<Customer[]> {
-    const response = await apiClient.get<BaseResponse<CustomerResponseDto[]>>(
-      "/customers",
-      { params }
-    )
-    return (response.data ?? []).map(mapCustomerDto)
-  },
-
   async getCustomerById(id: string): Promise<Customer | null> {
     const response = await apiClient.get<
       BaseResponse<CustomerDetailResponseDto>
@@ -63,5 +55,13 @@ export const customerService = {
       totalPrice: dto.total_price,
       createdAt: dto.created_at,
     }))
+  },
+
+  async getCustomers(params: CustomerQueryParams = {}): Promise<Customer[]> {
+    const response = await apiClient.get<BaseResponse<CustomerResponseDto[]>>(
+      "/customers",
+      { params }
+    )
+    return (response.data ?? []).map(mapCustomerDto)
   },
 }

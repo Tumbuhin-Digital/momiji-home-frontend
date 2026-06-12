@@ -44,7 +44,7 @@ async function validateAddress(data: ValidateAddressRequest): Promise<void> {
 }
 
 export const shippingService = {
-  getMethods,
   calculateShipping,
+  getMethods,
   validateAddress,
 }
