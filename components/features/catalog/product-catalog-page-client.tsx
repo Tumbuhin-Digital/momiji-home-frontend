@@ -15,7 +15,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 
-import { ProductCatalogSkeleton } from "@/components/features/catalog/product-catalog-skeleton"
+import { ProductCatalogCardSkeleton } from "@/components/features/catalog/product-catalog-card-skeleton"
 
 const ProductCatalogCard = dynamic(
   () =>
@@ -23,7 +23,7 @@ const ProductCatalogCard = dynamic(
       (mod) => mod.ProductCatalogCard
     ),
   {
-    loading: () => <ProductCatalogSkeleton />,
+    loading: () => <ProductCatalogCardSkeleton />,
     ssr: false,
   }
 )
@@ -106,7 +106,7 @@ export function ProductCatalogPageClient({
         </header>
         <div className="grid w-full grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:gap-8 sm:px-10">
           {Array.from({ length: itemsPerPage }).map((_, idx) => (
-            <ProductCatalogSkeleton key={idx} />
+            <ProductCatalogCardSkeleton key={idx} />
           ))}
         </div>
       </div>
@@ -165,7 +165,7 @@ export function ProductCatalogPageClient({
             <>
               {Array.from({ length: windowWidth >= 768 ? 3 : 2 }).map(
                 (_, idx) => (
-                  <ProductCatalogSkeleton key={`skeleton-load-${idx}`} />
+                  <ProductCatalogCardSkeleton key={`skeleton-load-${idx}`} />
                 )
               )}
             </>
