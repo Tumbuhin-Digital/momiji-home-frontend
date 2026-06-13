@@ -11,6 +11,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogPanel,
   DialogTitle,
 } from "@/components/ui/dialog"
 
@@ -47,35 +48,43 @@ export function LogoutConfirmModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="bg-secondary sm:max-w-lg"
+        className="bg-secondary sm:max-w-sm"
         showCloseButton={false}
       >
-        <DialogHeader className="text-center">
-          <DialogTitle className="text-xl text-destructive sm:text-2xl">
-            Confirm Logout
-          </DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed text-alternate sm:text-base">
-            Are you sure you want to log out of MOMIJI Operations?
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="flex flex-row gap-3 pt-2 sm:justify-start">
-          <DialogClose>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="flex-1 font-medium sm:text-lg"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
+        <DialogPanel className="flex flex-col items-center gap-6 sm:py-4">
+          <div className="w-full">
+            <DialogHeader className="p-0 text-center">
+              <DialogTitle className="tracking-wide text-destructive sm:text-[22px]">
+                Confirm Logout
+              </DialogTitle>
+              <DialogDescription className="text-[15px] leading-relaxed">
+                Are you sure you want to log out of MOMIJI Operations?
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+        </DialogPanel>
+        <DialogFooter
+          variant="bare"
+          className="w-full flex-col-reverse gap-3 px-6 pb-6 sm:flex-col-reverse sm:space-x-0 sm:px-6"
+        >
+          <DialogClose
+            render={
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full font-medium text-slate-500"
+                onClick={onClose}
+                disabled={isLoading}
+              />
+            }
+          >
+            Cancel
           </DialogClose>
           <Button
             type="button"
             size="lg"
             variant="destructive"
-            className="flex-1 font-medium sm:text-lg"
+            className="w-full font-medium"
             onClick={confirmLogout}
             disabled={isLoading}
           >

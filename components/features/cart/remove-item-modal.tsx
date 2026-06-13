@@ -8,6 +8,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogPanel,
   DialogTitle,
 } from "@/components/ui/dialog"
 
@@ -22,39 +23,47 @@ export function RemoveItemModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-sm" showCloseButton={false}>
-        <DialogHeader className="items-center gap-3 text-center">
-          <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10 p-2">
-            <InfoIcon className="size-6 text-destructive" />
+        <DialogPanel className="flex flex-col items-center gap-6 sm:py-4">
+          <div className="flex size-16 items-center justify-center rounded-full bg-destructive/10 p-3">
+            <InfoIcon className="size-8 text-destructive" />
           </div>
-          <DialogTitle className="text-xl text-destructive sm:text-2xl">
-            Remove item from cart?
-          </DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed text-alternate sm:text-base">
-            Are you sure you want to remove{" "}
-            <span className="font-bold">{productName || "this item"}</span> from
-            your cart?
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <DialogClose>
-            <Button
-              type="button"
-              variant="secondary"
-              size="lg"
-              className="flex flex-1 gap-2 rounded-[6px] bg-[#F1F1F1] px-4 py-2 transition-colors duration-300 ease-out hover:bg-[#F1F1F1]/80"
-              onClick={onClose}
-            >
-              <p className="font-medium text-[#9AA4B2]">Cancel</p>
-            </Button>
+          <div className="w-full">
+            <DialogHeader className="p-0 text-center">
+              <DialogTitle className="tracking-wide text-destructive sm:text-[22px]">
+                Remove item from cart?
+              </DialogTitle>
+              <DialogDescription className="text-[15px] leading-relaxed">
+                Are you sure you want to remove{" "}
+                <span className="font-bold">{productName || "this item"}</span>{" "}
+                from your cart?
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+        </DialogPanel>
+        <DialogFooter
+          variant="bare"
+          className="w-full flex-col-reverse gap-3 px-6 pb-6 sm:flex-col-reverse sm:space-x-0 sm:px-6"
+        >
+          <DialogClose
+            render={
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full font-medium text-slate-500"
+                onClick={onClose}
+              />
+            }
+          >
+            Cancel
           </DialogClose>
           <Button
             type="button"
             variant="destructive"
             onClick={onConfirm}
             size="lg"
-            className="flex flex-1 gap-2 rounded-[6px] px-4 py-2 transition-colors duration-300 ease-out"
+            className="w-full font-medium"
           >
-            <p className="font-medium">Remove</p>
+            Remove
           </Button>
         </DialogFooter>
       </DialogContent>
