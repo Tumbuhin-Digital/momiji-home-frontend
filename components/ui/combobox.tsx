@@ -1,11 +1,14 @@
 "use client"
 
+import * as React from "react"
+
 import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox"
 import { ChevronsUpDownIcon, XIcon } from "lucide-react"
-import * as React from "react"
-import { cn } from "@/lib/utils"
+
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
+
+import { cn } from "@/lib/utils"
 
 export const ComboboxContext: React.Context<{
   chipsRef: React.RefObject<Element | null> | null
@@ -101,7 +104,8 @@ export function ComboboxInput({
         render={
           <Input
             className="has-disabled:opacity-100"
-            size={typeof sizeValue === "number" ? sizeValue : undefined}
+            nativeInput
+            size={sizeValue}
           />
         }
         {...props}
@@ -110,7 +114,7 @@ export function ComboboxInput({
         <ComboboxTrigger
           className={cn(
             "absolute top-1/2 inline-flex size-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border border-transparent opacity-80 transition-opacity outline-none hover:opacity-100 has-[+[data-slot=combobox-clear]]:hidden sm:size-7 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4",
-            sizeValue === "sm" ? "inset-e-0" : "inset-e-0.5"
+            sizeValue === "sm" ? "end-0" : "end-0.5"
           )}
           {...triggerProps}
         >
@@ -123,7 +127,7 @@ export function ComboboxInput({
         <ComboboxClear
           className={cn(
             "absolute top-1/2 inline-flex size-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border border-transparent opacity-80 transition-opacity outline-none hover:opacity-100 has-[+[data-slot=combobox-clear]]:hidden sm:size-7 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4",
-            sizeValue === "sm" ? "inset-e-0" : "inset-e-0.5"
+            sizeValue === "sm" ? "end-0" : "end-0.5"
           )}
           {...clearProps}
         >
@@ -318,7 +322,7 @@ export function ComboboxList({
   ...props
 }: ComboboxPrimitive.List.Props): React.ReactElement {
   return (
-    <ScrollArea>
+    <ScrollArea scrollbarGutter scrollFade>
       <ComboboxPrimitive.List
         className={cn(
           "not-empty:scroll-py-1 not-empty:px-1 not-empty:py-1 in-data-has-overflow-y:pe-3",

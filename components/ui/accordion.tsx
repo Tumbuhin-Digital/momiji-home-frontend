@@ -2,8 +2,10 @@
 
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion"
 import { ChevronDownIcon } from "lucide-react"
-import type React from "react"
+
 import { cn } from "@/lib/utils"
+
+import type React from "react"
 
 export function Accordion(
   props: AccordionPrimitive.Root.Props

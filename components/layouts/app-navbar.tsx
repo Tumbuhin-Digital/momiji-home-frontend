@@ -42,11 +42,13 @@ export function AppNavbar() {
       </div>
       <div className="flex flex-1 items-center justify-end gap-8">
         <Button
-          onClick={() => setIsOpen(true)}
+          type="button"
+          variant="ghost"
           size="icon-sm"
+          onClick={() => setIsOpen(true)}
           className="relative cursor-pointer bg-transparent transition-all hover:bg-transparent"
         >
-          <IconBag className="size-8 text-alternate" />
+          <IconBag className="size-8 text-black" />
           {count > 0 && (
             <Badge className="absolute -top-0.5 right-0 flex size-4 items-center justify-center rounded-full bg-destructive p-0 text-[8px] font-black">
               {count}
