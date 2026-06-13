@@ -1,6 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query"
 
 import { queryKeys } from "@/lib/query/query-keys"
 import { pricingService, productsService } from "@/lib/services"
@@ -67,6 +73,25 @@ export function useProducts(
     queryKey: queryKeys.products.list(params),
     queryFn: () => productsService.getProducts(params),
     refetchInterval: 10 * 60 * 1000,
+    ...options,
+  })
+}
+
+export function useInfiniteProducts(
+  params: ProductQueryParams = {},
+  options?: any
+) {
+  return useInfiniteQuery({
+    queryKey: [...queryKeys.products.list(params), "infinite"],
+    queryFn: ({ pageParam = 1 }) =>
+      productsService.getProducts({ ...params, page: pageParam as number }),
+    getNextPageParam: (lastPage) => {
+      if (lastPage.page < lastPage.totalPages) {
+        return lastPage.page + 1
+      }
+      return undefined
+    },
+    initialPageParam: 1,
     ...options,
   })
 }

@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 
 import { Boxes } from "lucide-react"
 import { motion } from "motion/react"
@@ -15,10 +15,20 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 
-import { ProductCatalogCard } from "@/components/features/catalog/product-catalog-card"
 import { ProductCatalogSkeleton } from "@/components/features/catalog/product-catalog-skeleton"
 
-import { useProducts } from "@/hooks"
+const ProductCatalogCard = dynamic(
+  () =>
+    import("@/components/features/catalog/product-catalog-card").then(
+      (mod) => mod.ProductCatalogCard
+    ),
+  {
+    loading: () => <ProductCatalogSkeleton />,
+    ssr: false,
+  }
+)
+
+import { useInfiniteProducts } from "@/hooks"
 
 import type { ProductCatalogPageClientProps } from "@/types/products"
 
@@ -28,14 +38,10 @@ export function ProductCatalogPageClient({
   bottomNavLink,
   bottomNavText,
 }: ProductCatalogPageClientProps) {
-  const [uiPage, setUiPage] = useState(1)
-  const [apiPage, setApiPage] = useState(1)
   const [isInitialized, setIsInitialized] = useState(false)
   const [windowWidth, setWindowWidth] = useState(0)
 
   const observerTarget = useRef<HTMLDivElement>(null)
-
-  const [allVariants, setAllVariants] = useState<any[]>([])
 
   const itemsPerPage = windowWidth >= 1280 ? 6 : windowWidth >= 768 ? 6 : 8
 
@@ -46,56 +52,13 @@ export function ProductCatalogPageClient({
         ? "pre_order"
         : undefined
 
-  const {
-    data: productsResponse,
-    isLoading,
-    isFetching,
-  } = useProducts({
-    fulfillment_type: fulfillmentType,
-    page: apiPage,
-    limit: itemsPerPage,
-  })
+  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
+    useInfiniteProducts({
+      fulfillment_type: fulfillmentType,
+      limit: itemsPerPage,
+    })
 
-  const totalPages = productsResponse?.totalPages ?? 1
-  const hasMoreApi = apiPage < totalPages
-  const requiredVariants = uiPage * itemsPerPage
-
-  const accumulatedProducts = allVariants.slice(0, requiredVariants)
-  const hasMoreUi = allVariants.length > requiredVariants || hasMoreApi
-
-  useEffect(() => {
-    if (productsResponse?.data) {
-      if (apiPage === 1) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setAllVariants(productsResponse.data)
-      } else {
-        setAllVariants((prev) => {
-          const newItems = productsResponse.data.filter(
-            (item) => !prev.some((p) => p.id === item.id)
-          )
-          return [...prev, ...newItems]
-        })
-      }
-    }
-  }, [productsResponse?.data, apiPage])
-
-  useEffect(() => {
-    if (
-      isInitialized &&
-      allVariants.length < requiredVariants &&
-      hasMoreApi &&
-      !isFetching
-    ) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setApiPage((prev) => prev + 1)
-    }
-  }, [
-    allVariants.length,
-    requiredVariants,
-    hasMoreApi,
-    isFetching,
-    isInitialized,
-  ])
+  const allVariants = data?.pages.flatMap((page) => page.data) ?? []
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -117,8 +80,8 @@ export function ProductCatalogPageClient({
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMoreUi && !isFetching) {
-          setUiPage((prev) => prev + 1)
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage()
         }
       },
       { threshold: 0.1, rootMargin: "100px" }
@@ -129,11 +92,11 @@ export function ProductCatalogPageClient({
     }
 
     return () => observer.disconnect()
-  }, [hasMoreUi, isFetching])
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   if (!isInitialized) return null
 
-  if (isLoading && apiPage === 1) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center gap-8">
         <header className="px-4 pt-10 pb-6 text-center sm:px-10">
@@ -158,7 +121,7 @@ export function ProductCatalogPageClient({
         </h1>
       </header>
 
-      {accumulatedProducts.length === 0 && !isLoading ? (
+      {allVariants.length === 0 && !isLoading ? (
         <div className="flex w-full items-center justify-center px-4 py-12">
           <Empty className="max-w-2xl animate-in border-none bg-transparent text-center duration-700 ease-out fade-in slide-in-from-bottom-8">
             <div className="mb-8 flex justify-center">
@@ -180,15 +143,15 @@ export function ProductCatalogPageClient({
         </div>
       ) : (
         <div className="grid w-full grid-cols-2 gap-4 px-4 sm:gap-6 sm:px-10 md:grid-cols-3">
-          {accumulatedProducts.map((product, index) => (
+          {allVariants.map((product, index) => (
             <motion.div
               key={product.id}
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{
-                duration: 0.5,
-                delay: (index % itemsPerPage) * 0.1,
+                duration: 0.4,
+                delay: (index % itemsPerPage) * 0.05,
+                ease: "easeOut",
               }}
               className="h-full"
             >
@@ -198,7 +161,7 @@ export function ProductCatalogPageClient({
             </motion.div>
           ))}
 
-          {isFetching && apiPage >= 1 && (
+          {isFetchingNextPage && (
             <>
               {Array.from({ length: windowWidth >= 768 ? 3 : 2 }).map(
                 (_, idx) => (
@@ -210,7 +173,7 @@ export function ProductCatalogPageClient({
         </div>
       )}
 
-      {hasMoreUi && (
+      {hasNextPage && (
         <div
           ref={observerTarget}
           className="flex w-full items-center justify-center py-4"
@@ -222,7 +185,7 @@ export function ProductCatalogPageClient({
       <div className="flex items-center justify-center pb-2">
         <Button
           type="button"
-          className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
+          className="h-17.75 w-57.5 gap-2.5 rounded-full border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
           render={<Link href={bottomNavLink} />}
         >
           <span className="text-base font-medium uppercase">
