@@ -127,7 +127,12 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
       itemsReceived: item.items_received,
       trackingNumber: item.tracking_number,
       trackingUrl: item.tracking_url,
-      type: item.type,
+      type:
+        item.type === "ship_ready"
+          ? "ship-ready"
+          : item.type === "pre_order"
+            ? "pre-order"
+            : item.type,
     })),
     totalPrice: parseFloat(dto.total_price) || 0,
     currency: (dto.currency as CurrencyCode) ?? "USD",
