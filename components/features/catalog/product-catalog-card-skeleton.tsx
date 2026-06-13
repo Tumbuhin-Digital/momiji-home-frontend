@@ -17,7 +17,7 @@ export function ProductCatalogCardSkeleton() {
           </div>
         </div>
 
-        <div className="absolute right-3 bottom-3 z-10 sm:right-5 sm:bottom-5">
+        <div className="flex justify-end">
           <Skeleton className="size-7.5 rounded-full sm:size-13" />
         </div>
       </CardContent>

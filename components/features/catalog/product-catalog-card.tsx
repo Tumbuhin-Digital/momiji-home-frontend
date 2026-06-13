@@ -223,7 +223,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
             </div>
           </div>
 
-          <div className="absolute right-3 bottom-3 z-10 sm:right-5 sm:bottom-5">
+          <div className="flex justify-end">
             {localQuantity > 0 ? (
               <QuantitySelector
                 quantity={localQuantity}
