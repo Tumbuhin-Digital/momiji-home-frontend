@@ -38,6 +38,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-navbar: var(--navbar);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
   --color-alternate: var(--alternate);
@@ -137,7 +138,8 @@
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
+  --card: oklch(95.923% 0.00695 38.759);
+  --navbar: oklch(95.243% 0.00597 42.568);
   --card-foreground: oklch(0.141 0.005 285.823);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);
@@ -182,7 +184,8 @@
 .dark {
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
+  --card: oklch(95.923% 0.00695 38.759);
+  --navbar: oklch(95.243% 0.00597 42.568);
   --card-foreground: oklch(0.141 0.005 285.823);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);

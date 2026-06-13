@@ -26,7 +26,7 @@ export function AppNavbar() {
   }
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-40 flex h-16 items-center justify-between border-b border-primary/10 bg-[#F3EEEB] p-4 shadow-xs backdrop-blur-md transition-all duration-300 sm:h-24 sm:px-10 sm:py-4 lg:h-31.5">
+    <header className="fixed top-0 right-0 left-0 z-40 flex h-16 items-center justify-between border-b border-primary/10 bg-navbar p-4 shadow-xs backdrop-blur-md transition-all duration-300 sm:h-24 sm:px-10 sm:py-4 lg:h-31.5">
       <div className="flex flex-1" />
       <div className="flex shrink-0 justify-center">
         <Link href="/">
@@ -50,7 +50,10 @@ export function AppNavbar() {
         >
           <IconBag className="size-8 text-black" />
           {count > 0 && (
-            <Badge className="absolute -top-0.5 right-0 flex size-4 items-center justify-center rounded-full bg-destructive p-0 text-[8px] font-black">
+            <Badge
+              variant="destructive"
+              className="absolute -top-1 -right-1.25 size-4 min-w-4 rounded-full p-0 text-[8px] font-medium"
+            >
               {count}
             </Badge>
           )}
