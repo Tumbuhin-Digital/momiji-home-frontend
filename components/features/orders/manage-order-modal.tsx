@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect } from "react"
+
 import { format } from "date-fns"
 import { XIcon } from "lucide-react"
 
@@ -34,6 +36,18 @@ export function ManageOrderModal({
 
   const currentOrder = fetchedOrder || order
 
+  useEffect(() => {
+    if (isOpen && order?.id) {
+      window.history.pushState(null, "", `/order-management/${order.id}`)
+    } else {
+      window.history.replaceState(null, "", `/order-management`)
+    }
+
+    return () => {
+      window.history.replaceState(null, "", `/order-management`)
+    }
+  }, [isOpen, order?.id])
+
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -62,15 +76,15 @@ export function ManageOrderModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="flex h-209 max-h-[90vh] w-[95vw] max-w-314.5 flex-col gap-4 overflow-hidden rounded-2xl border-none p-6 shadow-xl sm:max-w-314.5"
+        className="flex max-h-[90vh] w-[95vw] max-w-6xl flex-col gap-6 overflow-y-auto rounded-2xl border-none p-8 shadow-xl"
         showCloseButton={false}
       >
-        <DialogHeader className="flex h-20 shrink-0 flex-col items-center justify-between sm:flex-row">
+        <DialogHeader className="flex shrink-0 flex-col items-center justify-between sm:flex-row">
           <div>
-            <DialogTitle className="text-[32px] text-neutral-800">
+            <DialogTitle className="text-[32px] text-[#2C3E50]">
               {currentOrder.orderNumber}
             </DialogTitle>
-            <span className="text-lg text-neutral-400">
+            <span className="text-lg text-[#7F8C8D]">
               {totalItems} items -{" "}
               {formatCurrency(currentOrder.totalPrice, currentOrder.currency)}
             </span>
@@ -78,58 +92,53 @@ export function ManageOrderModal({
           <Button
             type="button"
             onClick={onClose}
-            size="icon-lg"
-            className="rounded-[8px] bg-[#EDEDED]/80 hover:bg-[#EDEDED]"
+            size="icon"
+            className="rounded-[8px] bg-[#F1F2F6] hover:bg-[#E1E2E6]"
           >
-            <XIcon className="size-6 text-[#697586]" />
+            <XIcon className="h-5 w-5 text-[#7F8C8D]" />
             <span className="sr-only">Close</span>
           </Button>
         </DialogHeader>
 
-        <div className="flex flex-col gap-3 rounded-[12px] border border-[#69758633] bg-[#F2EDE4] p-3">
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            <div>
-              <span>
-                <p className="text-sm text-neutral-800">Customer Information</p>
-              </span>
+        <div className="flex flex-col gap-4 rounded-[12px] border border-[#EBEBEB] bg-[#F4F1ED] p-6">
+          <p className="text-sm font-medium text-[#4A4A4A]">
+            Customer Information
+          </p>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
-                <p className="text-xs text-[#32323299]">Name</p>
-                <p className="text-[#323232]">
+                <p className="text-xs text-[#959595]">Name</p>
+                <p className="text-sm text-[#4A4A4A]">
                   {currentOrder.customer?.name || "-"}
                 </p>
               </div>
               <div className="flex flex-col gap-1">
-                <p className="text-xs text-[#32323299]">Order Date</p>
-                <p className="text-[#323232]">
+                <p className="text-xs text-[#959595]">Order Date</p>
+                <p className="text-sm text-[#4A4A4A]">
                   {currentOrder.orderDate
-                    ? format(
-                        new Date(currentOrder.orderDate),
-                        "dd MMM yyyy, h:mm a"
-                      )
+                    ? format(new Date(currentOrder.orderDate), "d MMMM yyyy")
                     : "-"}
                 </p>
               </div>
             </div>
-            <div>
+            <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
-                <p className="text-xs text-[#32323299]">Email</p>
-                <p className="text-[#323232]">
+                <p className="text-xs text-[#959595]">Email</p>
+                <p className="text-sm text-[#4A4A4A]">
                   {currentOrder.customer?.email || "-"}
                 </p>
               </div>
               <div className="flex flex-col gap-1">
-                <p className="text-xs text-[#32323299]">Address</p>
-                <p className="text-[#323232]">
+                <p className="text-xs text-[#959595]">Address</p>
+                <p className="text-sm text-[#4A4A4A]">
                   {currentOrder.shippingAddress
                     ? `${currentOrder.shippingAddress.address1}${
                         currentOrder.shippingAddress.address2
                           ? `, ${currentOrder.shippingAddress.address2}`
                           : ""
                       }, ${currentOrder.shippingAddress.city}, ${
-                        currentOrder.shippingAddress.province
-                      }, ${currentOrder.shippingAddress.country} ${
-                        currentOrder.shippingAddress.zip
-                      }`
+                        currentOrder.shippingAddress.country
+                      }, ${currentOrder.shippingAddress.zip}`
                     : "-"}
                 </p>
               </div>
@@ -137,13 +146,21 @@ export function ManageOrderModal({
           </div>
         </div>
 
-        {shipReadyItems.length > 0 && (
-          <OrderFulfillmentPanel order={currentOrder} type="ship-ready" />
-        )}
+        <div
+          className={`grid gap-6 ${
+            shipReadyItems.length > 0 && preOrderItems.length > 0
+              ? "grid-cols-1 lg:grid-cols-2"
+              : "grid-cols-1"
+          }`}
+        >
+          {shipReadyItems.length > 0 && (
+            <OrderFulfillmentPanel order={currentOrder} type="ship-ready" />
+          )}
 
-        {preOrderItems.length > 0 && (
-          <OrderFulfillmentPanel order={currentOrder} type="pre-order" />
-        )}
+          {preOrderItems.length > 0 && (
+            <OrderFulfillmentPanel order={currentOrder} type="pre-order" />
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )

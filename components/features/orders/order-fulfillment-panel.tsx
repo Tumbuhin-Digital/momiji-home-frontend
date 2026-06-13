@@ -1,19 +1,64 @@
-"use client"
-
+import dynamic from "next/dynamic"
 import { useState } from "react"
 
 import { Check, Truck } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 import { Input } from "@/components/ui/input"
+import {
+  Stepper,
+  StepperIndicator,
+  StepperItem,
+  StepperSeparator,
+  StepperTitle,
+  StepperTrigger,
+} from "@/components/ui/stepper"
 
 import {
   useAcceptOrder,
   useCancelOrder,
+  useUpdateItemReceived,
   useUpdateItemStep,
+  useUpdateItemTracking,
 } from "@/hooks/use-orders"
 
 import type { Order } from "@/types/orders"
+import type { OrderLineItem } from "@/types/orders/entities"
+
+const UpdateReceivedModal = dynamic(
+  () =>
+    import("./update-received-modal").then((mod) => mod.UpdateReceivedModal),
+  { ssr: false }
+)
+const UpdateStepModal = dynamic(
+  () => import("./update-step-modal").then((mod) => mod.UpdateStepModal),
+  { ssr: false }
+)
+const UpdateTrackingModal = dynamic(
+  () =>
+    import("./update-tracking-modal").then((mod) => mod.UpdateTrackingModal),
+  { ssr: false }
+)
+
+const shipReadySteps = [
+  { step: 1, title: "Order Placed" },
+  { step: 3, title: "Shipped" },
+  { step: 4, title: "Delivered" },
+]
+
+const preOrderSteps = [
+  { step: 1, title: "Order Placed" },
+  { step: 2, title: "Stock Ready" },
+  { step: 3, title: "Shipped" },
+  { step: 4, title: "Delivered" },
+]
 
 interface OrderFulfillmentPanelProps {
   order: Order
@@ -32,9 +77,18 @@ export function OrderFulfillmentPanel({
     !order.fulfillment?.trackingNumber
   )
 
+  const [selectedReceivedItem, setSelectedReceivedItem] =
+    useState<OrderLineItem | null>(null)
+  const [selectedStepItem, setSelectedStepItem] =
+    useState<OrderLineItem | null>(null)
+  const [selectedTrackingItem, setSelectedTrackingItem] =
+    useState<OrderLineItem | null>(null)
+
   const acceptOrder = useAcceptOrder()
   const cancelOrder = useCancelOrder()
+  const updateReceived = useUpdateItemReceived()
   const updateStep = useUpdateItemStep()
+  const updateTracking = useUpdateItemTracking()
 
   const items = order.lineItems.filter(
     (item) => item.type === type || (!item.type && order.type === type)
@@ -89,6 +143,26 @@ export function OrderFulfillmentPanel({
     1
   )
 
+  const renderItemContent = (item: OrderLineItem) => (
+    <div className="flex gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
+        {/* Product Image placeholder */}
+        <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+          Img
+        </div>
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col justify-center">
+        <p className="truncate font-medium text-slate-800" title={item.title}>
+          {item.title}
+        </p>
+        <p className="mt-1 text-sm text-slate-500">
+          {item.quantity} pcs -{" "}
+          {formatCurrency(item.unitPrice * item.quantity, item.currency)}
+        </p>
+      </div>
+    </div>
+  )
+
   return (
     <div className="overflow-hidden rounded-xl border border-[#D9E2E8] bg-[#F4F7F9]/30">
       <div className="flex items-center justify-between border-b border-[#D9E2E8] bg-[#EBF0F3] px-6 py-3">
@@ -96,7 +170,7 @@ export function OrderFulfillmentPanel({
           {type === "ship-ready" ? "Ship Ready" : "Pre-Order"}
         </h3>
         <div className="flex gap-2">
-          {type === "pre-order" && currentStep === 1 && (
+          {type === "pre-order" && currentStep === 2 && (
             <Button
               variant="default"
               size="sm"
@@ -133,87 +207,45 @@ export function OrderFulfillmentPanel({
       </div>
 
       <div className="p-6">
-        <h4 className="mb-4 text-sm font-bold">Total Item</h4>
-        <div className="mb-8 space-y-4">
-          {items.map((item, idx) => (
-            <div key={idx} className="flex gap-4">
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
-                {/* Product Image placeholder */}
-                <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-                  Img
-                </div>
-              </div>
-              <div>
-                <p className="font-medium text-slate-800">{item.title}</p>
-                <p className="mt-1 text-sm text-slate-500">
-                  {item.quantity} pcs -{" "}
-                  {formatCurrency(
-                    item.unitPrice * item.quantity,
-                    item.currency
-                  )}
-                </p>
-              </div>
-            </div>
-          ))}
+        <div className="mb-4 flex items-center justify-between">
+          <h4 className="text-sm font-bold">Total Item ({items.length})</h4>
         </div>
+        {items.length > 1 ? (
+          <Carousel opts={{ align: "start" }} className="mb-8 w-full">
+            <CarouselContent>
+              {items.map((item, idx) => (
+                <CarouselItem key={idx}>{renderItemContent(item)}</CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="-left-4 size-8 bg-white/90 shadow-md backdrop-blur-sm hover:bg-white" />
+            <CarouselNext className="-right-4 size-8 bg-white/90 shadow-md backdrop-blur-sm hover:bg-white" />
+          </Carousel>
+        ) : (
+          <div className="mb-8 w-full">{renderItemContent(items[0])}</div>
+        )}
 
         {/* Stepper */}
-        <div className="relative mb-6">
-          <div className="absolute top-4 right-4 left-4 h-px border-t border-dashed border-slate-400 bg-slate-300"></div>
-          <div className="relative z-10 flex justify-between">
-            <div className="flex flex-col items-center">
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${currentStep >= 1 ? "bg-[#7EA4B3] text-white" : "border border-slate-300 bg-white text-slate-400"}`}
+        <Stepper value={currentStep} className="mb-6">
+          {(isPreOrder ? preOrderSteps : shipReadySteps).map(
+            ({ step, title }, idx, arr) => (
+              <StepperItem
+                key={step}
+                step={step}
+                className="relative flex-1 flex-col!"
               >
-                1
-              </div>
-              <span className="mt-2 text-[10px] font-medium text-[#7EA4B3]">
-                Order Placed
-              </span>
-            </div>
-
-            {isPreOrder && (
-              <div className="flex flex-col items-center">
-                <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${currentStep >= 2 ? "bg-[#7EA4B3] text-white" : "border border-slate-300 bg-white text-slate-400"}`}
-                >
-                  2
-                </div>
-                <span
-                  className={`mt-2 text-[10px] font-medium ${currentStep >= 2 ? "text-[#7EA4B3]" : "text-slate-400"}`}
-                >
-                  Stock Ready
-                </span>
-              </div>
-            )}
-
-            <div className="flex flex-col items-center">
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${currentStep >= 3 ? "bg-[#7EA4B3] text-white" : "border border-slate-300 bg-white text-slate-400"}`}
-              >
-                3
-              </div>
-              <span
-                className={`mt-2 text-[10px] font-medium ${currentStep >= 3 ? "text-[#7EA4B3]" : "text-slate-400"}`}
-              >
-                Shipped
-              </span>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${currentStep >= 4 ? "bg-[#7EA4B3] text-white" : "border border-slate-300 bg-white text-slate-400"}`}
-              >
-                4
-              </div>
-              <span
-                className={`mt-2 text-[10px] font-medium ${currentStep >= 4 ? "text-[#7EA4B3]" : "text-slate-400"}`}
-              >
-                Delivered
-              </span>
-            </div>
-          </div>
-        </div>
+                <StepperTrigger className="flex-col gap-3 rounded">
+                  <StepperIndicator />
+                  <div className="space-y-0.5 px-2">
+                    <StepperTitle>{title}</StepperTitle>
+                  </div>
+                </StepperTrigger>
+                {idx < arr.length - 1 && (
+                  <StepperSeparator className="absolute inset-x-0 top-3 left-[calc(50%+0.75rem+0.125rem)] -order-1 m-0 -translate-y-1/2 border-dashed group-data-[orientation=horizontal]/stepper:w-[calc(100%-1.5rem-0.25rem)] group-data-[orientation=horizontal]/stepper:flex-none" />
+                )}
+              </StepperItem>
+            )
+          )}
+        </Stepper>
 
         {/* Airway Bill Section */}
         {currentStep >= 2 && (
@@ -271,6 +303,57 @@ export function OrderFulfillmentPanel({
           </div>
         )}
       </div>
+
+      <UpdateStepModal
+        item={selectedStepItem}
+        isOpen={!!selectedStepItem}
+        onClose={() => setSelectedStepItem(null)}
+        onConfirm={async (step: number) => {
+          if (!selectedStepItem) return
+          await updateStep.mutateAsync({
+            orderId: order.id,
+            itemId: selectedStepItem.productId,
+            body: { fulfillment_step: step },
+          })
+          setSelectedStepItem(null)
+        }}
+        isConfirming={updateStep.isPending}
+      />
+
+      <UpdateReceivedModal
+        item={selectedReceivedItem}
+        isOpen={!!selectedReceivedItem}
+        onClose={() => setSelectedReceivedItem(null)}
+        onConfirm={async (received: number) => {
+          if (!selectedReceivedItem) return
+          await updateReceived.mutateAsync({
+            orderId: order.id,
+            itemId: selectedReceivedItem.productId,
+            body: { items_received: received },
+          })
+          setSelectedReceivedItem(null)
+        }}
+        isConfirming={updateReceived.isPending}
+      />
+
+      <UpdateTrackingModal
+        item={selectedTrackingItem}
+        isOpen={!!selectedTrackingItem}
+        onClose={() => setSelectedTrackingItem(null)}
+        onConfirm={async (trackingNumber: string, trackingUrl: string) => {
+          if (!selectedTrackingItem) return
+          await updateTracking.mutateAsync({
+            orderId: order.id,
+            itemId: selectedTrackingItem.productId,
+            body: {
+              tracking_number: trackingNumber,
+              tracking_url: trackingUrl,
+            },
+          })
+          setSelectedTrackingItem(null)
+        }}
+        isConfirming={updateTracking.isPending}
+      />
     </div>
   )
 }
