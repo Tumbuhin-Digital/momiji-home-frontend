@@ -230,6 +230,8 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
                 onIncrease={handleIncrease}
                 onDecrease={handleDecrease}
                 onChange={handleCustomChange}
+                disabled={isPending}
+                isPending={isPending}
                 className="h-8 w-24 sm:h-10 sm:w-28"
               />
             ) : (

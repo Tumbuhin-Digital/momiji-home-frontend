@@ -6,10 +6,13 @@ import { Minus, Plus } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+import { Spinner } from "@/components/ui/spinner"
+
 interface QuantitySelectorProps {
   className?: string
   disabled?: boolean
   disabledIncrease?: boolean
+  isPending?: boolean
   quantity: number
   onIncrease: () => void
   onDecrease: () => void
@@ -20,6 +23,7 @@ export function QuantitySelector({
   className,
   disabled,
   disabledIncrease,
+  isPending,
   quantity,
   onIncrease,
   onDecrease,
@@ -76,7 +80,11 @@ export function QuantitySelector({
           aria-hidden="true"
         />
       </button>
-      {onChange ? (
+      {isPending ? (
+        <div className="flex min-w-0 flex-1 items-center justify-center">
+          <Spinner className="size-4 text-alternate sm:size-5" />
+        </div>
+      ) : onChange ? (
         <input
           type="number"
           min={0}
