@@ -72,7 +72,6 @@ export function PreorderListClient() {
 
   const currentDateStr = format(new Date(), "EEEE, MMM d yyyy")
 
-  // Frontend search filter if they type Order ID
   const filteredPreorders = preorders
     ?.filter((p) => p.orderId.toLowerCase().includes(searchQuery.toLowerCase()))
     ?.sort((a, b) => {
@@ -103,8 +102,7 @@ export function PreorderListClient() {
   }
 
   return (
-    <div className="flex w-full flex-col gap-6 pb-10">
-      {/* Header section matching design */}
+    <div className="flex w-full flex-col gap-6 p-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-800">
@@ -124,7 +122,6 @@ export function PreorderListClient() {
         </Button>
       </div>
 
-      {/* Toolbar section matching design */}
       <div className="flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:flex-row">
         <div className="relative w-full">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -139,7 +136,6 @@ export function PreorderListClient() {
         <div className="mx-2 hidden h-8 w-px bg-slate-200 sm:block"></div>
 
         <div className="flex shrink-0 gap-2 overflow-x-auto px-2">
-          {/* Quick filters mapped as alternative to "Sort By" or in addition */}
           <Button
             variant={statusFilter === undefined ? "default" : "outline"}
             onClick={() => {
@@ -228,7 +224,6 @@ export function PreorderListClient() {
         </DropdownMenu>
       </div>
 
-      {/* Content section */}
       <div className="mt-2 space-y-6">
         <div className="overflow-hidden rounded-xl border border-[#EBEBEB] bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 bg-white px-6 py-4">

@@ -9,6 +9,7 @@ import { Iconsax3dRotate } from "@/public/icons/iconsax-3d-rotate"
 
 import { useOrders } from "@/hooks/use-orders"
 import { useForceSync } from "@/hooks/use-sync"
+import { formatLastSynced } from "@/lib/utils"
 
 export function OrderManagementClient() {
   const { data: orders, isLoading, isFetching, isError, refetch } = useOrders()
@@ -24,29 +25,21 @@ export function OrderManagementClient() {
   }
 
   return (
-    <div className="flex w-full flex-col gap-6 px-6 lg:pr-6 lg:pl-0">
-      <div className="flex flex-col items-start justify-between gap-4 pt-6 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[32px] font-medium text-neutral-800">
             Order Management
           </h1>
           <p className="text-lg text-neutral-400">
-            Last synced:{" "}
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatLastSynced(new Date())}
           </p>
         </div>
-
         <Button
           type="button"
           onClick={handleSync}
           disabled={isSyncing}
-          className="h-10 gap-1.5 bg-primary/20 px-4 py-2 text-primary hover:bg-primary/30 hover:text-primary"
+          className="h-10 w-full gap-1.5 bg-primary/20 px-4 py-2 text-primary hover:bg-primary/30 hover:text-primary sm:w-fit"
         >
           <Iconsax3dRotate
             className={`size-6 ${isSyncing ? "animate-spin" : ""}`}

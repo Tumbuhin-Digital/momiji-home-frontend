@@ -3,7 +3,6 @@
 import Image from "next/image"
 import { Fragment, Suspense, useMemo, useState } from "react"
 
-import { format } from "date-fns"
 import {
   Boxes,
   ChevronDown,
@@ -46,7 +45,7 @@ import { EditPriceModal } from "@/components/features/products/edit-price-modal"
 import { UpdateBatchModal } from "@/components/features/products/update-batch-modal"
 
 import { useProducts, useUpdateProductStatus } from "@/hooks"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, formatLastSynced } from "@/lib/utils"
 
 import type { Product } from "@/types/products"
 
@@ -128,10 +127,6 @@ export default function ProductsPageClient() {
     return Object.values(groups)
   }, [productsQuery.data])
 
-  const lastSyncDate = productsQuery.dataUpdatedAt
-    ? format(new Date(productsQuery.dataUpdatedAt), "EEEE, hh:mm a")
-    : format(new Date(), "EEEE, hh:mm a")
-
   const toggleExpand = (productId: string) => {
     setExpandedProducts((prev) => ({
       ...prev,
@@ -164,18 +159,18 @@ export default function ProductsPageClient() {
         </div>
       }
     >
-      <main className="flex w-full flex-col gap-6 p-8 lg:p-10">
-        <header className="flex flex-col gap-2">
-          <div className="flex items-center gap-4">
-            <h1 className="text-[28px] font-medium text-[#2C414A]">
+      <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h1 className="text-[32px] font-medium text-neutral-800">
               Product Details
             </h1>
+            <p className="text-lg text-neutral-400">
+              {formatLastSynced(new Date())} · {productsQuery.data?.total || 0}{" "}
+              products in total
+            </p>
           </div>
-          <p className="text-[14px] text-slate-400">
-            Last synced: Today, {lastSyncDate} ·{" "}
-            {productsQuery.data?.total || 0} products in total
-          </p>
-        </header>
+        </div>
 
         <div className="flex flex-col gap-4">
           <DimensionsCsvSection />
@@ -683,7 +678,7 @@ export default function ProductsPageClient() {
             </div>
           )}
         </div>
-      </main>
+      </div>
 
       {selectedProduct && (
         <EditPriceModal

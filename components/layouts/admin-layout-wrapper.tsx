@@ -36,7 +36,7 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
   }, [isSidebarOpen])
 
   return (
-    <div className="relative flex min-h-screen gap-6 bg-white">
+    <div className="relative flex min-h-screen bg-white">
       {/* Mobile Top Bar */}
       <div className="fixed top-0 right-0 left-0 z-40 flex h-16 items-center justify-between border-b border-neutral-200 bg-[#FFFAF0] px-4 shadow-sm xl:hidden">
         <div className="flex w-12 justify-start">
