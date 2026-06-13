@@ -12,6 +12,7 @@ import type { CartItemDto } from "@/types/cart"
 export interface CartSheetItemRowProps {
   disableIncrease?: boolean
   isBlinking?: boolean
+  isPending?: boolean
   isPreOrder?: boolean
   item: CartItemDto
   maxStock?: number
@@ -24,6 +25,7 @@ export interface CartSheetItemRowProps {
 export function CartSheetItemRow({
   disableIncrease,
   isBlinking,
+  isPending,
   isPreOrder,
   item,
   maxStock,
@@ -122,6 +124,7 @@ export function CartSheetItemRow({
           <QuantitySelector
             key={resetKey}
             quantity={localQuantity}
+            isPending={isPending}
             onIncrease={handleIncrease}
             onDecrease={() => handleUpdate(localQuantity - 1)}
             onChange={(q) => {

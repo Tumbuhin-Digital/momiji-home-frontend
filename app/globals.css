@@ -56,9 +56,22 @@
   --color-success-foreground: var(--success-foreground);
   --color-success: var(--success);
   --color-info-foreground: var(--info-foreground);
-  --color-info: var(--info);
+  --color-info: var(--color-blue-500);
   --color-destructive-foreground: var(--destructive-foreground);
   --animate-skeleton: skeleton 2s -1s infinite linear;
+  --animate-progress-indeterminate: progress-indeterminate 1.5s infinite
+    ease-in-out;
+  @keyframes progress-indeterminate {
+    0% {
+      transform: translateX(-100%) scaleX(0.2);
+    }
+    50% {
+      transform: translateX(0%) scaleX(0.5);
+    }
+    100% {
+      transform: translateX(100%) scaleX(0.2);
+    }
+  }
   @keyframes skeleton {
     to {
       background-position: -200% 0;

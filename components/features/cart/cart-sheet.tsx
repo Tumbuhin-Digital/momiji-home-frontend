@@ -40,6 +40,7 @@ export function CartSheet() {
 
   const isOpen = useCartStore((state) => state.isOpen)
   const setIsOpen = useCartStore((state) => state.setIsOpen)
+  const setIsGlobalPending = useCartStore((state) => state.setIsGlobalPending)
 
   const [itemToRemove, setItemToRemove] = useState<string | null>(null)
   const [depletedProduct, setDepletedProduct] = useState<{
@@ -72,7 +73,10 @@ export function CartSheet() {
   }
 
   const allItemsLength = shipReadyItems.length + preOrderItems.length
-  const isPending = updateCartItem.isPending || removeCartItem.isPending
+  const isPending =
+    addCartItem.isPending ||
+    updateCartItem.isPending ||
+    removeCartItem.isPending
 
   return (
     <>
@@ -151,6 +155,7 @@ export function CartSheet() {
                           item={item}
                           formatCurrency={formatCurrency}
                           maxStock={item.inventory_quantity}
+                          isPending={isPending}
                           onExceedStock={(desired, revert) => {
                             setDepletedProduct({
                               title: item.title,
@@ -203,6 +208,7 @@ export function CartSheet() {
                           item={item}
                           formatCurrency={formatCurrency}
                           isBlinking={blinkingProductKey === item.variant_id}
+                          isPending={isPending}
                           isPreOrder
                           onRemove={() => setItemToRemove(item.id)}
                           onUpdateQuantity={(q) =>
@@ -306,52 +312,67 @@ export function CartSheet() {
             if (revertQuantity) revertQuantity()
             setRevertQuantity(null)
           }}
-          onConfirm={() => {
-            if (depletedProduct) {
-              setBlinkingProductKey(depletedProduct.sku)
-              const maxStock = depletedProduct.maxStock
+          onConfirm={async () => {
+            const currentProduct = depletedProduct
+            const currentQuantity = depletedQuantity
 
-              const targetShipReadyQty = Math.min(depletedQuantity, maxStock)
-              const targetPreOrderQty = Math.max(0, depletedQuantity - maxStock)
-
-              const shipReadyItem = shipReadyItems.find(
-                (i) => i.variant_id === depletedProduct.sku
-              )
-              const preOrderItem = preOrderItems.find(
-                (i) => i.variant_id === depletedProduct.sku
-              )
-
-              if (
-                shipReadyItem &&
-                shipReadyItem.quantity !== targetShipReadyQty
-              ) {
-                updateCartItem.mutate({
-                  id: shipReadyItem.id,
-                  quantity: targetShipReadyQty,
-                })
-              } else if (!shipReadyItem && targetShipReadyQty > 0) {
-                addCartItem.mutate({
-                  variant_id: depletedProduct.sku,
-                  quantity: targetShipReadyQty,
-                })
-              }
-
-              if (preOrderItem && preOrderItem.quantity !== targetPreOrderQty) {
-                updateCartItem.mutate({
-                  id: preOrderItem.id,
-                  quantity: targetPreOrderQty,
-                })
-              } else if (!preOrderItem && targetPreOrderQty > 0) {
-                addCartItem.mutate({
-                  variant_id: depletedProduct.sku,
-                  quantity: targetPreOrderQty,
-                })
-              }
-
-              setTimeout(() => setBlinkingProductKey(null), 3000)
-            }
             setDepletedProduct(null)
             setRevertQuantity(null)
+
+            if (currentProduct) {
+              setBlinkingProductKey(currentProduct.sku)
+              setIsGlobalPending(true)
+              try {
+                const maxStock = currentProduct.maxStock
+
+                const targetShipReadyQty = Math.min(currentQuantity, maxStock)
+                const targetPreOrderQty = Math.max(
+                  0,
+                  currentQuantity - maxStock
+                )
+
+                const shipReadyItem = shipReadyItems.find(
+                  (i) => i.variant_id === currentProduct.sku
+                )
+                const preOrderItem = preOrderItems.find(
+                  (i) => i.variant_id === currentProduct.sku
+                )
+
+                if (
+                  shipReadyItem &&
+                  shipReadyItem.quantity !== targetShipReadyQty
+                ) {
+                  await updateCartItem.mutateAsync({
+                    id: shipReadyItem.id,
+                    quantity: targetShipReadyQty,
+                  })
+                } else if (!shipReadyItem && targetShipReadyQty > 0) {
+                  await addCartItem.mutateAsync({
+                    variant_id: currentProduct.sku,
+                    quantity: targetShipReadyQty,
+                  })
+                }
+
+                if (
+                  preOrderItem &&
+                  preOrderItem.quantity !== targetPreOrderQty
+                ) {
+                  await updateCartItem.mutateAsync({
+                    id: preOrderItem.id,
+                    quantity: targetPreOrderQty,
+                  })
+                } else if (!preOrderItem && targetPreOrderQty > 0) {
+                  await addCartItem.mutateAsync({
+                    variant_id: currentProduct.sku,
+                    quantity: targetPreOrderQty,
+                  })
+                }
+
+                setTimeout(() => setBlinkingProductKey(null), 3000)
+              } finally {
+                setIsGlobalPending(false)
+              }
+            }
           }}
         />
       )}

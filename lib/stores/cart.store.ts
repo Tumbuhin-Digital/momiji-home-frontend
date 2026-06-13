@@ -7,9 +7,11 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set) => ({
       expiresAt: null,
+      isGlobalPending: false,
       isOpen: false,
       market: "USD",
       sessionId: null,
+      setIsGlobalPending: (isGlobalPending) => set({ isGlobalPending }),
       setIsOpen: (isOpen) => set({ isOpen }),
       setMarket: (market) => set({ market }),
       setSessionId: (sessionId, expiresAt = null) =>

@@ -9,9 +9,10 @@ export function useAddCartItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    mutationKey: ["cart", "add"],
     mutationFn: cartService.addItem,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.cart.all() })
+      return queryClient.invalidateQueries({ queryKey: queryKeys.cart.all() })
     },
   })
 }
@@ -20,15 +21,17 @@ export function useClearCart() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    mutationKey: ["cart", "clear"],
     mutationFn: cartService.clearCart,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.cart.all() })
+      return queryClient.invalidateQueries({ queryKey: queryKeys.cart.all() })
     },
   })
 }
 
 export function useCreateCartSession() {
   return useMutation({
+    mutationKey: ["cart", "session"],
     mutationFn: cartService.createSession,
   })
 }
@@ -37,6 +40,7 @@ export function useRemoveCartItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    mutationKey: ["cart", "remove"],
     mutationFn: cartService.removeItem,
     onMutate: async (deletedItemId) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.cart.cart() })
@@ -65,7 +69,7 @@ export function useRemoveCartItem() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.cart.all() })
+      return queryClient.invalidateQueries({ queryKey: queryKeys.cart.all() })
     },
   })
 }
@@ -74,6 +78,7 @@ export function useUpdateCartItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    mutationKey: ["cart", "update"],
     mutationFn: ({ id, ...input }: { id: string } & UpdateCartItemInput) =>
       cartService.updateItem(id, input),
     onMutate: async (updatedItem) => {
@@ -107,7 +112,7 @@ export function useUpdateCartItem() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.cart.all() })
+      return queryClient.invalidateQueries({ queryKey: queryKeys.cart.all() })
     },
   })
 }

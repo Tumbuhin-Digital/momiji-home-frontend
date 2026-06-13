@@ -12,6 +12,7 @@ import type { CartItemDto } from "@/types/cart"
 export interface CartItemRowProps {
   disableIncrease?: boolean
   isBlinking?: boolean
+  isPending?: boolean
   isPreOrder?: boolean
   item: CartItemDto
   formatCurrency: (val: number) => string
@@ -22,6 +23,7 @@ export interface CartItemRowProps {
 export function CartItemRow({
   disableIncrease,
   isBlinking,
+  isPending,
   isPreOrder,
   item,
   formatCurrency,
@@ -101,6 +103,7 @@ export function CartItemRow({
             <QuantitySelector
               key={resetKey}
               quantity={localQuantity}
+              isPending={isPending}
               disabled={disableIncrease}
               onIncrease={() => handleUpdate(localQuantity + 1)}
               onDecrease={() => handleUpdate(localQuantity - 1)}

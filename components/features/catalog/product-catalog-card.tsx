@@ -26,7 +26,8 @@ import { formatCurrency } from "@/lib/utils"
 import type { ProductCatalogCardProps } from "@/types/products"
 
 export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
-  const { market, sessionId, expiresAt, setSessionId } = useCartStore()
+  const { market, sessionId, expiresAt, setSessionId, setIsGlobalPending } =
+    useCartStore()
 
   const [localQuantity, setLocalQuantity] = useState(0)
   const [showDepletedModal, setShowDepletedModal] = useState(false)
@@ -91,57 +92,72 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     }
   }
 
-  const triggerUpdate = (newTotal: number) => {
+  const triggerUpdate = (newTotal: number, immediate = false) => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current)
     setLocalQuantity(newTotal)
 
-    debounceTimer.current = setTimeout(() => {
-      if (newTotal === quantity) return
+    setIsGlobalPending(true)
 
-      const maxShipReady = product.inventory.quantity
-      let targetShipReadyQty = newTotal
-      let targetPreOrderQty = 0
-
-      if (isShipReady && maxShipReady > 0) {
-        targetShipReadyQty = Math.min(newTotal, maxShipReady)
-        targetPreOrderQty = Math.max(0, newTotal - maxShipReady)
-      } else if (!isShipReady || maxShipReady === 0) {
-        targetShipReadyQty = 0
-        targetPreOrderQty = newTotal
+    const doUpdate = async () => {
+      if (newTotal === quantity) {
+        setIsGlobalPending(false)
+        return
       }
 
-      if (targetShipReadyQty <= 0 && shipReadyCartItem) {
-        removeCartItem.mutate(shipReadyCartItem.id)
-      } else if (targetShipReadyQty > 0 && shipReadyCartItem) {
-        if (shipReadyCartItem.quantity !== targetShipReadyQty) {
-          updateCartItem.mutate({
-            id: shipReadyCartItem.id,
+      try {
+        const maxShipReady = product.inventory.quantity
+        let targetShipReadyQty = newTotal
+        let targetPreOrderQty = 0
+
+        if (isShipReady && maxShipReady > 0) {
+          targetShipReadyQty = Math.min(newTotal, maxShipReady)
+          targetPreOrderQty = Math.max(0, newTotal - maxShipReady)
+        } else if (!isShipReady || maxShipReady === 0) {
+          targetShipReadyQty = 0
+          targetPreOrderQty = newTotal
+        }
+
+        if (targetShipReadyQty <= 0 && shipReadyCartItem) {
+          await removeCartItem.mutateAsync(shipReadyCartItem.id)
+        } else if (targetShipReadyQty > 0 && shipReadyCartItem) {
+          if (shipReadyCartItem.quantity !== targetShipReadyQty) {
+            await updateCartItem.mutateAsync({
+              id: shipReadyCartItem.id,
+              quantity: targetShipReadyQty,
+            })
+          }
+        } else if (targetShipReadyQty > 0 && !shipReadyCartItem) {
+          await addCartItem.mutateAsync({
+            variant_id: product.sku,
             quantity: targetShipReadyQty,
           })
         }
-      } else if (targetShipReadyQty > 0 && !shipReadyCartItem) {
-        addCartItem.mutate({
-          variant_id: product.sku,
-          quantity: targetShipReadyQty,
-        })
-      }
 
-      if (targetPreOrderQty <= 0 && preOrderCartItem) {
-        removeCartItem.mutate(preOrderCartItem.id)
-      } else if (targetPreOrderQty > 0 && preOrderCartItem) {
-        if (preOrderCartItem.quantity !== targetPreOrderQty) {
-          updateCartItem.mutate({
-            id: preOrderCartItem.id,
+        if (targetPreOrderQty <= 0 && preOrderCartItem) {
+          await removeCartItem.mutateAsync(preOrderCartItem.id)
+        } else if (targetPreOrderQty > 0 && preOrderCartItem) {
+          if (preOrderCartItem.quantity !== targetPreOrderQty) {
+            await updateCartItem.mutateAsync({
+              id: preOrderCartItem.id,
+              quantity: targetPreOrderQty,
+            })
+          }
+        } else if (targetPreOrderQty > 0 && !preOrderCartItem) {
+          await addCartItem.mutateAsync({
+            variant_id: product.sku,
             quantity: targetPreOrderQty,
           })
         }
-      } else if (targetPreOrderQty > 0 && !preOrderCartItem) {
-        addCartItem.mutate({
-          variant_id: product.sku,
-          quantity: targetPreOrderQty,
-        })
+      } finally {
+        setIsGlobalPending(false)
       }
-    }, 600)
+    }
+
+    if (immediate) {
+      doUpdate()
+    } else {
+      debounceTimer.current = setTimeout(doUpdate, 600)
+    }
   }
 
   const handleIncrease = async () => {
@@ -262,7 +278,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         }}
         onConfirm={() => {
           setShowDepletedModal(false)
-          triggerUpdate(localQuantity)
+          triggerUpdate(localQuantity, true)
         }}
       />
     </>

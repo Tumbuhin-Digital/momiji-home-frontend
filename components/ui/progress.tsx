@@ -48,7 +48,7 @@ export function ProgressTrack({
   return (
     <ProgressPrimitive.Track
       className={cn(
-        "block h-1.5 w-full overflow-hidden rounded-full bg-input",
+        "relative block h-1.5 w-full overflow-hidden rounded-full bg-input",
         className
       )}
       data-slot="progress-track"
@@ -63,7 +63,11 @@ export function ProgressIndicator({
 }: ProgressPrimitive.Indicator.Props): React.ReactElement {
   return (
     <ProgressPrimitive.Indicator
-      className={cn("bg-primary transition-all duration-500", className)}
+      className={cn(
+        "h-full w-full flex-1 bg-primary transition-all duration-500",
+        "data-[state=indeterminate]:origin-left data-[state=indeterminate]:animate-progress-indeterminate",
+        className
+      )}
       data-slot="progress-indicator"
       {...props}
     />
