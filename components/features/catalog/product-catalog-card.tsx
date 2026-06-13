@@ -183,21 +183,23 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
 
   return (
     <>
-      <Card className="group flex h-full flex-col overflow-hidden rounded-[12px] border-none bg-[#F6F0EE] transition-all duration-300">
-        <CardContent className="flex flex-1 flex-col p-3 sm:p-4">
-          <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-white">
+      <Card className="group h-full cursor-pointer overflow-hidden rounded-[14px] border-none transition-all duration-300">
+        <CardContent className="relative grid gap-5 p-3 sm:p-5">
+          <div className="relative aspect-square w-full overflow-hidden rounded-[14px] bg-white">
             {(!isShipReady || isBackendPreOrder || isConvertedToPreorder) && (
-              <Badge className="absolute top-2.5 right-2.5 z-10 rounded-full bg-destructive px-2.5 py-1 text-[10px] font-semibold tracking-wider text-white uppercase shadow-sm hover:bg-destructive sm:top-3 sm:right-3 sm:text-xs">
+              <Badge
+                size="lg"
+                className="absolute top-2.5 left-2.5 z-10 text-sm tracking-wider uppercase shadow-sm sm:top-3 sm:left-3"
+              >
                 Pre-Order
               </Badge>
             )}
-
             {product.imageUrl ? (
               <Image
                 src={product.imageUrl}
                 alt={product.title}
                 fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                className="relative block aspect-square h-auto max-w-full align-middle transition-opacity duration-200"
                 sizes="(max-width: 640px) 200px, 400px"
               />
             ) : (
@@ -207,52 +209,44 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
             )}
           </div>
 
-          <div className="mt-3 flex flex-1 flex-col sm:mt-4">
-            {(isBackendPreOrder || isConvertedToPreorder) && (
-              <p className="mb-1 text-xs font-semibold tracking-wider text-destructive uppercase">
-                Pre-Order
-              </p>
-            )}
-
-            <h3 className="mb-2 line-clamp-2 flex-1 text-sm text-alternate sm:text-base">
+          <div className="mr-6 flex flex-col justify-center-safe gap-1">
+            <h3 className="max-h-10 overflow-hidden text-left text-sm capitalize sm:max-h-14 sm:text-lg">
               {product.title}
             </h3>
-
-            <div className="mt-auto flex items-end justify-between">
-              <div className="flex flex-col">
-                <p className="text-sm font-semibold text-alternate sm:text-base">
-                  {formatCurrency(price)}
-                </p>
-                <p className="text-xs text-alternate/60">
-                  RPP {formatCurrency(rpp)}
-                </p>
-              </div>
-              <div className="ml-2 shrink-0">
-                {localQuantity > 0 ? (
-                  <QuantitySelector
-                    quantity={localQuantity}
-                    onIncrease={handleIncrease}
-                    onDecrease={handleDecrease}
-                    onChange={handleCustomChange}
-                    className="h-8 w-24 sm:h-10 sm:w-28"
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      handleIncrease()
-                    }}
-                    disabled={isPending}
-                    aria-label="Add to cart"
-                    className="flex size-7.5 cursor-pointer items-center justify-center rounded-full bg-white shadow-sm transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 sm:size-13"
-                  >
-                    <IconBag className="pointer-events-none size-4.5 text-alternate sm:size-8" />
-                  </button>
-                )}
-              </div>
+            <div className="flex w-full flex-col flex-wrap justify-start gap-0 self-baseline sm:flex-row sm:gap-2">
+              <p className="text-sm font-medium text-alternate sm:text-base">
+                {formatCurrency(price)} USD
+              </p>
+              <p className="text-sm text-alternate/60 sm:text-base">
+                RPP {formatCurrency(rpp)} USD
+              </p>
             </div>
+          </div>
+
+          <div className="absolute right-3 bottom-3 z-10 sm:right-5 sm:bottom-5">
+            {localQuantity > 0 ? (
+              <QuantitySelector
+                quantity={localQuantity}
+                onIncrease={handleIncrease}
+                onDecrease={handleDecrease}
+                onChange={handleCustomChange}
+                className="h-8 w-24 sm:h-10 sm:w-28"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleIncrease()
+                }}
+                disabled={isPending}
+                aria-label="Add to cart"
+                className="flex size-7.5 cursor-pointer items-center justify-center rounded-full bg-white transition-all hover:bg-card hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50 sm:size-13"
+              >
+                <IconBag className="pointer-events-none size-4.5 text-alternate sm:size-8" />
+              </button>
+            )}
           </div>
         </CardContent>
       </Card>
