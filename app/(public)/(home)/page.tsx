@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Premium B2B Supply Orchestration for Modern Interiors.",
 }
 
-export default function LandingPage() {
+export default function HomePage() {
   return (
     <div className="flex flex-col items-center justify-center gap-2.5">
       <div className="flex flex-col items-center justify-center gap-8 py-20">

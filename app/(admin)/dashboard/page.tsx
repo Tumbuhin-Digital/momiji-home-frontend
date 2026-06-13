@@ -1,4 +1,4 @@
-import DashboardClient from "./dashboard-client"
+import DashboardClient from "@/components/features/dashboard/dashboard-client"
 
 import type { Metadata } from "next"
 

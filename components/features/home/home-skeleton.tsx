@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton"
 
-export default function Loading() {
+export default function HomeSkeleton() {
   return (
     <div className="flex flex-col items-center justify-center gap-2.5">
       <div className="flex flex-col items-center justify-center gap-8 py-20">

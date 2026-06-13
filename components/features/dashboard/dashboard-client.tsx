@@ -1,28 +1,53 @@
 "use client"
 
-import { format } from "date-fns"
 import { AlignLeft, ArrowRight, BarChart3, Lock } from "lucide-react"
+import { toast } from "sonner"
 
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
+import { Iconsax3dRotate } from "@/public/icons/iconsax-3d-rotate"
+
+import { useForceSync } from "@/hooks/use-sync"
+import { formatSystemStatus } from "@/lib/utils"
+
 export default function DashboardClient() {
-  const currentDate = format(new Date(), "EEEE, MMM dd yyyy")
+  const forceSyncMutation = useForceSync()
+
+  const isSyncing = forceSyncMutation.isPending
+
+  const handleSync = async () => {
+    try {
+      await forceSyncMutation.mutateAsync()
+      toast.success("Products synced successfully")
+    } catch {}
+  }
 
   return (
-    <div className="flex flex-col gap-6 p-8 lg:p-10">
-      {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-[28px] font-medium text-slate-800">
-          Operations Dashboard
-        </h1>
-        <p className="text-[15px] text-slate-400">
-          {currentDate} - All System Running
-        </p>
+    <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="text-[32px] font-medium text-neutral-800">
+            Operations Dashboard
+          </h1>
+          <p className="text-lg text-neutral-400">
+            {formatSystemStatus(new Date())}
+          </p>
+        </div>
+        <Button
+          type="button"
+          onClick={handleSync}
+          disabled={isSyncing}
+          className="h-10 w-full gap-1.5 bg-primary/20 px-4 py-2 text-primary hover:bg-primary/30 hover:text-primary sm:w-fit"
+        >
+          <Iconsax3dRotate
+            className={`size-6 ${isSyncing ? "animate-spin" : ""}`}
+          />
+          <span className="text-sm font-medium">Syncing Shopify Product</span>
+        </Button>
       </div>
 
-      {/* 4 Top Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1 */}
         <Card className="rounded-[12px] border-slate-200/60 bg-[#FFFAF0] shadow-sm">
           <CardContent className="flex flex-col gap-4 p-6">
             <div className="flex items-start justify-between">
@@ -44,7 +69,6 @@ export default function DashboardClient() {
           </CardContent>
         </Card>
 
-        {/* Card 2 */}
         <Card className="rounded-[12px] border-slate-200/60 bg-[#FFFAF0] shadow-sm">
           <CardContent className="flex flex-col gap-4 p-6">
             <div className="flex items-start justify-between">
@@ -66,7 +90,6 @@ export default function DashboardClient() {
           </CardContent>
         </Card>
 
-        {/* Card 3 */}
         <Card className="rounded-[12px] border-slate-200/60 bg-[#FFFAF0] shadow-sm">
           <CardContent className="flex flex-col gap-4 p-6">
             <div className="flex items-start justify-between">
@@ -88,7 +111,6 @@ export default function DashboardClient() {
           </CardContent>
         </Card>
 
-        {/* Card 4 */}
         <Card className="rounded-[12px] border-slate-200/60 bg-[#FFFAF0] shadow-sm">
           <CardContent className="flex flex-col gap-4 p-6">
             <div className="flex items-start justify-between">
@@ -111,9 +133,7 @@ export default function DashboardClient() {
         </Card>
       </div>
 
-      {/* Split Content */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left Column: Recent Order Queue */}
         <Card className="rounded-[12px] border-slate-200/60 bg-[#FFFAF0] shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-200/60 p-6">
             <div className="flex items-center gap-2">
@@ -180,7 +200,6 @@ export default function DashboardClient() {
           </CardContent>
         </Card>
 
-        {/* Right Column: Sales Report */}
         <Card className="rounded-[12px] border-slate-200/60 bg-[#FFFAF0] shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-200/60 p-6">
             <div className="flex items-center gap-2">
@@ -218,8 +237,6 @@ export default function DashboardClient() {
                 </h4>
                 <div className="ml-4 h-px flex-1 bg-slate-200" />
               </div>
-
-              {/* Simple Bar Chart Mockup */}
               <div className="mt-8 flex h-40 items-end justify-between px-2">
                 {[
                   { label: "Jan", h: "4%" },
