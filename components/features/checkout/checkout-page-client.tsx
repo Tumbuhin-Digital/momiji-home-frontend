@@ -279,15 +279,13 @@ export default function CheckoutPageClient() {
           </EmptyHeader>
           <EmptyContent className="max-w-none pt-2">
             <Button
-              asChild
               type="button"
               className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
+              render={<Link href="/" />}
             >
-              <Link href="/">
-                <span className="text-base font-medium uppercase">
-                  Continue Shopping
-                </span>
-              </Link>
+              <span className="text-base font-medium uppercase">
+                Continue Shopping
+              </span>
             </Button>
           </EmptyContent>
         </Empty>
@@ -754,16 +752,14 @@ export default function CheckoutPageClient() {
                   </Button>
                   <div className="flex w-full justify-center">
                     <Button
-                      asChild
                       type="button"
                       className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
+                      render={<Link href="/" />}
                     >
-                      <Link href="/">
-                        <span className="flex items-center text-base font-medium uppercase">
-                          <ChevronLeft className="mr-2 size-4" /> Continue
-                          Shopping
-                        </span>
-                      </Link>
+                      <span className="flex items-center text-base font-medium uppercase">
+                        <ChevronLeft className="mr-2 size-4" /> Continue
+                        Shopping
+                      </span>
                     </Button>
                   </div>
                 </div>

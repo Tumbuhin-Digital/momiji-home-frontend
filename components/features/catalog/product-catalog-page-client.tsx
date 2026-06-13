@@ -221,15 +221,13 @@ export function ProductCatalogPageClient({
 
       <div className="flex items-center justify-center pb-2">
         <Button
-          asChild
           type="button"
           className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
+          render={<Link href={bottomNavLink} />}
         >
-          <Link href={bottomNavLink}>
-            <span className="text-base font-medium uppercase">
-              {bottomNavText}
-            </span>
-          </Link>
+          <span className="text-base font-medium uppercase">
+            {bottomNavText}
+          </span>
         </Button>
       </div>
     </div>

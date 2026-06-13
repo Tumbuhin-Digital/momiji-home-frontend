@@ -173,12 +173,10 @@ export function OrderManagementTable({
                         variant="outline"
                         size="sm"
                         className="gap-2 rounded-full border-gray-300 shadow-sm"
-                        asChild
+                        render={<Link href={`/order-management/${order.id}`} />}
                       >
-                        <Link href={`/order-management/${order.id}`}>
-                          <Eye className="h-3 w-3 text-gray-500" />
-                          <span>View Detail</span>
-                        </Link>
+                        <Eye className="h-3 w-3 text-gray-500" />
+                        <span>View Detail</span>
                       </Button>
                       <Button
                         variant="outline"

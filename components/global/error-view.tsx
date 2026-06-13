@@ -93,15 +93,13 @@ export function ErrorView({
           {finalActions.map((act, index) => (
             <Button
               key={index}
-              asChild
+              render={<Link href={act.href} />}
               type="button"
               className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
             >
-              <Link href={act.href}>
-                <span className="text-base font-medium uppercase">
-                  {act.label}
-                </span>
-              </Link>
+              <span className="text-base font-medium uppercase">
+                {act.label}
+              </span>
             </Button>
           ))}
         </div>

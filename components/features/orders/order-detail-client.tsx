@@ -132,10 +132,12 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/order-management">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+          <Button
+            variant="outline"
+            size="icon"
+            render={<Link href="/order-management" />}
+          >
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <div className="flex items-center gap-3">
@@ -172,16 +174,19 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
         <div className="flex items-center gap-2">
           {order.shopifyDraftOrderId && (
-            <Button variant="outline" asChild>
-              <a
-                href={order.shopifyDraftOrderId}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="gap-2"
-              >
-                <ExternalLink className="h-4 w-4" />
-                View Invoice
-              </a>
+            <Button
+              variant="outline"
+              className="gap-2"
+              render={
+                <a
+                  href={order.shopifyDraftOrderId}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+            >
+              <ExternalLink className="h-4 w-4" />
+              View Invoice
             </Button>
           )}
 

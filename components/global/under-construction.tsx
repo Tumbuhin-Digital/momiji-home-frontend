@@ -46,15 +46,13 @@ export function UnderConstruction({
         </div>
         <div className="mt-8 flex w-full justify-center">
           <Button
-            asChild
+            render={<Link href={actionHref} />}
             type="button"
             className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
           >
-            <Link href={actionHref}>
-              <span className="text-base font-medium uppercase">
-                {actionLabel}
-              </span>
-            </Link>
+            <span className="text-base font-medium uppercase">
+              {actionLabel}
+            </span>
           </Button>
         </div>
       </div>

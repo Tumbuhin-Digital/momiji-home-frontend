@@ -156,53 +156,53 @@ export function CustomerOrderCard({ order }: CustomerOrderCardProps) {
 
               <div className="grid grid-cols-1 gap-2">
                 <Button
-                  asChild
                   variant="outline"
                   size="sm"
                   className="h-9 w-full rounded-xl text-[10px] font-black tracking-widest uppercase"
+                  render={
+                    <Link
+                      href={invoiceUrl}
+                      target={order.shopifyDraftOrderId ? "_blank" : "_self"}
+                      rel="noopener noreferrer"
+                    />
+                  }
                 >
-                  <Link
-                    href={invoiceUrl}
-                    target={order.shopifyDraftOrderId ? "_blank" : "_self"}
-                    rel="noopener noreferrer"
-                  >
-                    <ReceiptText className="mr-2 h-3 w-3 opacity-40" />
-                    View Invoice
-                  </Link>
+                  <ReceiptText className="mr-2 h-3 w-3 opacity-40" />
+                  View Invoice
                 </Button>
 
                 {needsPelunasan && (
                   <Button
-                    asChild
                     size="sm"
                     className="h-9 w-full rounded-xl bg-amber-500 text-[10px] font-black tracking-widest text-white uppercase shadow-lg shadow-amber-500/20 hover:bg-amber-600"
+                    render={
+                      <Link
+                        href={payBalanceUrl}
+                        target={order.shopifyDraftOrderId ? "_blank" : "_self"}
+                        rel="noopener noreferrer"
+                      />
+                    }
                   >
-                    <Link
-                      href={payBalanceUrl}
-                      target={order.shopifyDraftOrderId ? "_blank" : "_self"}
-                      rel="noopener noreferrer"
-                    >
-                      <CreditCard className="mr-2 h-3 w-3" />
-                      Pay Balance
-                    </Link>
+                    <CreditCard className="mr-2 h-3 w-3" />
+                    Pay Balance
                   </Button>
                 )}
 
                 {statusKey === "PAID" && (
                   <Button
-                    asChild
                     variant="secondary"
                     size="sm"
                     className="h-9 w-full rounded-xl text-[10px] font-black tracking-widest uppercase"
+                    render={
+                      <Link
+                        href={shopifyOrderUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      />
+                    }
                   >
-                    <Link
-                      href={shopifyOrderUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink className="mr-2 h-3 w-3 opacity-40" />
-                      Shopify Order
-                    </Link>
+                    <ExternalLink className="mr-2 h-3 w-3 opacity-40" />
+                    Shopify Order
                   </Button>
                 )}
               </div>
