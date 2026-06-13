@@ -342,7 +342,7 @@ export default function CheckoutPageClient() {
                 <div>
                   <Select
                     defaultValue="United States"
-                    onValueChange={(v) => setValue("country", v)}
+                    onValueChange={(v) => setValue("country", v || "")}
                   >
                     <SelectTrigger className="h-17.5! w-full rounded-lg border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal">
                       <div className="flex flex-col items-start gap-0.5">

@@ -57,7 +57,7 @@ export function UpdateStepModal({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <Select value={step} onValueChange={setStep}>
+          <Select value={step} onValueChange={(v) => setStep(v || "")}>
             <SelectTrigger>
               <SelectValue placeholder="Select a step" />
             </SelectTrigger>

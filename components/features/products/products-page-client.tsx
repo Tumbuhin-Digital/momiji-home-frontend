@@ -381,17 +381,18 @@ export default function ProductsPageClient() {
                                             ? "bg-[#34D399]"
                                             : singleVariant.category ===
                                                 "pre-order"
-                                              ? "bg-[#F59E0B]"
-                                              : "bg-[#EF4444]"
+                                              ? "bg-[#FBBF24]"
+                                              : "bg-[#94A3B8]"
                                         }`}
                                       />
-                                      {singleVariant.category === "ship-ready"
-                                        ? "Ship Ready"
-                                        : singleVariant.category === "pre-order"
-                                          ? "Pre-Order"
-                                          : "Inactive"}
+                                      <span className="capitalize">
+                                        {singleVariant.category.replace(
+                                          "-",
+                                          " "
+                                        )}
+                                      </span>
                                     </div>
-                                    <ChevronDown className="size-4 opacity-50" />
+                                    <ChevronDown className="size-4 text-slate-400" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent
@@ -424,13 +425,13 @@ export default function ProductsPageClient() {
                                     }
                                   >
                                     <div className="flex items-center gap-2">
-                                      <div className="size-2.5 rounded-full bg-[#F59E0B]" />
+                                      <div className="size-2.5 rounded-full bg-[#FBBF24]" />
                                       Pre-Order
                                     </div>
                                   </DropdownMenuItem>
                                   <DropdownMenuItem disabled>
                                     <div className="flex items-center gap-2">
-                                      <div className="size-2.5 rounded-full bg-[#EF4444]" />
+                                      <div className="size-2.5 rounded-full bg-[#94A3B8]" />
                                       Inactive
                                     </div>
                                   </DropdownMenuItem>
@@ -514,17 +515,15 @@ export default function ProductsPageClient() {
                                                 ? "bg-[#34D399]"
                                                 : variant.category ===
                                                     "pre-order"
-                                                  ? "bg-[#F59E0B]"
-                                                  : "bg-[#EF4444]"
+                                                  ? "bg-[#FBBF24]"
+                                                  : "bg-[#94A3B8]"
                                             }`}
                                           />
-                                          {variant.category === "ship-ready"
-                                            ? "Ship Ready"
-                                            : variant.category === "pre-order"
-                                              ? "Pre-Order"
-                                              : "Inactive"}
+                                          <span className="capitalize">
+                                            {variant.category.replace("-", " ")}
+                                          </span>
                                         </div>
-                                        <ChevronDown className="size-3 opacity-50" />
+                                        <ChevronDown className="size-3 text-slate-400" />
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent

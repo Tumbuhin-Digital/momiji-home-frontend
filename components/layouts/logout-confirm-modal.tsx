@@ -59,7 +59,7 @@ export function LogoutConfirmModal({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex flex-row gap-3 pt-2 sm:justify-start">
-          <DialogClose asChild>
+          <DialogClose>
             <Button
               type="button"
               variant="outline"

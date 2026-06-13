@@ -53,7 +53,7 @@ export function InventoryDepletedModal({
           </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild>
+          <DialogClose>
             <Button
               type="button"
               variant="secondary"

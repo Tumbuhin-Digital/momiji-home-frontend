@@ -36,7 +36,7 @@ export function RemoveItemModal({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <DialogClose asChild>
+          <DialogClose>
             <Button
               type="button"
               variant="secondary"
