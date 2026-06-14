@@ -123,8 +123,8 @@ export function LoginForm() {
         {/* Email Input */}
         <div>
           <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-              <Mail className="size-5 text-muted-foreground" />
+            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-4">
+              <Mail className="size-4.5 text-neutral-400" strokeWidth={1.5} />
             </div>
             <Input
               id="email"
@@ -138,7 +138,7 @@ export function LoginForm() {
                   if (errors.email) clearErrors("email")
                 },
               })}
-              className="h-12 w-full rounded-md border-input bg-white pl-12 shadow-sm focus-visible:ring-primary/20"
+              className="h-13 w-full rounded-[8px] border-neutral-300 bg-white pr-5 pl-11 text-sm font-medium text-neutral-700 shadow-none placeholder:text-neutral-400 focus-visible:ring-primary/20"
             />
           </div>
           {errors.email && (
@@ -151,8 +151,8 @@ export function LoginForm() {
         {/* Password Input */}
         <div>
           <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-              <Lock className="size-5 text-muted-foreground" />
+            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-4">
+              <Lock className="size-4.5 text-neutral-400" strokeWidth={1.5} />
             </div>
             <Input
               id="password"
@@ -166,17 +166,17 @@ export function LoginForm() {
                   if (errors.password) clearErrors("password")
                 },
               })}
-              className="h-12 w-full rounded-md border-input bg-white pr-12 pl-12 shadow-sm focus-visible:ring-primary/20"
+              className="h-13 w-full rounded-[8px] border-neutral-300 bg-white pr-12 pl-11 text-sm font-medium text-neutral-700 shadow-none placeholder:text-neutral-400 focus-visible:ring-primary/20"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-4 text-muted-foreground transition-colors hover:text-muted-foreground/80"
+              className="absolute inset-y-0 right-0 z-10 flex cursor-pointer items-center pr-5 text-neutral-400 transition-colors hover:text-neutral-500"
             >
               {showPassword ? (
-                <Eye className="size-5" />
+                <Eye className="size-5" strokeWidth={1.5} />
               ) : (
-                <EyeOff className="size-5" />
+                <EyeOff className="size-5" strokeWidth={1.5} />
               )}
             </button>
           </div>
@@ -195,11 +195,11 @@ export function LoginForm() {
           onCheckedChange={(checked) =>
             setValue("rememberMe", checked as boolean)
           }
-          className="cursor-pointer rounded border-neutral-300 bg-white data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+          className="size-4.5 cursor-pointer rounded border-neutral-300 bg-white data-checked:border-primary data-checked:bg-primary data-checked:text-white"
         />
         <Label
           htmlFor="remember"
-          className="cursor-pointer text-sm leading-none font-medium text-neutral-400 peer-disabled:cursor-not-allowed peer-disabled:opacity-80"
+          className="cursor-pointer text-[13px] font-medium text-neutral-400 peer-disabled:cursor-not-allowed peer-disabled:opacity-80 hover:text-neutral-500"
         >
           Remember me
         </Label>
@@ -216,14 +216,14 @@ export function LoginForm() {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="h-12 w-full rounded-md bg-neutral-400 font-semibold text-white transition-colors hover:bg-neutral-400/80"
+        className="h-13! w-full rounded-[8px] bg-[#9A9A9A] shadow-none transition-colors hover:bg-[#8A8A8A]"
       >
         {isSubmitting ? (
-          <>
+          <span className="flex items-center text-sm font-semibold text-white">
             <Loader2 className="mr-2 size-4 animate-spin" /> Logging in...
-          </>
+          </span>
         ) : (
-          "Login"
+          <span className="text-sm font-semibold text-white">Login</span>
         )}
       </Button>
     </form>
