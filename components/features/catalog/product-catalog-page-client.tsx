@@ -185,7 +185,7 @@ export function ProductCatalogPageClient({
       <div className="flex items-center justify-center pb-2">
         <Button
           type="button"
-          className="h-17.75 w-57.5 gap-2.5 rounded-full border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
+          className="h-17.75 w-57.5 gap-2.5 rounded-full p-6 backdrop-blur-md transition-all duration-200 hover:scale-105"
           render={<Link href={bottomNavLink} />}
         >
           <span className="text-base font-medium uppercase">
