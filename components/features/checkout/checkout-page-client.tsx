@@ -70,7 +70,7 @@ const checkoutSchema = z.object({
     .string()
     .min(1, "Phone number is required")
     .regex(/^\+1\d{10}$/, "Valid US phone number is required (10 digits)"),
-  shippingMethod: z.string().min(1, "Shipping method is required"),
+  shippingMethod: z.string().optional(),
 })
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>
@@ -155,7 +155,7 @@ export default function CheckoutPageClient() {
 
   useEffect(() => {
     if (
-      !formValues.shippingMethod ||
+      (preOrderItems.length > 0 && !formValues.shippingMethod) ||
       !formValues.country ||
       !formValues.zipCode
     )
@@ -163,17 +163,19 @@ export default function CheckoutPageClient() {
 
     const doRecalculate = async () => {
       try {
-        await calculateShippingMutation.mutateAsync({
-          address_id: 0,
-          country: formValues.country!,
-          province: formValues.state || "",
-          zip: formValues.zipCode!,
-          shipping_method: formValues.shippingMethod!,
-        })
+        if (preOrderItems.length > 0 && formValues.shippingMethod) {
+          await calculateShippingMutation.mutateAsync({
+            address_id: 0,
+            country: formValues.country!,
+            province: formValues.state || "",
+            zip: formValues.zipCode!,
+            shipping_method: formValues.shippingMethod,
+          })
+        }
 
         const summary = await checkoutSummaryMutation.mutateAsync({
           address_id: 0,
-          shipping_method: formValues.shippingMethod!,
+          shipping_method: formValues.shippingMethod || "",
           email: formValues.email || "guest@example.com",
         })
 
@@ -202,7 +204,12 @@ export default function CheckoutPageClient() {
 
     doRecalculate()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formValues.shippingMethod])
+  }, [
+    formValues.shippingMethod,
+    formValues.country,
+    formValues.zipCode,
+    preOrderItems.length,
+  ])
 
   const handleAddressPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     const text = e.clipboardData.getData("text")
@@ -259,6 +266,14 @@ export default function CheckoutPageClient() {
   }
 
   const onSubmit = async (values: CheckoutFormValues) => {
+    if (preOrderItems.length > 0 && !values.shippingMethod) {
+      setError("shippingMethod", {
+        type: "manual",
+        message: "Shipping method is required for pre-order items",
+      })
+      return
+    }
+
     try {
       await validateAddressMutation.mutateAsync({
         city: values.city,
@@ -292,7 +307,7 @@ export default function CheckoutPageClient() {
           first_name: values.firstName,
           last_name: values.lastName,
           phone: values.phone,
-          shipping_method: values.shippingMethod,
+          shipping_method: values.shippingMethod || "",
           state: values.state,
           zip: values.zipCode,
         })
@@ -638,80 +653,86 @@ export default function CheckoutPageClient() {
               </section>
 
               {/* Shipping Method */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-medium text-alternate">
-                    Shipping Method
-                  </h2>
-                  <PreviewCard>
-                    <PreviewCardTrigger
-                      render={
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 rounded-full"
-                        />
-                      }
-                    >
-                      <InfoIcon className="size-4 text-muted-foreground" />
-                    </PreviewCardTrigger>
-                    <PreviewCardPopup>
-                      <div className="flex max-w-xs flex-col gap-2 p-1">
-                        <h4 className="text-sm font-medium">
-                          Shipping Information
-                        </h4>
-                        <p className="text-xs text-muted-foreground">
-                          Shipping for &quot;Ship Ready&quot; items will be
-                          calculated directly at checkout on Shopify. Shipping
-                          for &quot;Pre-Order&quot; items is calculated here and
-                          will be due later when the item is ready to ship.
-                        </p>
-                      </div>
-                    </PreviewCardPopup>
-                  </PreviewCard>
-                </div>
-                {isLoadingShipping ? (
-                  <div className="flex h-24 items-center justify-center rounded-lg bg-muted/50">
-                    <Loader2 className="size-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  <div className="overflow-hidden rounded-lg border bg-white">
-                    <RadioGroup
-                      onValueChange={(v) => {
-                        setValue("shippingMethod", v)
-                        clearErrors("shippingMethod")
-                      }}
-                      value={formValues.shippingMethod}
-                      className="gap-0"
-                    >
-                      {shippingMethods.map((method, idx) => (
-                        <div
-                          key={method.id}
-                          className={`flex items-center justify-between p-4 ${idx !== shippingMethods.length - 1 ? "border-b" : ""}`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <RadioGroupItem value={method.id} id={method.id} />
-                            <label
-                              htmlFor={method.id}
-                              className="cursor-pointer text-sm font-medium"
-                            >
-                              {method.label}
-                            </label>
-                          </div>
-                          <span className="text-sm font-medium">
-                            {formatCurrency(parseFloat(method.cost))}
-                          </span>
+              {preOrderItems.length > 0 && (
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-2xl font-medium text-alternate">
+                      Shipping Method
+                    </h2>
+                    <PreviewCard>
+                      <PreviewCardTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-full"
+                          />
+                        }
+                      >
+                        <InfoIcon className="size-4 text-muted-foreground" />
+                      </PreviewCardTrigger>
+                      <PreviewCardPopup>
+                        <div className="flex max-w-xs flex-col gap-2 p-1">
+                          <h4 className="text-sm font-medium">
+                            Shipping Information
+                          </h4>
+                          <p className="text-xs text-pretty text-muted-foreground">
+                            Shipping for &quot;Ship Ready&quot; items will be
+                            calculated directly at checkout on Shopify. Shipping
+                            for &quot;Pre-Order&quot; items is calculated here
+                            and will be due later when the item is ready to
+                            ship.
+                          </p>
                         </div>
-                      ))}
-                    </RadioGroup>
+                      </PreviewCardPopup>
+                    </PreviewCard>
                   </div>
-                )}
-                {errors.shippingMethod && (
-                  <p className="text-sm text-red-500">
-                    {errors.shippingMethod.message}
-                  </p>
-                )}
-              </section>
+                  {isLoadingShipping ? (
+                    <div className="flex h-24 items-center justify-center rounded-lg bg-muted/50">
+                      <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : (
+                    <div className="overflow-hidden rounded-lg border bg-white">
+                      <RadioGroup
+                        onValueChange={(v) => {
+                          setValue("shippingMethod", v)
+                          clearErrors("shippingMethod")
+                        }}
+                        value={formValues.shippingMethod}
+                        className="gap-0"
+                      >
+                        {shippingMethods.map((method, idx) => (
+                          <div
+                            key={method.id}
+                            className={`flex items-center justify-between p-4 ${idx !== shippingMethods.length - 1 ? "border-b" : ""}`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <RadioGroupItem
+                                value={method.id}
+                                id={method.id}
+                              />
+                              <label
+                                htmlFor={method.id}
+                                className="cursor-pointer text-sm font-medium"
+                              >
+                                {method.label}
+                              </label>
+                            </div>
+                            <span className="text-sm font-medium">
+                              {formatCurrency(parseFloat(method.cost))}
+                            </span>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                  )}
+                  {errors.shippingMethod && (
+                    <p className="text-sm text-red-500">
+                      {errors.shippingMethod.message}
+                    </p>
+                  )}
+                </section>
+              )}
             </div>
           </div>
 
@@ -837,16 +858,18 @@ export default function CheckoutPageClient() {
                             Calculated at checkout
                           </span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-alternate/60">
-                            Pre-Order - 50% Deposit
-                          </span>
-                          <span className="text-alternate/60">
-                            {formatCurrency(
-                              parseFloat(summaryState.preorderDeposit || "0")
-                            )}
-                          </span>
-                        </div>
+                        {preOrderItems.length > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-alternate/60">
+                              Pre-Order - 50% Deposit
+                            </span>
+                            <span className="text-alternate/60">
+                              {formatCurrency(
+                                parseFloat(summaryState.preorderDeposit || "0")
+                              )}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <Separator className="my-2 bg-black/20" />
                       <div className="flex justify-between text-alternate">
@@ -861,42 +884,46 @@ export default function CheckoutPageClient() {
                   </Card>
 
                   {/* Due Later */}
-                  <Card className="gap-1 rounded-[12px] border-l-4 border-black/20 bg-muted shadow-none">
-                    <CardContent className="space-y-2 p-4">
-                      <p className="font-medium text-alternate/80">Due Later</p>
-                      <div className="space-y-0.5">
-                        <div className="flex justify-between">
-                          <span className="text-alternate/60">
-                            Pre-order - Remaining 50%
-                          </span>
-                          <span className="text-alternate/60">
+                  {preOrderItems.length > 0 && (
+                    <Card className="gap-1 rounded-[12px] border-l-4 border-black/20 bg-muted shadow-none">
+                      <CardContent className="space-y-2 p-4">
+                        <p className="font-medium text-alternate/80">
+                          Due Later
+                        </p>
+                        <div className="space-y-0.5">
+                          <div className="flex justify-between">
+                            <span className="text-alternate/60">
+                              Pre-order - Remaining 50%
+                            </span>
+                            <span className="text-alternate/60">
+                              {formatCurrency(
+                                parseFloat(summaryState.preorderBalance || "0")
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-alternate/60">
+                              + Shipping (Pre-Order)
+                            </span>
+                            <span className="text-alternate/60">
+                              {formatCurrency(
+                                parseFloat(summaryState.shippingPreorder || "0")
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        <Separator className="my-2 bg-black/20" />
+                        <div className="flex justify-between text-alternate">
+                          <span>Total</span>
+                          <span>
                             {formatCurrency(
-                              parseFloat(summaryState.preorderBalance || "0")
+                              parseFloat(summaryState.totalDueLater || "0")
                             )}
                           </span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-alternate/60">
-                            + Shipping (Pre-Order)
-                          </span>
-                          <span className="text-alternate/60">
-                            {formatCurrency(
-                              parseFloat(summaryState.shippingPreorder || "0")
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                      <Separator className="my-2 bg-black/20" />
-                      <div className="flex justify-between text-alternate">
-                        <span>Total</span>
-                        <span>
-                          {formatCurrency(
-                            parseFloat(summaryState.totalDueLater || "0")
-                          )}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
 
                 <div className="space-y-6">
@@ -925,30 +952,31 @@ export default function CheckoutPageClient() {
                   </div>
 
                   {/* Total Due Later */}
-                  {parseFloat(summaryState.totalDueLater || "0") > 0 && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between pb-px">
-                        <h3 className="text-xl font-medium text-black sm:text-2xl">
-                          Due Later
-                        </h3>
-                        <div className="flex items-center gap-3">
-                          {(calculateShippingMutation.isPending ||
-                            checkoutSummaryMutation.isPending) && (
-                            <Loader2 className="size-5 animate-spin text-alternate/50" />
-                          )}
-                          <span className="text-xl font-medium text-black sm:text-2xl">
-                            {formatCurrency(
-                              parseFloat(summaryState.totalDueLater || "0")
+                  {preOrderItems.length > 0 &&
+                    parseFloat(summaryState.totalDueLater || "0") > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between pb-px">
+                          <h3 className="text-xl font-medium text-black sm:text-2xl">
+                            Due Later
+                          </h3>
+                          <div className="flex items-center gap-3">
+                            {(calculateShippingMutation.isPending ||
+                              checkoutSummaryMutation.isPending) && (
+                              <Loader2 className="size-5 animate-spin text-alternate/50" />
                             )}
-                          </span>
+                            <span className="text-xl font-medium text-black sm:text-2xl">
+                              {formatCurrency(
+                                parseFloat(summaryState.totalDueLater || "0")
+                              )}
+                            </span>
+                          </div>
                         </div>
+                        <p className="text-sm text-alternate/80 sm:text-base">
+                          You will be notified when our next shipment arrives in
+                          the US
+                        </p>
                       </div>
-                      <p className="text-sm text-alternate/80 sm:text-base">
-                        You will be notified when our next shipment arrives in
-                        the US
-                      </p>
-                    </div>
-                  )}
+                    )}
 
                   <div className="space-y-4">
                     <Button
