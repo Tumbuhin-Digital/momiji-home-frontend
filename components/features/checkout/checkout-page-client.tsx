@@ -21,6 +21,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { PhoneInput } from "@/components/ui/phone-input"
+import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   Select,
@@ -34,6 +35,8 @@ import { Separator } from "@/components/ui/separator"
 import { CheckoutSkeleton } from "@/components/features/checkout/checkout-skeleton"
 import { WaitingPaymentOverlay } from "@/components/features/checkout/waiting-payment-overlay"
 import { IconBag } from "@/public/icons/icon-bag"
+
+import { US_STATES_MAP } from "@/constants/states"
 
 import { useCart } from "@/hooks"
 import {
@@ -102,6 +105,8 @@ export default function CheckoutPageClient() {
   const [currentCheckoutUrl, setCurrentCheckoutUrl] = useState("")
   const [checkoutReference, setCheckoutReference] = useState("")
   const [paymentExpiresAt, setPaymentExpiresAt] = useState<number | null>(null)
+  const [isParsingAddress, setIsParsingAddress] = useState(false)
+  const [parsingProgress, setParsingProgress] = useState(0)
 
   const [summaryState, setSummaryState] = useState({
     shippingCost: "0",
@@ -184,6 +189,60 @@ export default function CheckoutPageClient() {
     doRecalculate()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formValues.shippingMethod])
+
+  const handleAddressPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData("text")
+    if (!text) return
+
+    const parts = text.split(",").map((p) => p.trim())
+    if (parts.length >= 3) {
+      e.preventDefault()
+      setIsParsingAddress(true)
+      setParsingProgress(0)
+
+      const interval = setInterval(() => {
+        setParsingProgress((prev) => {
+          if (prev >= 85) return prev
+          const increment = Math.random() * 12 + 3
+          return Math.min(85, Math.round(prev + increment))
+        })
+      }, 100)
+
+      setTimeout(() => {
+        clearInterval(interval)
+        setParsingProgress(100)
+
+        setTimeout(() => {
+          const address = parts[0]
+          const city = parts[1]
+          const stateZip = parts[2]
+          const country = parts[3] || "United States"
+
+          const stateZipParts = stateZip.split(" ")
+          let state = stateZipParts[0]
+          const zip = stateZipParts.slice(1).join(" ")
+
+          if (
+            state &&
+            US_STATES_MAP[state.toUpperCase() as keyof typeof US_STATES_MAP]
+          ) {
+            state =
+              US_STATES_MAP[state.toUpperCase() as keyof typeof US_STATES_MAP]
+          }
+
+          setValue("address", address, { shouldValidate: true })
+          setValue("city", city, { shouldValidate: true })
+          setValue("state", state, { shouldValidate: true })
+          setValue("zipCode", zip, { shouldValidate: true })
+          setValue("country", country, { shouldValidate: true })
+
+          setIsParsingAddress(false)
+          setParsingProgress(0)
+          toast.success("Address auto-filled successfully!")
+        }, 300)
+      }, 500)
+    }
+  }
 
   const onSubmit = async (values: CheckoutFormValues) => {
     try {
@@ -296,576 +355,594 @@ export default function CheckoutPageClient() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16"
-      >
-        {/* Left Column */}
-        <div className="space-y-10 lg:col-span-7">
-          <div className="space-y-8">
-            {/* Contact */}
-            <section className="space-y-4">
-              <h2 className="text-2xl font-medium text-alternate">Contact</h2>
-              <div className="space-y-3">
-                {/* Email */}
-                <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
-                  <input
-                    {...register("email")}
-                    id="email"
-                    type="email"
-                    placeholder=" "
-                    className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
-                  />
-                  <label
-                    htmlFor="email"
-                    className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
-                  >
-                    Email
-                  </label>
-                </div>
-                {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email.message}</p>
-                )}
-              </div>
-            </section>
-
-            {/* Delivery */}
-            <section className="space-y-4">
-              <h2 className="text-2xl font-medium text-alternate">Delivery</h2>
-              <div className="space-y-4">
-                {/* Country/Region */}
-                <div>
-                  <Select
-                    defaultValue="United States"
-                    onValueChange={(v) => setValue("country", v || "")}
-                  >
-                    <SelectTrigger className="h-17.5! w-full rounded-lg border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal">
-                      <div className="flex flex-col items-start gap-0.5">
-                        <span className="text-[11px] text-[#737373]">
-                          Country/Region
-                        </span>
-                        <SelectValue placeholder="Country/Region" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="United States">
-                        United States
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.country && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.country.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {/* First Name */}
-                  <div>
-                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
-                      <input
-                        {...register("firstName")}
-                        id="firstName"
-                        type="text"
-                        placeholder=" "
-                        className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
-                      />
-                      <label
-                        htmlFor="firstName"
-                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
-                      >
-                        First Name
-                      </label>
-                    </div>
-                    {errors.firstName && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {errors.firstName.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Last Name */}
-                  <div>
-                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
-                      <input
-                        {...register("lastName")}
-                        id="lastName"
-                        type="text"
-                        placeholder=" "
-                        className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
-                      />
-                      <label
-                        htmlFor="lastName"
-                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
-                      >
-                        Last Name
-                      </label>
-                    </div>
-                    {errors.lastName && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {errors.lastName.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Address */}
-                <div>
+    <>
+      {isParsingAddress && (
+        <div className="fixed inset-0 z-55 flex items-center justify-center bg-black/20 backdrop-blur-sm transition-all duration-300">
+          <div className="flex w-1/3 flex-col items-center gap-4 bg-transparent p-6">
+            <Progress className="w-full" value={parsingProgress} />
+            <p className="animate-bounce text-sm font-medium text-white">
+              Auto-filling address...
+            </p>
+          </div>
+        </div>
+      )}
+      <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16"
+        >
+          {/* Left Column */}
+          <div className="space-y-10 lg:col-span-7">
+            <div className="space-y-8">
+              {/* Contact */}
+              <section className="space-y-4">
+                <h2 className="text-2xl font-medium text-alternate">Contact</h2>
+                <div className="space-y-3">
+                  {/* Email */}
                   <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
                     <input
-                      {...register("address")}
-                      id="address"
-                      type="text"
+                      {...register("email")}
+                      id="email"
+                      type="email"
                       placeholder=" "
                       className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
                     />
                     <label
-                      htmlFor="address"
+                      htmlFor="email"
                       className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
                     >
-                      Address
+                      Email
                     </label>
                   </div>
-                  {errors.address && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.address.message}
+                  {errors.email && (
+                    <p className="text-sm text-red-500">
+                      {errors.email.message}
                     </p>
                   )}
                 </div>
+              </section>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  {/* City */}
+              {/* Delivery */}
+              <section className="space-y-4">
+                <h2 className="text-2xl font-medium text-alternate">
+                  Delivery
+                </h2>
+                <div className="space-y-4">
+                  {/* Country/Region */}
                   <div>
-                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
-                      <input
-                        {...register("city")}
-                        id="city"
-                        type="text"
-                        placeholder=" "
-                        className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
-                      />
-                      <label
-                        htmlFor="city"
-                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
-                      >
-                        City
-                      </label>
-                    </div>
-                    {errors.city && (
+                    <Select
+                      defaultValue="United States"
+                      onValueChange={(v) => setValue("country", v || "")}
+                    >
+                      <SelectTrigger className="h-17.5! w-full rounded-lg border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal">
+                        <div className="flex flex-col items-start gap-0.5">
+                          <span className="text-[11px] text-[#737373]">
+                            Country/Region
+                          </span>
+                          <SelectValue placeholder="Country/Region" />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="United States">
+                          United States
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.country && (
                       <p className="mt-1 text-sm text-red-500">
-                        {errors.city.message}
+                        {errors.country.message}
                       </p>
                     )}
                   </div>
 
-                  {/* State */}
-                  <div>
-                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
-                      <input
-                        {...register("state")}
-                        id="state"
-                        type="text"
-                        placeholder=" "
-                        className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
-                      />
-                      <label
-                        htmlFor="state"
-                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
-                      >
-                        State
-                      </label>
-                    </div>
-                    {errors.state && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {errors.state.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Zip Code */}
-                  <div>
-                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
-                      <input
-                        {...register("zipCode")}
-                        id="zipCode"
-                        type="text"
-                        placeholder=" "
-                        className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
-                      />
-                      <label
-                        htmlFor="zipCode"
-                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
-                      >
-                        ZIP Code
-                      </label>
-                    </div>
-                    {errors.zipCode && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {errors.zipCode.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Phone Number */}
-                <div>
-                  <Controller
-                    control={control}
-                    name="phone"
-                    render={({
-                      field: { value, onChange, ref, ...fieldProps },
-                    }) => (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {/* First Name */}
+                    <div>
                       <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
-                        <PhoneInput
-                          {...fieldProps}
-                          id="phone"
-                          ref={ref}
-                          value={value}
-                          onChange={onChange}
+                        <input
+                          {...register("firstName")}
+                          id="firstName"
+                          type="text"
                           placeholder=" "
-                          className="w-full border-none bg-transparent p-0 font-inter text-base leading-[140%] font-normal text-foreground ring-0 outline-none focus-visible:ring-0 [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                          className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
                         />
                         <label
-                          htmlFor="phone"
+                          htmlFor="firstName"
                           className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
                         >
-                          Phone
+                          First Name
                         </label>
                       </div>
-                    )}
-                  />
-                  {errors.phone && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.phone.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </section>
+                      {errors.firstName && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {errors.firstName.message}
+                        </p>
+                      )}
+                    </div>
 
-            {/* Shipping Method */}
-            <section className="space-y-4">
-              <h2 className="text-2xl font-medium text-alternate">
-                Shipping Method
-              </h2>
-              {isLoadingShipping ? (
-                <div className="flex h-24 items-center justify-center rounded-lg bg-muted/50">
-                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <div className="overflow-hidden rounded-lg border bg-white">
-                  <RadioGroup
-                    onValueChange={(v) => {
-                      setValue("shippingMethod", v)
-                      clearErrors("shippingMethod")
-                    }}
-                    value={formValues.shippingMethod}
-                    className="gap-0"
-                  >
-                    {shippingMethods.map((method, idx) => (
-                      <div
-                        key={method.id}
-                        className={`flex items-center justify-between p-4 ${idx !== shippingMethods.length - 1 ? "border-b" : ""}`}
+                    {/* Last Name */}
+                    <div>
+                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                        <input
+                          {...register("lastName")}
+                          id="lastName"
+                          type="text"
+                          placeholder=" "
+                          className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                        />
+                        <label
+                          htmlFor="lastName"
+                          className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                        >
+                          Last Name
+                        </label>
+                      </div>
+                      {errors.lastName && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {errors.lastName.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Address */}
+                  <div>
+                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                      <input
+                        {...register("address")}
+                        id="address"
+                        type="text"
+                        onPaste={handleAddressPaste}
+                        placeholder=" "
+                        className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                      />
+                      <label
+                        htmlFor="address"
+                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
                       >
-                        <div className="flex items-center space-x-3">
-                          <RadioGroupItem value={method.id} id={method.id} />
+                        Address
+                      </label>
+                    </div>
+                    {errors.address && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.address.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    {/* City */}
+                    <div>
+                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                        <input
+                          {...register("city")}
+                          id="city"
+                          type="text"
+                          placeholder=" "
+                          className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                        />
+                        <label
+                          htmlFor="city"
+                          className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                        >
+                          City
+                        </label>
+                      </div>
+                      {errors.city && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {errors.city.message}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* State */}
+                    <div>
+                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                        <input
+                          {...register("state")}
+                          id="state"
+                          type="text"
+                          placeholder=" "
+                          className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                        />
+                        <label
+                          htmlFor="state"
+                          className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                        >
+                          State
+                        </label>
+                      </div>
+                      {errors.state && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {errors.state.message}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Zip Code */}
+                    <div>
+                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                        <input
+                          {...register("zipCode")}
+                          id="zipCode"
+                          type="text"
+                          placeholder=" "
+                          className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                        />
+                        <label
+                          htmlFor="zipCode"
+                          className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                        >
+                          ZIP Code
+                        </label>
+                      </div>
+                      {errors.zipCode && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {errors.zipCode.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Phone Number */}
+                  <div>
+                    <Controller
+                      control={control}
+                      name="phone"
+                      render={({
+                        field: { value, onChange, ref, ...fieldProps },
+                      }) => (
+                        <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                          <PhoneInput
+                            {...fieldProps}
+                            id="phone"
+                            ref={ref}
+                            value={value}
+                            onChange={onChange}
+                            placeholder=" "
+                            className="w-full border-none bg-transparent p-0 font-inter text-base leading-[140%] font-normal text-foreground ring-0 outline-none focus-visible:ring-0 [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                          />
                           <label
-                            htmlFor={method.id}
-                            className="cursor-pointer text-sm font-medium"
+                            htmlFor="phone"
+                            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
                           >
-                            {method.label}
+                            Phone
                           </label>
                         </div>
-                        <span className="text-sm font-medium">
-                          {formatCurrency(parseFloat(method.cost))}
-                        </span>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-              )}
-              {errors.shippingMethod && (
-                <p className="text-sm text-red-500">
-                  {errors.shippingMethod.message}
-                </p>
-              )}
-            </section>
-          </div>
-        </div>
-
-        {/* Right Column */}
-        <div className="lg:col-span-5">
-          <div className="sticky top-8 space-y-6">
-            {/* Items List */}
-            <section className="space-y-6">
-              {/* Ship Ready */}
-              {shipReadyItems.length > 0 && (
-                <div className="space-y-4">
-                  <div className="border-b border-black/20 pb-2">
-                    <h3 className="text-lg font-medium text-primary">
-                      Ship Ready
-                    </h3>
-                  </div>
-                  {shipReadyItems.map((item) => {
-                    return (
-                      <div key={item.id} className="flex items-center gap-4">
-                        <div className="relative size-16 shrink-0 overflow-hidden rounded bg-white">
-                          {item.image_src ? (
-                            <Image
-                              src={item.image_src}
-                              alt={item.title}
-                              fill
-                              className="relative block aspect-square h-auto max-w-full rounded border align-middle transition-opacity duration-200"
-                              sizes="64px"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border">
-                              <Boxes
-                                className="size-5 text-neutral-400"
-                                strokeWidth={0.5}
-                              />
-                              <span className="text-[10px] font-light text-neutral-400">
-                                No Image
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex min-w-0 flex-1 flex-col">
-                          <p className="truncate text-base font-medium">
-                            {item.title}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {item.quantity}x (pcs)
-                          </p>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* Pre-Order */}
-              {preOrderItems.length > 0 && (
-                <div className="space-y-4">
-                  <div className="border-b border-black/20 pb-2">
-                    <h3 className="text-lg font-medium text-primary">
-                      Pre-Order
-                    </h3>
-                  </div>
-                  {preOrderItems.map((item) => {
-                    return (
-                      <div key={item.id} className="flex items-center gap-4">
-                        <div className="relative size-16 shrink-0 overflow-hidden rounded bg-muted">
-                          {item.image_src ? (
-                            <Image
-                              src={item.image_src}
-                              alt={item.title}
-                              fill
-                              className="relative block aspect-square h-auto max-w-full rounded border align-middle transition-opacity duration-200"
-                              sizes="64px"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border bg-white">
-                              <Boxes
-                                className="size-5 text-neutral-400"
-                                strokeWidth={0.5}
-                              />
-                              <span className="text-[10px] font-light text-neutral-400">
-                                No Image
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex min-w-0 flex-1 flex-col">
-                          <p className="truncate text-base font-medium">
-                            {item.title}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {item.quantity}x (pcs)
-                          </p>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </section>
-
-            {/* Summary Blocks */}
-            <section className="space-y-6">
-              <div className="space-y-3 border-b border-black/12 pb-6">
-                {/* Due Now */}
-                <Card className="gap-1 rounded-[12px] border-l-4 border-primary bg-primary/20 shadow-none">
-                  <CardContent className="space-y-2 p-4">
-                    <p className="font-medium text-alternate/80">Due Now</p>
-                    <div className="space-y-0.5">
-                      <div className="flex justify-between">
-                        <span className="text-alternate/60">
-                          Ship Ready Total
-                        </span>
-                        <span className="text-alternate/60">
-                          {formatCurrency(
-                            parseFloat(summaryState.shipReadyTotal || "0")
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-alternate/60">+ Shipping</span>
-                        <span className="text-alternate/60 italic">
-                          {summaryState.shippingCost === "0"
-                            ? "Calculated at checkout"
-                            : formatCurrency(
-                                parseFloat(summaryState.shippingCost)
-                              )}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-alternate/60">
-                          Pre-Order - 50% Deposit
-                        </span>
-                        <span className="text-alternate/60">
-                          {formatCurrency(
-                            parseFloat(summaryState.preorderDeposit || "0")
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                    <Separator className="my-2 bg-black/20" />
-                    <div className="flex justify-between text-alternate">
-                      <span>Total</span>
-                      <span>
-                        {formatCurrency(
-                          parseFloat(summaryState.totalDueNow || "0")
-                        )}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Due Later */}
-                <Card className="gap-1 rounded-[12px] border-l-4 border-black/20 bg-muted shadow-none">
-                  <CardContent className="space-y-2 p-4">
-                    <p className="font-medium text-alternate/80">Due Later</p>
-                    <div className="space-y-0.5">
-                      <div className="flex justify-between">
-                        <span className="text-alternate/60">
-                          Pre-order - Remaining 50%
-                        </span>
-                        <span className="text-alternate/60">
-                          {formatCurrency(
-                            parseFloat(summaryState.preorderBalance || "0")
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-alternate/60">
-                          + Shipping (Pre-Order)
-                        </span>
-                        <span className="text-alternate/60">
-                          {formatCurrency(
-                            parseFloat(summaryState.shippingPreorder || "0")
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                    <Separator className="my-2 bg-black/20" />
-                    <div className="flex justify-between text-alternate">
-                      <span>Total</span>
-                      <span>
-                        {formatCurrency(
-                          parseFloat(summaryState.totalDueLater || "0")
-                        )}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="space-y-6">
-                {/* Total Due Now */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between pb-px">
-                    <h3 className="text-xl font-medium text-black sm:text-2xl">
-                      Total Due now
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      {(calculateShippingMutation.isPending ||
-                        checkoutSummaryMutation.isPending) && (
-                        <Loader2 className="size-5 animate-spin text-alternate/50" />
                       )}
-                      <span className="text-xl font-medium text-black sm:text-2xl">
-                        {formatCurrency(
-                          parseFloat(summaryState.totalDueNow || "0")
-                        )}
-                      </span>
-                    </div>
+                    />
+                    {errors.phone && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.phone.message}
+                      </p>
+                    )}
                   </div>
-                  <p className="text-sm text-alternate/80 sm:text-base">
-                    1-2 business days dispatch, UPS Ground or equivalent carrier
-                  </p>
                 </div>
+              </section>
 
-                {/* Total Due Later */}
-                {parseFloat(summaryState.totalDueLater || "0") > 0 && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between pb-px">
-                      <h3 className="text-xl font-medium text-black sm:text-2xl">
-                        Due Later
+              {/* Shipping Method */}
+              <section className="space-y-4">
+                <h2 className="text-2xl font-medium text-alternate">
+                  Shipping Method
+                </h2>
+                {isLoadingShipping ? (
+                  <div className="flex h-24 items-center justify-center rounded-lg bg-muted/50">
+                    <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <div className="overflow-hidden rounded-lg border bg-white">
+                    <RadioGroup
+                      onValueChange={(v) => {
+                        setValue("shippingMethod", v)
+                        clearErrors("shippingMethod")
+                      }}
+                      value={formValues.shippingMethod}
+                      className="gap-0"
+                    >
+                      {shippingMethods.map((method, idx) => (
+                        <div
+                          key={method.id}
+                          className={`flex items-center justify-between p-4 ${idx !== shippingMethods.length - 1 ? "border-b" : ""}`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <RadioGroupItem value={method.id} id={method.id} />
+                            <label
+                              htmlFor={method.id}
+                              className="cursor-pointer text-sm font-medium"
+                            >
+                              {method.label}
+                            </label>
+                          </div>
+                          <span className="text-sm font-medium">
+                            {formatCurrency(parseFloat(method.cost))}
+                          </span>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                )}
+                {errors.shippingMethod && (
+                  <p className="text-sm text-red-500">
+                    {errors.shippingMethod.message}
+                  </p>
+                )}
+              </section>
+            </div>
+          </div>
+
+          {/* Right Column */}
+          <div className="lg:col-span-5">
+            <div className="sticky top-8 space-y-6">
+              {/* Items List */}
+              <section className="space-y-6">
+                {/* Ship Ready */}
+                {shipReadyItems.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="border-b border-black/20 pb-2">
+                      <h3 className="text-lg font-medium text-primary">
+                        Ship Ready
                       </h3>
-                      <span className="text-xl font-medium text-black sm:text-2xl">
-                        {formatCurrency(
-                          parseFloat(summaryState.totalDueLater || "0")
-                        )}
-                      </span>
                     </div>
-                    <p className="text-sm text-alternate/80 sm:text-base">
-                      You will be notified when our next shipment arrives in the
-                      US
-                    </p>
+                    {shipReadyItems.map((item) => {
+                      return (
+                        <div key={item.id} className="flex items-center gap-4">
+                          <div className="relative size-16 shrink-0 overflow-hidden rounded bg-white">
+                            {item.image_src ? (
+                              <Image
+                                src={item.image_src}
+                                alt={item.title}
+                                fill
+                                className="relative block aspect-square h-auto max-w-full rounded border align-middle transition-opacity duration-200"
+                                sizes="64px"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border">
+                                <Boxes
+                                  className="size-5 text-neutral-400"
+                                  strokeWidth={0.5}
+                                />
+                                <span className="text-[10px] font-light text-neutral-400">
+                                  No Image
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex min-w-0 flex-1 flex-col">
+                            <p className="truncate text-base font-medium">
+                              {item.title}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {item.quantity}x (pcs)
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
 
-                <div className="space-y-4">
-                  <Button
-                    type="submit"
-                    size="2xl"
-                    disabled={createCheckoutMutation.isPending}
-                    className="w-full"
-                  >
-                    <span className="text-base font-medium uppercase">
-                      {createCheckoutMutation.isPending
-                        ? "Processing..."
-                        : "Checkout"}
-                    </span>
-                  </Button>
-                  <div className="flex w-full justify-center">
+                {/* Pre-Order */}
+                {preOrderItems.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="border-b border-black/20 pb-2">
+                      <h3 className="text-lg font-medium text-primary">
+                        Pre-Order
+                      </h3>
+                    </div>
+                    {preOrderItems.map((item) => {
+                      return (
+                        <div key={item.id} className="flex items-center gap-4">
+                          <div className="relative size-16 shrink-0 overflow-hidden rounded bg-muted">
+                            {item.image_src ? (
+                              <Image
+                                src={item.image_src}
+                                alt={item.title}
+                                fill
+                                className="relative block aspect-square h-auto max-w-full rounded border align-middle transition-opacity duration-200"
+                                sizes="64px"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border bg-white">
+                                <Boxes
+                                  className="size-5 text-neutral-400"
+                                  strokeWidth={0.5}
+                                />
+                                <span className="text-[10px] font-light text-neutral-400">
+                                  No Image
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex min-w-0 flex-1 flex-col">
+                            <p className="truncate text-base font-medium">
+                              {item.title}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {item.quantity}x (pcs)
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </section>
+
+              {/* Summary Blocks */}
+              <section className="space-y-6">
+                <div className="space-y-3 border-b border-black/12 pb-6">
+                  {/* Due Now */}
+                  <Card className="gap-1 rounded-[12px] border-l-4 border-primary bg-primary/20 shadow-none">
+                    <CardContent className="space-y-2 p-4">
+                      <p className="font-medium text-alternate/80">Due Now</p>
+                      <div className="space-y-0.5">
+                        <div className="flex justify-between">
+                          <span className="text-alternate/60">
+                            Ship Ready Total
+                          </span>
+                          <span className="text-alternate/60">
+                            {formatCurrency(
+                              parseFloat(summaryState.shipReadyTotal || "0")
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-alternate/60">+ Shipping</span>
+                          <span className="text-alternate/60 italic">
+                            {summaryState.shippingCost === "0"
+                              ? "Calculated at checkout"
+                              : formatCurrency(
+                                  parseFloat(summaryState.shippingCost)
+                                )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-alternate/60">
+                            Pre-Order - 50% Deposit
+                          </span>
+                          <span className="text-alternate/60">
+                            {formatCurrency(
+                              parseFloat(summaryState.preorderDeposit || "0")
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <Separator className="my-2 bg-black/20" />
+                      <div className="flex justify-between text-alternate">
+                        <span>Total</span>
+                        <span>
+                          {formatCurrency(
+                            parseFloat(summaryState.totalDueNow || "0")
+                          )}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Due Later */}
+                  <Card className="gap-1 rounded-[12px] border-l-4 border-black/20 bg-muted shadow-none">
+                    <CardContent className="space-y-2 p-4">
+                      <p className="font-medium text-alternate/80">Due Later</p>
+                      <div className="space-y-0.5">
+                        <div className="flex justify-between">
+                          <span className="text-alternate/60">
+                            Pre-order - Remaining 50%
+                          </span>
+                          <span className="text-alternate/60">
+                            {formatCurrency(
+                              parseFloat(summaryState.preorderBalance || "0")
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-alternate/60">
+                            + Shipping (Pre-Order)
+                          </span>
+                          <span className="text-alternate/60">
+                            {formatCurrency(
+                              parseFloat(summaryState.shippingPreorder || "0")
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <Separator className="my-2 bg-black/20" />
+                      <div className="flex justify-between text-alternate">
+                        <span>Total</span>
+                        <span>
+                          {formatCurrency(
+                            parseFloat(summaryState.totalDueLater || "0")
+                          )}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Total Due Now */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between pb-px">
+                      <h3 className="text-xl font-medium text-black sm:text-2xl">
+                        Total Due now
+                      </h3>
+                      <div className="flex items-center gap-3">
+                        {(calculateShippingMutation.isPending ||
+                          checkoutSummaryMutation.isPending) && (
+                          <Loader2 className="size-5 animate-spin text-alternate/50" />
+                        )}
+                        <span className="text-xl font-medium text-black sm:text-2xl">
+                          {formatCurrency(
+                            parseFloat(summaryState.totalDueNow || "0")
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-alternate/80 sm:text-base">
+                      1-2 business days dispatch, UPS Ground or equivalent
+                      carrier
+                    </p>
+                  </div>
+
+                  {/* Total Due Later */}
+                  {parseFloat(summaryState.totalDueLater || "0") > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between pb-px">
+                        <h3 className="text-xl font-medium text-black sm:text-2xl">
+                          Due Later
+                        </h3>
+                        <span className="text-xl font-medium text-black sm:text-2xl">
+                          {formatCurrency(
+                            parseFloat(summaryState.totalDueLater || "0")
+                          )}
+                        </span>
+                      </div>
+                      <p className="text-sm text-alternate/80 sm:text-base">
+                        You will be notified when our next shipment arrives in
+                        the US
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
                     <Button
-                      type="button"
-                      variant="ghost"
-                      className="h-auto bg-transparent p-2 text-alternate hover:bg-transparent hover:opacity-80"
-                      render={<Link href="/" />}
+                      type="submit"
+                      size="2xl"
+                      disabled={createCheckoutMutation.isPending}
+                      className="w-full"
                     >
-                      <span className="flex items-center gap-2.5 sm:text-lg">
-                        <ChevronLeft className="size-4 text-alternate/60 sm:size-6" />{" "}
-                        Continue Shopping
+                      <span className="text-base font-medium uppercase">
+                        {createCheckoutMutation.isPending
+                          ? "Processing..."
+                          : "Checkout"}
                       </span>
                     </Button>
+                    <div className="flex w-full justify-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-auto bg-transparent p-2 text-alternate hover:bg-transparent hover:opacity-80"
+                        render={<Link href="/" />}
+                      >
+                        <span className="flex items-center gap-2.5 sm:text-lg">
+                          <ChevronLeft className="size-4 text-alternate/60 sm:size-6" />{" "}
+                          Continue Shopping
+                        </span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
 
-      <WaitingPaymentOverlay
-        isOpen={isWaitingForPayment}
-        onOpenChange={setIsWaitingForPayment}
-        checkoutUrl={currentCheckoutUrl}
-        expiresAt={paymentExpiresAt}
-      />
-    </div>
+        <WaitingPaymentOverlay
+          isOpen={isWaitingForPayment}
+          onOpenChange={setIsWaitingForPayment}
+          checkoutUrl={currentCheckoutUrl}
+          expiresAt={paymentExpiresAt}
+        />
+      </div>
+    </>
   )
 }
