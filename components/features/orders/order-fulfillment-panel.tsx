@@ -98,15 +98,20 @@ export function OrderFulfillmentPanel({
 
   const isPreOrder = type === "pre-order"
 
+  const apiFulfillmentType = type.replace("-", "_")
+
   const handleAccept = () => {
-    acceptOrder.mutate({ orderId: order.id, fulfillmentType: type })
+    acceptOrder.mutate({
+      orderId: order.id,
+      fulfillmentType: apiFulfillmentType,
+    })
   }
 
   const handleCancel = () => {
     cancelOrder.mutate({
       orderId: order.id,
       reason: "Cancelled by admin",
-      fulfillmentType: type,
+      fulfillmentType: apiFulfillmentType,
     })
   }
 
