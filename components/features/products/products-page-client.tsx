@@ -10,8 +10,9 @@ import {
   Edit2,
   Filter,
   Loader2,
+  RotateCcw,
   Search,
-  X,
+  Upload,
 } from "lucide-react"
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs"
 
@@ -30,7 +31,11 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { Input } from "@/components/ui/input"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group"
 import {
   Pagination,
   PaginationContent,
@@ -40,9 +45,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 
-import { DimensionsCsvSection } from "@/components/features/products/dimensions-csv-section"
+import { DimensionsCsvModal } from "@/components/features/products/dimensions-csv-modal"
 import { EditPriceModal } from "@/components/features/products/edit-price-modal"
-import { UpdateBatchModal } from "@/components/features/products/update-batch-modal"
 
 import { useProducts, useUpdateProductStatus } from "@/hooks"
 import { formatCurrency, formatLastSynced } from "@/lib/utils"
@@ -66,11 +70,8 @@ export default function ProductsPageClient() {
   const [page, setPage] = useQueryState("page", pageParser)
 
   const [editModalOpen, setEditModalOpen] = useState(false)
+  const [csvModalOpen, setCsvModalOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-
-  const [batchModalOpen, setBatchModalOpen] = useState(false)
-  const [selectedBatchProduct, setSelectedBatchProduct] =
-    useState<Product | null>(null)
 
   const [expandedProducts, setExpandedProducts] = useState<
     Record<string, boolean>
@@ -143,11 +144,6 @@ export default function ProductsPageClient() {
     setEditModalOpen(true)
   }
 
-  const openBatchModal = (product: Product) => {
-    setSelectedBatchProduct(product)
-    setBatchModalOpen(true)
-  }
-
   return (
     <Suspense
       fallback={
@@ -170,92 +166,104 @@ export default function ProductsPageClient() {
               products in total
             </p>
           </div>
+          <Button
+            type="button"
+            size="xl"
+            onClick={() => setCsvModalOpen(true)}
+            className="w-full sm:w-fit"
+          >
+            <Upload className="size-4" />
+            Upload CSV
+          </Button>
         </div>
 
         <div className="flex flex-col gap-4">
-          <DimensionsCsvSection />
-
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-slate-400" />
-              <Input
+          <div className="flex items-center gap-2">
+            <InputGroup className="h-11 flex-1 rounded-[8px] border-slate-200 shadow-sm has-[input:focus-visible]:border-[#8CAEBA] has-[input:focus-visible]:ring-[#8CAEBA]">
+              <InputGroupAddon>
+                <Search className="size-4 text-slate-400" aria-hidden="true" />
+              </InputGroupAddon>
+              <InputGroupInput
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder="Search Product"
-                className="h-11 w-full rounded-[8px] border-slate-200 pl-11 text-sm shadow-sm focus-visible:ring-[#8CAEBA]"
+                className="text-sm"
               />
-            </div>
+            </InputGroup>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <div className="flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-11! gap-2 rounded-[8px] border-slate-200 px-5 text-sm font-medium text-slate-600 shadow-sm"
+                  >
+                    <Filter className="size-4" /> Filter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-48 rounded-xl bg-white shadow-lg"
+                >
+                  <DropdownMenuCheckboxItem
+                    checked={sort === "name_asc"}
+                    onCheckedChange={() =>
+                      setSort(sort === "name_asc" ? "" : "name_asc")
+                    }
+                  >
+                    A-Z
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={filter === "ship-ready"}
+                    onCheckedChange={() =>
+                      setFilter(filter === "ship-ready" ? "all" : "ship-ready")
+                    }
+                  >
+                    Ship Ready
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={filter === "pre-order"}
+                    onCheckedChange={() =>
+                      setFilter(filter === "pre-order" ? "all" : "pre-order")
+                    }
+                  >
+                    Pre-Order
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={sort === "stock_asc"}
+                    onCheckedChange={() =>
+                      setSort(sort === "stock_asc" ? "" : "stock_asc")
+                    }
+                  >
+                    Stock: low-high
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={sort === "stock_desc"}
+                    onCheckedChange={() =>
+                      setSort(sort === "stock_desc" ? "" : "stock_desc")
+                    }
+                  >
+                    Stock: high-low
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {isFilterActive && (
                 <Button
                   variant="outline"
-                  className="h-11 gap-2 rounded-[8px] border-slate-200 px-5 text-sm font-medium text-slate-600 shadow-sm"
+                  size="icon"
+                  onClick={() => {
+                    setSearch(null)
+                    setFilter("all")
+                    setSort(null)
+                    setPage(1)
+                  }}
+                  className="size-11! shrink-0 rounded-[8px] text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                 >
-                  <Filter className="size-4" /> Filter
+                  <RotateCcw className="size-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-48 rounded-xl bg-white shadow-lg"
-              >
-                <DropdownMenuCheckboxItem
-                  checked={sort === "name_asc"}
-                  onCheckedChange={() =>
-                    setSort(sort === "name_asc" ? "" : "name_asc")
-                  }
-                >
-                  A-Z
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={filter === "ship-ready"}
-                  onCheckedChange={() =>
-                    setFilter(filter === "ship-ready" ? "all" : "ship-ready")
-                  }
-                >
-                  Ship Ready
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={filter === "pre-order"}
-                  onCheckedChange={() =>
-                    setFilter(filter === "pre-order" ? "all" : "pre-order")
-                  }
-                >
-                  Pre-Order
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={sort === "stock_asc"}
-                  onCheckedChange={() =>
-                    setSort(sort === "stock_asc" ? "" : "stock_asc")
-                  }
-                >
-                  Stock: low-high
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={sort === "stock_desc"}
-                  onCheckedChange={() =>
-                    setSort(sort === "stock_desc" ? "" : "stock_desc")
-                  }
-                >
-                  Stock: high-low
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {isFilterActive && (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setSearch(null)
-                  setFilter("all")
-                  setSort(null)
-                  setPage(1)
-                }}
-                className="h-11 gap-2 rounded-[8px] px-4 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-              >
-                <X className="size-4" /> Reset
-              </Button>
-            )}
+              )}
+            </div>
           </div>
 
           <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -313,23 +321,7 @@ export default function ProductsPageClient() {
                         {/* Parent/Main Row */}
                         <tr className="transition-colors hover:bg-slate-50/50">
                           <td className="px-6 py-4">
-                            <div className="flex items-center gap-4">
-                              {hasVariants && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    toggleExpand(group.shopifyProductId)
-                                  }
-                                  className="flex size-6 items-center justify-center rounded text-slate-500 hover:bg-slate-100"
-                                >
-                                  {isExpanded ? (
-                                    <ChevronDown className="size-4" />
-                                  ) : (
-                                    <ChevronRight className="size-4" />
-                                  )}
-                                </button>
-                              )}
-                              {!hasVariants && <div className="w-6" />}
+                            <div className="flex items-center justify-start gap-4">
                               <div className="relative size-12 overflow-hidden rounded-md border border-slate-200 bg-white p-1">
                                 {group.imageUrl ? (
                                   <Image
@@ -355,6 +347,21 @@ export default function ProductsPageClient() {
                                   </span>
                                 )}
                               </div>
+                              {hasVariants && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    toggleExpand(group.shopifyProductId)
+                                  }
+                                  className="flex size-6 cursor-pointer items-center justify-center rounded text-slate-500 hover:bg-slate-100"
+                                >
+                                  {isExpanded ? (
+                                    <ChevronDown className="size-4" />
+                                  ) : (
+                                    <ChevronRight className="size-4" />
+                                  )}
+                                </button>
+                              )}
                             </div>
                           </td>
                           <td className="px-6 py-4 font-medium text-slate-800">
@@ -447,19 +454,6 @@ export default function ProductsPageClient() {
                           <td className="px-6 py-4 text-right">
                             {singleVariant && (
                               <div className="flex items-center justify-end gap-2">
-                                {singleVariant.category === "pre-order" && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 gap-2 rounded-md border-slate-200 font-medium text-slate-500 hover:text-slate-800"
-                                    onClick={() =>
-                                      openBatchModal(singleVariant)
-                                    }
-                                  >
-                                    <Boxes className="size-3.5" />
-                                    Batch
-                                  </Button>
-                                )}
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -572,17 +566,6 @@ export default function ProductsPageClient() {
                                 </td>
                                 <td className="px-6 py-3 text-right">
                                   <div className="flex items-center justify-end gap-2">
-                                    {variant.category === "pre-order" && (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 gap-1 rounded-md border-slate-200 text-xs font-medium text-slate-500 hover:text-slate-800"
-                                        onClick={() => openBatchModal(variant)}
-                                      >
-                                        <Boxes className="size-3" />
-                                        Batch
-                                      </Button>
-                                    )}
                                     <Button
                                       variant="outline"
                                       size="sm"
@@ -691,15 +674,10 @@ export default function ProductsPageClient() {
         />
       )}
 
-      {selectedBatchProduct && (
-        <UpdateBatchModal
-          key={`batch-${selectedBatchProduct.sku}`}
-          isOpen={batchModalOpen}
-          onClose={() => setBatchModalOpen(false)}
-          productName={selectedBatchProduct.title}
-          productId={selectedBatchProduct.originalId}
-        />
-      )}
+      <DimensionsCsvModal
+        isOpen={csvModalOpen}
+        onClose={() => setCsvModalOpen(false)}
+      />
     </Suspense>
   )
 }
