@@ -13,7 +13,6 @@ import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Empty,
   EmptyContent,
@@ -318,20 +317,6 @@ export default function CheckoutPageClient() {
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email.message}</p>
                 )}
-
-                <div className="flex items-center space-x-2 pt-1">
-                  <Checkbox
-                    id="acceptsMarketing"
-                    checked={formValues.acceptsMarketing}
-                    onCheckedChange={(c) => setValue("acceptsMarketing", !!c)}
-                  />
-                  <label
-                    htmlFor="acceptsMarketing"
-                    className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Email me with news and offers
-                  </label>
-                </div>
               </div>
             </section>
 
@@ -517,22 +502,6 @@ export default function CheckoutPageClient() {
                 </p>
               )}
             </section>
-
-            {/* Footer Links */}
-            <section className="flex flex-wrap gap-4 border-t pt-6 text-sm text-blue-600">
-              <Link href="/refund-policy" className="hover:underline">
-                Refund policy
-              </Link>
-              <Link href="/shipping-policy" className="hover:underline">
-                Shipping
-              </Link>
-              <Link href="/privacy-policy" className="hover:underline">
-                Privacy policy
-              </Link>
-              <Link href="/terms" className="hover:underline">
-                Term of service
-              </Link>
-            </section>
           </div>
         </div>
 
@@ -540,29 +509,36 @@ export default function CheckoutPageClient() {
         <div className="lg:col-span-5">
           <div className="sticky top-8 space-y-6">
             {/* Items List */}
-            <section className="space-y-6 border-b pb-6">
+            <section className="space-y-6">
+              {/* Ship Ready */}
               {shipReadyItems.length > 0 && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-[#87A9B3]">
+                  <div className="border-b border-black/20 pb-2">
+                    <h3 className="text-lg font-medium text-primary">
                       Ship Ready
                     </h3>
                   </div>
                   {shipReadyItems.map((item) => {
                     return (
                       <div key={item.id} className="flex items-center gap-4">
-                        <div className="relative size-16 shrink-0 overflow-hidden rounded bg-slate-100">
+                        <div className="relative size-16 shrink-0 overflow-hidden rounded bg-white">
                           {item.image_src ? (
                             <Image
                               src={item.image_src}
                               alt={item.title}
                               fill
-                              className="object-cover"
+                              className="relative block aspect-square h-auto max-w-full rounded border align-middle transition-opacity duration-200"
                               sizes="64px"
                             />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center">
-                              <Boxes className="size-6 text-slate-300" />
+                            <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border">
+                              <Boxes
+                                className="size-5 text-neutral-400"
+                                strokeWidth={0.5}
+                              />
+                              <span className="text-[10px] font-light text-neutral-400">
+                                No Image
+                              </span>
                             </div>
                           )}
                         </div>
@@ -580,26 +556,35 @@ export default function CheckoutPageClient() {
                 </div>
               )}
 
+              {/* Pre-Order */}
               {preOrderItems.length > 0 && (
-                <div className="space-y-4 border-t border-dashed pt-4">
-                  <h3 className="text-lg font-medium text-[#87A9B3]">
-                    Pre-Order
-                  </h3>
+                <div className="space-y-4">
+                  <div className="border-b border-black/20 pb-2">
+                    <h3 className="text-lg font-medium text-primary">
+                      Pre-Order
+                    </h3>
+                  </div>
                   {preOrderItems.map((item) => {
                     return (
                       <div key={item.id} className="flex items-center gap-4">
-                        <div className="relative size-16 shrink-0 overflow-hidden rounded bg-slate-100">
+                        <div className="relative size-16 shrink-0 overflow-hidden rounded bg-muted">
                           {item.image_src ? (
                             <Image
                               src={item.image_src}
                               alt={item.title}
                               fill
-                              className="object-cover"
+                              className="relative block aspect-square h-auto max-w-full rounded border align-middle transition-opacity duration-200"
                               sizes="64px"
                             />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center">
-                              <Boxes className="size-6 text-slate-300" />
+                            <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border bg-white">
+                              <Boxes
+                                className="size-5 text-neutral-400"
+                                strokeWidth={0.5}
+                              />
+                              <span className="text-[10px] font-light text-neutral-400">
+                                No Image
+                              </span>
                             </div>
                           )}
                         </div>
@@ -620,28 +605,25 @@ export default function CheckoutPageClient() {
 
             {/* Summary Blocks */}
             <section className="space-y-6">
-              <div className="space-y-3 border-b border-black/12 pb-3">
+              <div className="space-y-3 border-b border-black/12 pb-6">
+                {/* Due Now */}
                 <Card className="gap-1 rounded-[12px] border-l-4 border-primary bg-primary/20 shadow-none">
                   <CardContent className="space-y-2 p-4">
-                    <p className="text-xs font-black tracking-widest text-alternate uppercase">
-                      Due Now
-                    </p>
-                    <div className="space-y-1 text-sm">
+                    <p className="font-medium text-alternate/80">Due Now</p>
+                    <div className="space-y-0.5">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">
+                        <span className="text-alternate/60">
                           Ship Ready Total
                         </span>
-                        <span className="font-medium">
+                        <span className="text-alternate/60">
                           {formatCurrency(
                             parseFloat(summaryState.shipReadyTotal || "0")
                           )}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          + Shipping
-                        </span>
-                        <span className="text-xs font-medium text-muted-foreground italic">
+                        <span className="text-alternate/60">+ Shipping</span>
+                        <span className="text-alternate/60 italic">
                           {summaryState.shippingCost === "0"
                             ? "Calculated at checkout"
                             : formatCurrency(
@@ -650,23 +632,18 @@ export default function CheckoutPageClient() {
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Pre-Order Deposit
+                        <span className="text-alternate/60">
+                          Pre-Order - 50% Deposit
                         </span>
-                        <span className="font-medium">
+                        <span className="text-alternate/60">
                           {formatCurrency(
                             parseFloat(summaryState.preorderDeposit || "0")
                           )}
                         </span>
                       </div>
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Tax</span>
-                        <span>{formatCurrency(0)}</span>{" "}
-                        {/* Placeholder for Tax */}
-                      </div>
                     </div>
-                    <Separator className="my-2 bg-alternate/10" />
-                    <div className="flex justify-between font-black text-alternate">
+                    <Separator className="my-2 bg-black/20" />
+                    <div className="flex justify-between text-alternate">
                       <span>Total</span>
                       <span>
                         {formatCurrency(
@@ -677,35 +654,34 @@ export default function CheckoutPageClient() {
                   </CardContent>
                 </Card>
 
+                {/* Due Later */}
                 <Card className="gap-1 rounded-[12px] border-l-4 border-black/20 bg-muted shadow-none">
                   <CardContent className="space-y-2 p-4">
-                    <p className="text-xs font-black tracking-widest text-muted-foreground uppercase">
-                      Due August
-                    </p>
-                    <div className="space-y-1 text-sm">
+                    <p className="font-medium text-alternate/80">Due Later</p>
+                    <div className="space-y-0.5">
                       <div className="flex justify-between">
-                        <span className="text-xs text-muted-foreground">
-                          Pre-order - Remaining Balance
+                        <span className="text-alternate/60">
+                          Pre-order - Remaining 50%
                         </span>
-                        <span className="font-medium">
+                        <span className="text-alternate/60">
                           {formatCurrency(
                             parseFloat(summaryState.preorderBalance || "0")
                           )}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-alternate/60">
                           + Shipping (Pre-Order)
                         </span>
-                        <span className="font-medium">
+                        <span className="text-alternate/60">
                           {formatCurrency(
                             parseFloat(summaryState.shippingPreorder || "0")
                           )}
                         </span>
                       </div>
                     </div>
-                    <Separator className="my-2 bg-alternate/10" />
-                    <div className="flex justify-between font-black text-alternate/60">
+                    <Separator className="my-2 bg-black/20" />
+                    <div className="flex justify-between text-alternate">
                       <span>Total</span>
                       <span>
                         {formatCurrency(
@@ -717,48 +693,73 @@ export default function CheckoutPageClient() {
                 </Card>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-2xl font-black tracking-tight text-alternate">
-                    Estimated total
-                  </h3>
-                  <div className="flex items-center gap-3">
-                    {(calculateShippingMutation.isPending ||
-                      checkoutSummaryMutation.isPending) && (
-                      <Loader2 className="size-5 animate-spin text-alternate/50" />
-                    )}
-                    <span className="text-3xl font-black text-alternate">
-                      {formatCurrency(
-                        parseFloat(summaryState.totalDueNow || "0")
+              <div className="space-y-6">
+                {/* Total Due Now */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between pb-px">
+                    <h3 className="text-xl font-medium text-black sm:text-2xl">
+                      Total Due now
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      {(calculateShippingMutation.isPending ||
+                        checkoutSummaryMutation.isPending) && (
+                        <Loader2 className="size-5 animate-spin text-alternate/50" />
                       )}
-                    </span>
+                      <span className="text-xl font-medium text-black sm:text-2xl">
+                        {formatCurrency(
+                          parseFloat(summaryState.totalDueNow || "0")
+                        )}
+                      </span>
+                    </div>
                   </div>
+                  <p className="text-sm text-alternate/80 sm:text-base">
+                    1-2 business days dispatch, UPS Ground or equivalent carrier
+                  </p>
                 </div>
 
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  Charged today only. Total due August will be invoiced in upon
-                  Pre-Order settlement — includes remaining balance + shipping.
-                </p>
+                {/* Total Due Later */}
+                {parseFloat(summaryState.totalDueLater || "0") > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between pb-px">
+                      <h3 className="text-xl font-medium text-black sm:text-2xl">
+                        Due Later
+                      </h3>
+                      <span className="text-xl font-medium text-black sm:text-2xl">
+                        {formatCurrency(
+                          parseFloat(summaryState.totalDueLater || "0")
+                        )}
+                      </span>
+                    </div>
+                    <p className="text-sm text-alternate/80 sm:text-base">
+                      You will be notified when our next shipment arrives in the
+                      US
+                    </p>
+                  </div>
+                )}
 
-                <div className="space-y-4 pt-4">
+                <div className="space-y-4">
                   <Button
                     type="submit"
+                    size="2xl"
                     disabled={createCheckoutMutation.isPending}
-                    className="h-14 w-full rounded-none bg-[#87A9B3] text-sm font-bold tracking-widest text-white transition-colors hover:bg-[#7697a1] disabled:opacity-50"
+                    className="w-full"
                   >
-                    {createCheckoutMutation.isPending
-                      ? "Processing..."
-                      : "Checkout"}
+                    <span className="text-base font-medium uppercase">
+                      {createCheckoutMutation.isPending
+                        ? "Processing..."
+                        : "Checkout"}
+                    </span>
                   </Button>
                   <div className="flex w-full justify-center">
                     <Button
                       type="button"
-                      className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
+                      variant="ghost"
+                      className="h-auto bg-transparent p-2 text-alternate hover:bg-transparent hover:opacity-80"
                       render={<Link href="/" />}
                     >
-                      <span className="flex items-center text-base font-medium uppercase">
-                        <ChevronLeft className="mr-2 size-4" /> Continue
-                        Shopping
+                      <span className="flex items-center gap-2.5 sm:text-lg">
+                        <ChevronLeft className="size-4 text-alternate/60 sm:size-6" />{" "}
+                        Continue Shopping
                       </span>
                     </Button>
                   </div>
