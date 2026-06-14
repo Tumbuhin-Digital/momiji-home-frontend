@@ -219,8 +219,14 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
                 sizes="(max-width: 640px) 200px, 400px"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <Boxes className="size-8 text-slate-300" />
+              <div className="flex h-full w-full flex-col items-center justify-center gap-1">
+                <Boxes
+                  className="size-8 text-neutral-400 sm:size-12"
+                  strokeWidth={0.5}
+                />
+                <span className="font-light text-neutral-400 sm:text-lg">
+                  No Image
+                </span>
               </div>
             )}
           </div>

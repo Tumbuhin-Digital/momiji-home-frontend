@@ -86,18 +86,21 @@ export function CartSheetItemRow({
         isBlinking && "animate-pulse rounded-md bg-primary/20 p-2"
       )}
     >
-      <div className="relative aspect-square w-20 shrink-0 overflow-hidden rounded bg-muted sm:w-24">
+      <div className="relative aspect-square w-20 shrink-0 overflow-hidden rounded bg-white sm:w-24">
         {displayImage ? (
           <Image
             src={displayImage}
             alt={displayTitle}
             fill
-            className="object-cover"
+            className="relative block aspect-square h-auto max-w-full rounded border align-middle transition-opacity duration-200"
             sizes="96px"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Boxes className="size-6 text-slate-300" />
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border">
+            <Boxes className="size-6 text-neutral-400" strokeWidth={0.5} />
+            <span className="text-xs font-light text-neutral-400">
+              No Image
+            </span>
           </div>
         )}
       </div>
@@ -142,7 +145,7 @@ export function CartSheetItemRow({
           <button
             type="button"
             onClick={onRemove}
-            className="text-xs font-medium text-alternate underline underline-offset-4 transition-opacity hover:opacity-80 sm:text-sm"
+            className="relative cursor-pointer text-xs font-medium text-alternate after:absolute after:-bottom-1 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-100 after:bg-alternate after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-0 sm:text-sm"
           >
             Remove
           </button>
