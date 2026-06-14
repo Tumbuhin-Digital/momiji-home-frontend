@@ -4,20 +4,22 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
 
-import { X } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import {
   Empty,
   EmptyContent,
   EmptyDescription,
   EmptyHeader,
+  EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetFooter,
   SheetHeader,
+  SheetPanel,
   SheetTitle,
 } from "@/components/ui/sheet"
 
@@ -82,62 +84,51 @@ export function CartSheet() {
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent
-          showCloseButton={false}
+          closeProps={{
+            className:
+              "z-20 h-8 w-8 rounded-full text-alternate hover:bg-alternate/10",
+          }}
           className="flex w-full max-w-91.75 flex-col px-0 sm:w-150.5 sm:max-w-150.5"
         >
-          <SheetHeader className="z-10 flex flex-row items-center justify-between bg-popover px-6 pt-6 pb-2 shadow-sm">
-            <SheetTitle className="text-left text-xl sm:text-2xl">
-              Cart
-            </SheetTitle>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="mt-0 h-8 w-8 rounded-full p-0 text-alternate hover:bg-alternate/10"
-              onClick={() => setIsOpen(false)}
-            >
-              <X className="size-5" />
-              <span className="sr-only">Close cart</span>
-            </Button>
+          <SheetHeader className="border-b">
+            <SheetTitle>Cart</SheetTitle>
+            <SheetDescription>
+              Your selected items are saved here. Take a final look before
+              placing your order.
+            </SheetDescription>
           </SheetHeader>
 
           {allItemsLength === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center p-6">
-              <Empty className="w-full animate-in border-none bg-transparent text-center duration-700 ease-out fade-in slide-in-from-bottom-8">
-                <div className="mb-6 flex justify-center">
-                  <div className="relative flex size-16 items-center justify-center rounded-full bg-primary/20">
-                    <div className="absolute inset-0 animate-ping rounded-full bg-primary/40 opacity-20 duration-3000" />
-                    <IconBag className="size-8 text-white" />
-                  </div>
+            <Empty className="animate-in duration-700 ease-out fade-in slide-in-from-bottom-8">
+              <EmptyMedia>
+                <div className="relative flex size-16 items-center justify-center rounded-full bg-primary/20">
+                  <div className="absolute inset-0 animate-ping rounded-full bg-primary/40 opacity-20 duration-3000" />
+                  <IconBag className="size-8 text-white" />
                 </div>
-                <EmptyHeader className="max-w-none space-y-2 pb-6">
-                  <EmptyTitle className="text-xl font-bold tracking-tight text-header sm:text-2xl">
-                    Your Cart is Empty
-                  </EmptyTitle>
-                  <EmptyDescription className="text-sm text-muted-foreground">
-                    Explore our exclusive collection and find your favorite
-                    items.
-                  </EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent className="max-w-none pt-2">
-                  <Button
-                    type="button"
-                    className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
-                    onClick={() => setIsOpen(false)}
-                    render={
-                      <Link
-                        href={pathname.includes("/shop") ? pathname : "/"}
-                      />
-                    }
-                  >
-                    <span className="text-base font-medium uppercase">
-                      Continue Shopping
-                    </span>
-                  </Button>
-                </EmptyContent>
-              </Empty>
-            </div>
+              </EmptyMedia>
+              <EmptyHeader>
+                <EmptyTitle>Your Cart is Empty</EmptyTitle>
+                <EmptyDescription>
+                  Explore our exclusive collection and find your favorite items.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button
+                  type="button"
+                  className="h-17.75 w-57.5 gap-2.5 rounded-full border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
+                  onClick={() => setIsOpen(false)}
+                  render={
+                    <Link href={pathname.includes("/shop") ? pathname : "/"} />
+                  }
+                >
+                  <span className="text-base font-medium uppercase">
+                    Continue Shopping
+                  </span>
+                </Button>
+              </EmptyContent>
+            </Empty>
           ) : (
-            <div className="flex flex-1 flex-col space-y-8 overflow-y-auto px-6 py-4">
+            <SheetPanel className="flex flex-col space-y-8 px-6">
               {shipReadyItems.length > 0 && (
                 <div className="flex flex-col gap-4">
                   <h3 className="text-base font-semibold text-header sm:text-lg">
@@ -148,7 +139,6 @@ export function CartSheet() {
                       const hasPreOrder = preOrderItems.some(
                         (i) => i.variant_id === item.variant_id
                       )
-
                       return (
                         <CartSheetItemRow
                           key={item.id}
@@ -229,11 +219,11 @@ export function CartSheet() {
                   </div>
                 </div>
               )}
-            </div>
+            </SheetPanel>
           )}
 
           {allItemsLength > 0 && (
-            <div className="z-10 flex flex-col gap-4 border-t bg-popover p-6 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+            <SheetFooter className="flex flex-col sm:flex-col">
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between border-b border-alternate/10 pb-2">
                   <span className="text-xs font-medium text-alternate sm:text-sm">
@@ -264,11 +254,11 @@ export function CartSheet() {
                   </span>
                 </div>
               </div>
-
-              <div className="flex flex-col gap-2 pt-2">
+              <div className="flex flex-col gap-2">
                 <Button
                   type="button"
-                  className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
+                  size="2xl"
+                  className="rounded-full"
                   onClick={() => setIsOpen(false)}
                   render={<Link href="/checkout" />}
                 >
@@ -280,7 +270,7 @@ export function CartSheet() {
                   shipping calculated at checkout
                 </p>
               </div>
-            </div>
+            </SheetFooter>
           )}
         </SheetContent>
       </Sheet>
@@ -324,20 +314,17 @@ export function CartSheet() {
               setIsGlobalPending(true)
               try {
                 const maxStock = currentProduct.maxStock
-
                 const targetShipReadyQty = Math.min(currentQuantity, maxStock)
                 const targetPreOrderQty = Math.max(
                   0,
                   currentQuantity - maxStock
                 )
-
                 const shipReadyItem = shipReadyItems.find(
                   (i) => i.variant_id === currentProduct.sku
                 )
                 const preOrderItem = preOrderItems.find(
                   (i) => i.variant_id === currentProduct.sku
                 )
-
                 if (
                   shipReadyItem &&
                   shipReadyItem.quantity !== targetShipReadyQty
@@ -352,7 +339,6 @@ export function CartSheet() {
                     quantity: targetShipReadyQty,
                   })
                 }
-
                 if (
                   preOrderItem &&
                   preOrderItem.quantity !== targetPreOrderQty
@@ -367,7 +353,6 @@ export function CartSheet() {
                     quantity: targetPreOrderQty,
                   })
                 }
-
                 setTimeout(() => setBlinkingProductKey(null), 3000)
               } finally {
                 setIsGlobalPending(false)

@@ -86,6 +86,8 @@ export function SheetPopup({
   closeProps?: SheetPrimitive.Close.Props
   portalProps?: SheetPrimitive.Portal.Props
 }): React.ReactElement {
+  const { className: closeClassName, ...restCloseProps } = closeProps || {}
+
   return (
     <SheetPortal {...portalProps}>
       <SheetBackdrop />
@@ -112,9 +114,9 @@ export function SheetPopup({
           {showCloseButton && (
             <SheetPrimitive.Close
               aria-label="Close"
-              className="absolute inset-e-2 top-2"
+              className={cn("absolute inset-e-2 top-2", closeClassName)}
               render={<Button size="icon" variant="ghost" />}
-              {...closeProps}
+              {...restCloseProps}
             >
               <XIcon />
             </SheetPrimitive.Close>
