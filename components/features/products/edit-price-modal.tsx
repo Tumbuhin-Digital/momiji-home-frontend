@@ -6,16 +6,7 @@ import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogPanel,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogPanel } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -54,18 +45,15 @@ export function EditPriceModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-sm" showCloseButton={false}>
-        <DialogPanel className="flex flex-col items-center gap-6 sm:py-4">
-          <div className="w-full">
-            <DialogHeader className="p-0 text-center">
-              <DialogTitle className="tracking-wide sm:text-[22px]">
-                Edit Price Product
-              </DialogTitle>
-              <DialogDescription className="text-[15px] leading-relaxed">
-                Product Name:{" "}
-                <span className="font-bold text-slate-800">{productName}</span>
-              </DialogDescription>
-            </DialogHeader>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogPanel className="flex flex-col gap-6 p-6!">
+          <div className="flex flex-col">
+            <h1 className="text-[32px] font-medium text-neutral-900">
+              Edit Price Product
+            </h1>
+            <p className="text-lg text-slate-400">
+              Product Name: {productName}
+            </p>
           </div>
 
           <div className="w-full space-y-2 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm">
@@ -76,8 +64,8 @@ export function EditPriceModal({
               Custom price for WS$
             </Label>
             <div className="relative flex items-center">
-              <div className="absolute left-2 flex h-7 w-7 items-center justify-center rounded-md bg-[#DDE9EA]">
-                <span className="text-xs font-semibold text-[#8CAEBA]">$</span>
+              <div className="absolute left-2 z-10 flex size-7 items-center justify-center rounded-md border border-primary bg-primary/30">
+                <span className="text-xs font-semibold text-primary">$</span>
               </div>
               <Input
                 id="custom-price"
@@ -86,40 +74,21 @@ export function EditPriceModal({
                 className="h-11 rounded-lg border-slate-200 pl-11 text-sm shadow-sm focus-visible:ring-[#00B4F5]"
               />
             </div>
-            <p className="text-[11px] text-slate-400">Currency in USD</p>
+            <p className="text-[12px] text-slate-500">Currency in USD</p>
           </div>
-        </DialogPanel>
 
-        <DialogFooter
-          variant="bare"
-          className="w-full flex-col-reverse gap-3 px-6 pb-6 sm:flex-col-reverse sm:space-x-0 sm:px-6"
-        >
-          <DialogClose
-            render={
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full font-medium text-slate-500"
-                onClick={onClose}
-                disabled={updatePriceMutation.isPending}
-              />
-            }
-          >
-            Cancel
-          </DialogClose>
           <Button
             type="button"
             disabled={updatePriceMutation.isPending}
-            className="w-full bg-primary font-medium text-white"
+            className="h-11! w-full border-none! bg-blue-400/90 text-base font-medium text-white hover:bg-blue-400"
             onClick={handleSave}
-            size="lg"
           >
             {updatePriceMutation.isPending && (
               <Loader2 className="mr-2 size-4 animate-spin" />
             )}
             Save product
           </Button>
-        </DialogFooter>
+        </DialogPanel>
       </DialogContent>
     </Dialog>
   )
