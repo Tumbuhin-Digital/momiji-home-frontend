@@ -53,7 +53,7 @@ export function SalesReportClient() {
           </h1>
           <p className="text-lg text-neutral-400">History Sales</p>
         </div>
-        <Button type="button" size="xl">
+        <Button type="button" size="xl" className="w-full sm:w-fit">
           <CloudDownload className="size-4" />
           Download Excel
         </Button>
