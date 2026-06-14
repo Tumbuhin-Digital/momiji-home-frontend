@@ -271,7 +271,7 @@ export function CartSheet() {
                     Proceed To Checkout
                   </span>
                 </Button>
-                <p className="text-center text-[10px] text-alternate/60 sm:text-xs">
+                <p className="text-center text-xs font-medium text-alternate sm:text-sm">
                   shipping calculated at checkout
                 </p>
               </div>
