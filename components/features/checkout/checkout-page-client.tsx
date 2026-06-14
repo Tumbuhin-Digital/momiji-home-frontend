@@ -20,7 +20,6 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { Input } from "@/components/ui/input"
 import { PhoneInput } from "@/components/ui/phone-input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
@@ -309,11 +308,22 @@ export default function CheckoutPageClient() {
             <section className="space-y-4">
               <h2 className="text-2xl font-medium text-alternate">Contact</h2>
               <div className="space-y-3">
-                <Input
-                  {...register("email")}
-                  placeholder="Email"
-                  className="h-17.5 w-full rounded-lg border border-black/20 bg-white px-4 py-6 font-inter text-base leading-[140%] font-normal"
-                />
+                {/* Email */}
+                <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                  <input
+                    {...register("email")}
+                    id="email"
+                    type="email"
+                    placeholder=" "
+                    className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                  />
+                  <label
+                    htmlFor="email"
+                    className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                  >
+                    Email
+                  </label>
+                </div>
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email.message}</p>
                 )}
@@ -324,6 +334,7 @@ export default function CheckoutPageClient() {
             <section className="space-y-4">
               <h2 className="text-2xl font-medium text-alternate">Delivery</h2>
               <div className="space-y-4">
+                {/* Country/Region */}
                 <div>
                   <Select
                     defaultValue="United States"
@@ -351,24 +362,47 @@ export default function CheckoutPageClient() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {/* First Name */}
                   <div>
-                    <Input
-                      {...register("firstName")}
-                      placeholder="First Name"
-                      className="h-17.5 w-full rounded-lg border border-black/20 bg-white px-4 py-6 font-inter text-base leading-[140%] font-normal"
-                    />
+                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                      <input
+                        {...register("firstName")}
+                        id="firstName"
+                        type="text"
+                        placeholder=" "
+                        className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                      />
+                      <label
+                        htmlFor="firstName"
+                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                      >
+                        First Name
+                      </label>
+                    </div>
                     {errors.firstName && (
                       <p className="mt-1 text-sm text-red-500">
                         {errors.firstName.message}
                       </p>
                     )}
                   </div>
+
+                  {/* Last Name */}
                   <div>
-                    <Input
-                      {...register("lastName")}
-                      placeholder="Last Name"
-                      className="h-17.5 w-full rounded-lg border border-black/20 bg-white px-4 py-6 font-inter text-base leading-[140%] font-normal"
-                    />
+                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                      <input
+                        {...register("lastName")}
+                        id="lastName"
+                        type="text"
+                        placeholder=" "
+                        className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                      />
+                      <label
+                        htmlFor="lastName"
+                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                      >
+                        Last Name
+                      </label>
+                    </div>
                     {errors.lastName && (
                       <p className="mt-1 text-sm text-red-500">
                         {errors.lastName.message}
@@ -377,12 +411,23 @@ export default function CheckoutPageClient() {
                   </div>
                 </div>
 
+                {/* Address */}
                 <div>
-                  <Input
-                    {...register("address")}
-                    placeholder="Address"
-                    className="h-17.5 w-full rounded-lg border border-black/20 bg-white px-4 py-6 font-inter text-base leading-[140%] font-normal"
-                  />
+                  <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                    <input
+                      {...register("address")}
+                      id="address"
+                      type="text"
+                      placeholder=" "
+                      className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                    />
+                    <label
+                      htmlFor="address"
+                      className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                    >
+                      Address
+                    </label>
+                  </div>
                   {errors.address && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.address.message}
@@ -391,36 +436,71 @@ export default function CheckoutPageClient() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  {/* City */}
                   <div>
-                    <Input
-                      {...register("city")}
-                      placeholder="City"
-                      className="h-17.5 w-full rounded-lg border border-black/20 bg-white px-4 py-6 font-inter text-base leading-[140%] font-normal"
-                    />
+                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                      <input
+                        {...register("city")}
+                        id="city"
+                        type="text"
+                        placeholder=" "
+                        className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                      />
+                      <label
+                        htmlFor="city"
+                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                      >
+                        City
+                      </label>
+                    </div>
                     {errors.city && (
                       <p className="mt-1 text-sm text-red-500">
                         {errors.city.message}
                       </p>
                     )}
                   </div>
+
+                  {/* State */}
                   <div>
-                    <Input
-                      {...register("state")}
-                      placeholder="State"
-                      className="h-17.5 w-full rounded-lg border border-black/20 bg-white px-4 py-6 font-inter text-base leading-[140%] font-normal"
-                    />
+                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                      <input
+                        {...register("state")}
+                        id="state"
+                        type="text"
+                        placeholder=" "
+                        className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                      />
+                      <label
+                        htmlFor="state"
+                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                      >
+                        State
+                      </label>
+                    </div>
                     {errors.state && (
                       <p className="mt-1 text-sm text-red-500">
                         {errors.state.message}
                       </p>
                     )}
                   </div>
+
+                  {/* Zip Code */}
                   <div>
-                    <Input
-                      {...register("zipCode")}
-                      placeholder="ZIP Code"
-                      className="h-17.5 w-full rounded-lg border border-black/20 bg-white px-4 py-6 font-inter text-base leading-[140%] font-normal"
-                    />
+                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                      <input
+                        {...register("zipCode")}
+                        id="zipCode"
+                        type="text"
+                        placeholder=" "
+                        className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                      />
+                      <label
+                        htmlFor="zipCode"
+                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                      >
+                        ZIP Code
+                      </label>
+                    </div>
                     {errors.zipCode && (
                       <p className="mt-1 text-sm text-red-500">
                         {errors.zipCode.message}
@@ -429,6 +509,7 @@ export default function CheckoutPageClient() {
                   </div>
                 </div>
 
+                {/* Phone Number */}
                 <div>
                   <Controller
                     control={control}
@@ -436,14 +517,23 @@ export default function CheckoutPageClient() {
                     render={({
                       field: { value, onChange, ref, ...fieldProps },
                     }) => (
-                      <PhoneInput
-                        {...fieldProps}
-                        ref={ref}
-                        value={value}
-                        onChange={onChange}
-                        placeholder="Phone"
-                        className="h-17.5 w-full rounded-lg border border-black/20 bg-white px-4 py-6 font-inter text-base leading-[140%] font-normal"
-                      />
+                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                        <PhoneInput
+                          {...fieldProps}
+                          id="phone"
+                          ref={ref}
+                          value={value}
+                          onChange={onChange}
+                          placeholder=" "
+                          className="w-full border-none bg-transparent p-0 font-inter text-base leading-[140%] font-normal text-foreground ring-0 outline-none focus-visible:ring-0 [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                        />
+                        <label
+                          htmlFor="phone"
+                          className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                        >
+                          Phone
+                        </label>
+                      </div>
                     )}
                   />
                   {errors.phone && (

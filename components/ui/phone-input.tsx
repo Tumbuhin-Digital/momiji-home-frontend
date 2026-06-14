@@ -1,7 +1,5 @@
 import * as React from "react"
 
-import { Input } from "@/components/ui/input"
-
 import { cn } from "@/lib/utils"
 
 export interface PhoneInputProps extends Omit<
@@ -18,7 +16,6 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
 
     React.useEffect(() => {
       if (value) {
-        // Strip non-digits and remove the '1' country code if present from the payload
         let digits = value.replace(/\D/g, "")
         if (digits.startsWith("1")) {
           digits = digits.slice(1)
@@ -45,9 +42,6 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       const inputValue = e.target.value
 
       let digits = inputValue.replace(/\D/g, "")
-
-      // In NANP (US), area codes never start with 1.
-      // So if the string starts with 1, it's the country code.
       if (digits.startsWith("1")) {
         digits = digits.slice(1)
       }
@@ -67,7 +61,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     }
 
     return (
-      <Input
+      <input
         ref={ref}
         type="tel"
         className={cn(className)}
