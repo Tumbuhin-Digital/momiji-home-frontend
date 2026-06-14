@@ -58,7 +58,7 @@ export function StockLockTimer({
     <Badge
       variant="destructive"
       className={cn(
-        "flex h-7.5 w-full max-w-89.5 items-center justify-center gap-2.5 px-4 py-2 font-semibold",
+        "flex h-7.5 w-full max-w-89.5 items-center justify-center gap-2.5 rounded-full! px-4 py-3 font-semibold",
         className
       )}
     >

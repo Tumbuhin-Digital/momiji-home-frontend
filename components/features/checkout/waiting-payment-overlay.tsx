@@ -29,41 +29,60 @@ export function WaitingPaymentOverlay({
   onExpire,
 }: WaitingPaymentOverlayProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle className="text-center text-xl">
-            Waiting for Payment
-          </DialogTitle>
-          <DialogDescription className="pt-2 text-center">
-            Please complete your checkout in the securely opened Shopify window.
-          </DialogDescription>
+    <Dialog open={isOpen} onOpenChange={() => {}}>
+      <DialogContent
+        className="rounded-2xl border-none shadow-2xl sm:max-w-md"
+        showCloseButton={false}
+      >
+        <DialogHeader className="space-y-4 pt-4 pb-2">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10">
+            <Loader2 className="size-8 animate-spin text-primary" />
+          </div>
+          <div className="space-y-2">
+            <DialogTitle className="text-center text-2xl font-semibold tracking-tight text-header">
+              Waiting for Payment
+            </DialogTitle>
+            <DialogDescription className="text-center text-base">
+              Please complete your checkout in the securely opened Shopify
+              window.
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
-        <div className="flex flex-col items-center justify-center gap-6 py-6">
+        <div className="flex flex-col items-center justify-center gap-3 p-6">
           {expiresAt && (
-            <StockLockTimer expiresAt={expiresAt} onExpire={onExpire} />
+            <div className="flex w-fit justify-center">
+              <StockLockTimer expiresAt={expiresAt} onExpire={onExpire} />
+            </div>
           )}
 
-          <div className="relative flex size-20 items-center justify-center rounded-full bg-primary/20">
-            <div className="absolute inset-0 animate-ping rounded-full bg-primary/40 opacity-20 duration-3000" />
-            <Loader2 className="size-10 animate-spin text-primary" />
+          <div className="rounded-md bg-muted p-4 text-center">
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Once you complete your payment on Shopify, this window will
+              automatically redirect you to your receipt.
+            </p>
           </div>
 
-          <p className="px-4 text-center text-sm text-muted-foreground">
-            Once you complete your payment on Shopify, the new window will
-            redirect you to your receipt.
-          </p>
-
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (checkoutUrl) window.open(checkoutUrl, "_blank")
-            }}
-            className="mt-2 w-full font-medium"
-          >
-            Click here if the window didn&apos;t open
-          </Button>
+          <div className="flex w-full flex-col gap-2 pt-2">
+            <Button
+              type="button"
+              size="xl"
+              onClick={() => {
+                if (checkoutUrl) window.open(checkoutUrl, "_blank")
+              }}
+              className="w-full rounded-full"
+            >
+              Reopen Payment Window
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-auto bg-transparent p-2 text-destructive hover:bg-transparent hover:opacity-80"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel & Return
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

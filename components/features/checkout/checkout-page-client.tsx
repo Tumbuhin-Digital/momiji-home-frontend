@@ -311,7 +311,7 @@ export default function CheckoutPageClient() {
   useEffect(() => {
     let interval: NodeJS.Timeout
     if (isWaitingForPayment && checkoutReference) {
-      interval = setInterval(async () => {
+      const checkPayment = async () => {
         try {
           const res =
             await checkoutService.getCheckoutConfirm(checkoutReference)
@@ -320,7 +320,10 @@ export default function CheckoutPageClient() {
           }
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err) {}
-      }, 3000)
+      }
+      checkPayment()
+
+      interval = setInterval(checkPayment, 30000)
     }
     return () => clearInterval(interval)
   }, [isWaitingForPayment, checkoutReference])
