@@ -55,10 +55,12 @@ export function GlobalLoadingOverlay() {
   if (!visible) return null
 
   return (
-    <div className="fixed inset-0 z-55 flex items-center justify-center bg-white/40 backdrop-blur-sm transition-all duration-300">
-      <div className="flex w-64 flex-col items-center gap-4 rounded-xl bg-white/80 p-6 shadow-xl backdrop-blur-md">
+    <div className="fixed inset-0 z-55 flex items-center justify-center bg-black/20 backdrop-blur-sm transition-all duration-300">
+      <div className="flex w-1/3 flex-col items-center gap-4 bg-transparent p-6">
         <Progress className="w-full" value={progress} />
-        <p className="text-sm font-medium text-slate-600">Updating cart...</p>
+        <p className="animate-bounce text-sm font-medium text-white">
+          Updating Cart...
+        </p>
       </div>
     </div>
   )
