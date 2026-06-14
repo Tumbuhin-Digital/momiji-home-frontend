@@ -16,8 +16,15 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
 
     React.useEffect(() => {
       if (value) {
-        let digits = value.replace(/\D/g, "")
-        if (digits.startsWith("1")) {
+        let rawInput = value
+        if (rawInput.startsWith("+1 ")) {
+          rawInput = rawInput.slice(3)
+        } else if (rawInput.startsWith("+1")) {
+          rawInput = rawInput.slice(2)
+        }
+
+        let digits = rawInput.replace(/\D/g, "")
+        if (digits.length === 11 && digits.startsWith("1")) {
           digits = digits.slice(1)
         }
         setDisplayValue(formatUSPhone(digits))
@@ -41,8 +48,15 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const inputValue = e.target.value
 
-      let digits = inputValue.replace(/\D/g, "")
-      if (digits.startsWith("1")) {
+      let rawInput = inputValue
+      if (rawInput.startsWith("+1 ")) {
+        rawInput = rawInput.slice(3)
+      } else if (rawInput.startsWith("+1")) {
+        rawInput = rawInput.slice(2)
+      }
+
+      let digits = rawInput.replace(/\D/g, "")
+      if (digits.length === 11 && digits.startsWith("1")) {
         digits = digits.slice(1)
       }
 
