@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Boxes, ChevronLeft, Loader2 } from "lucide-react"
+import { Boxes, ChevronLeft, Loader2, InfoIcon } from "lucide-react"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -21,6 +21,11 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { PhoneInput } from "@/components/ui/phone-input"
+import {
+  PreviewCard,
+  PreviewCardPopup,
+  PreviewCardTrigger,
+} from "@/components/ui/preview-card"
 import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
@@ -172,14 +177,23 @@ export default function CheckoutPageClient() {
           email: formValues.email || "guest@example.com",
         })
 
+        const shippingCost = parseFloat(summary.dueNow.shipping || "0")
+        const shipReadyTotal = parseFloat(summary.dueNow.shipReadyTotal || "0")
+        const preorderDeposit = parseFloat(
+          summary.dueNow.preorderDeposit || "0"
+        )
+        const preorderBalance = parseFloat(
+          summary.dueAugust.preorderBalance || "0"
+        )
+
         setSummaryState({
-          shippingCost: summary.dueNow.shipping,
+          shippingCost: "0",
           shipReadyTotal: summary.dueNow.shipReadyTotal,
           preorderDeposit: summary.dueNow.preorderDeposit,
-          totalDueNow: summary.dueNow.total,
+          totalDueNow: String(shipReadyTotal + preorderDeposit),
           preorderBalance: summary.dueAugust.preorderBalance,
-          shippingPreorder: summary.dueAugust.shippingPreorder,
-          totalDueLater: summary.dueAugust.total,
+          shippingPreorder: String(shippingCost),
+          totalDueLater: String(preorderBalance + shippingCost),
         })
       } catch (err) {
         console.error("Failed to recalculate shipping/summary", err)
@@ -622,9 +636,37 @@ export default function CheckoutPageClient() {
 
               {/* Shipping Method */}
               <section className="space-y-4">
-                <h2 className="text-2xl font-medium text-alternate">
-                  Shipping Method
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-medium text-alternate">
+                    Shipping Method
+                  </h2>
+                  <PreviewCard>
+                    <PreviewCardTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 rounded-full"
+                        />
+                      }
+                    >
+                      <InfoIcon className="size-4 text-muted-foreground" />
+                    </PreviewCardTrigger>
+                    <PreviewCardPopup>
+                      <div className="flex max-w-xs flex-col gap-2 p-1">
+                        <h4 className="text-sm font-medium">
+                          Shipping Information
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          Shipping for &quot;Ship Ready&quot; items will be
+                          calculated directly at checkout on Shopify. Shipping
+                          for &quot;Pre-Order&quot; items is calculated here and
+                          will be due later when the item is ready to ship.
+                        </p>
+                      </div>
+                    </PreviewCardPopup>
+                  </PreviewCard>
+                </div>
                 {isLoadingShipping ? (
                   <div className="flex h-24 items-center justify-center rounded-lg bg-muted/50">
                     <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -789,11 +831,7 @@ export default function CheckoutPageClient() {
                         <div className="flex justify-between">
                           <span className="text-alternate/60">+ Shipping</span>
                           <span className="text-alternate/60 italic">
-                            {summaryState.shippingCost === "0"
-                              ? "Calculated at checkout"
-                              : formatCurrency(
-                                  parseFloat(summaryState.shippingCost)
-                                )}
+                            Calculated at checkout
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -890,11 +928,17 @@ export default function CheckoutPageClient() {
                         <h3 className="text-xl font-medium text-black sm:text-2xl">
                           Due Later
                         </h3>
-                        <span className="text-xl font-medium text-black sm:text-2xl">
-                          {formatCurrency(
-                            parseFloat(summaryState.totalDueLater || "0")
+                        <div className="flex items-center gap-3">
+                          {(calculateShippingMutation.isPending ||
+                            checkoutSummaryMutation.isPending) && (
+                            <Loader2 className="size-5 animate-spin text-alternate/50" />
                           )}
-                        </span>
+                          <span className="text-xl font-medium text-black sm:text-2xl">
+                            {formatCurrency(
+                              parseFloat(summaryState.totalDueLater || "0")
+                            )}
+                          </span>
+                        </div>
                       </div>
                       <p className="text-sm text-alternate/80 sm:text-base">
                         You will be notified when our next shipment arrives in
