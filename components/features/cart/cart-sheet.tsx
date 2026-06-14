@@ -40,6 +40,11 @@ import { formatCurrency } from "@/lib/utils"
 export function CartSheet() {
   const pathname = usePathname()
 
+  const nextMonthDate = new Date()
+  nextMonthDate.setDate(1)
+  nextMonthDate.setMonth(nextMonthDate.getMonth() + 1)
+  const nextMonthName = nextMonthDate.toLocaleString("en-US", { month: "long" })
+
   const isOpen = useCartStore((state) => state.isOpen)
   const setIsOpen = useCartStore((state) => state.setIsOpen)
   const setIsGlobalPending = useCartStore((state) => state.setIsGlobalPending)
@@ -245,7 +250,7 @@ export function CartSheet() {
                 </div>
                 <div className="flex justify-between pb-1">
                   <span className="text-xs font-medium text-alternate sm:text-sm">
-                    Total Balance Due August
+                    Total Balance Due {nextMonthName}
                   </span>
                   <span className="text-sm font-semibold text-alternate sm:text-base">
                     {formatCurrency(
