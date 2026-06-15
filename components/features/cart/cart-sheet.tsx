@@ -95,18 +95,20 @@ export function CartSheet() {
           className="flex w-full max-w-91.75 flex-col px-0 sm:w-150.5 sm:max-w-150.5"
         >
           <SheetHeader className="flex flex-row items-center justify-between border-b px-6 pt-6 pb-4">
-            <SheetTitle className="text-xl font-semibold text-[#2F3E46]">
+            <SheetTitle className="text-xl font-semibold text-alternate">
               Cart
             </SheetTitle>
-            <SheetClose>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 rounded-md text-alternate"
-              >
-                <X className="h-5 w-5" />
-                <span className="sr-only">Close</span>
-              </Button>
+            <SheetClose
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 rounded-md text-alternate"
+                />
+              }
+            >
+              <X className="size-5" />
+              <span className="sr-only">Close</span>
             </SheetClose>
           </SheetHeader>
 
