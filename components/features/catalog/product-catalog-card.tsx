@@ -3,6 +3,7 @@
 
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
 
 import { Boxes } from "lucide-react"
 
@@ -96,13 +97,12 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     if (debounceTimer.current) clearTimeout(debounceTimer.current)
     setLocalQuantity(newTotal)
 
-    setIsGlobalPending(true)
-
     const doUpdate = async () => {
       if (newTotal === quantity) {
-        setIsGlobalPending(false)
         return
       }
+
+      setIsGlobalPending(true)
 
       try {
         const maxShipReady = product.inventory.quantity
@@ -117,37 +117,55 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
           targetPreOrderQty = newTotal
         }
 
+        const promises: Promise<any>[] = []
+
         if (targetShipReadyQty <= 0 && shipReadyCartItem) {
-          await removeCartItem.mutateAsync(shipReadyCartItem.id)
+          promises.push(removeCartItem.mutateAsync(shipReadyCartItem.id))
         } else if (targetShipReadyQty > 0 && shipReadyCartItem) {
           if (shipReadyCartItem.quantity !== targetShipReadyQty) {
-            await updateCartItem.mutateAsync({
-              id: shipReadyCartItem.id,
-              quantity: targetShipReadyQty,
-            })
+            promises.push(
+              updateCartItem.mutateAsync({
+                id: shipReadyCartItem.id,
+                quantity: targetShipReadyQty,
+              })
+            )
           }
         } else if (targetShipReadyQty > 0 && !shipReadyCartItem) {
-          await addCartItem.mutateAsync({
-            variant_id: product.sku,
-            quantity: targetShipReadyQty,
-          })
+          promises.push(
+            addCartItem.mutateAsync({
+              variant_id: product.sku,
+              quantity: targetShipReadyQty,
+            })
+          )
         }
 
         if (targetPreOrderQty <= 0 && preOrderCartItem) {
-          await removeCartItem.mutateAsync(preOrderCartItem.id)
+          promises.push(removeCartItem.mutateAsync(preOrderCartItem.id))
         } else if (targetPreOrderQty > 0 && preOrderCartItem) {
           if (preOrderCartItem.quantity !== targetPreOrderQty) {
-            await updateCartItem.mutateAsync({
-              id: preOrderCartItem.id,
-              quantity: targetPreOrderQty,
-            })
+            promises.push(
+              updateCartItem.mutateAsync({
+                id: preOrderCartItem.id,
+                quantity: targetPreOrderQty,
+              })
+            )
           }
         } else if (targetPreOrderQty > 0 && !preOrderCartItem) {
-          await addCartItem.mutateAsync({
-            variant_id: product.sku,
-            quantity: targetPreOrderQty,
-          })
+          promises.push(
+            addCartItem.mutateAsync({
+              variant_id: product.sku,
+              quantity: targetPreOrderQty,
+            })
+          )
         }
+
+        if (promises.length > 0) {
+          await Promise.all(promises)
+        }
+      } catch (error) {
+        setLocalQuantity(quantity)
+        toast.error("Gagal memperbarui keranjang. Silakan coba lagi.")
+        console.error("Cart update failed:", error)
       } finally {
         setIsGlobalPending(false)
       }
@@ -156,7 +174,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     if (immediate) {
       doUpdate()
     } else {
-      debounceTimer.current = setTimeout(doUpdate, 600)
+      debounceTimer.current = setTimeout(doUpdate, 1500)
     }
   }
 
