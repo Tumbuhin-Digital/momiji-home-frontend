@@ -25,9 +25,9 @@ export function InventoryDepletedModal({
   product,
 }: InventoryDepletedModalProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen}>
       <DialogContent className="sm:max-w-150" showCloseButton={false}>
-        <DialogPanel className="flex flex-col items-center gap-6 sm:flex-row sm:py-4">
+        <DialogPanel className="flex flex-col items-center gap-6 p-4! sm:flex-row">
           <div className="relative mx-auto flex size-32 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#F8F9FA] sm:size-40">
             {product?.imageUrl ? (
               <Image
