@@ -137,6 +137,15 @@ function Toasts({
                 "data-expanded:data-ending-style:data-[swipe-direction=right]:transform-[translateX(calc(var(--toast-swipe-movement-x)+100%+var(--toast-inset)))_translateY(var(--toast-calc-offset-y))]",
                 "data-expanded:data-ending-style:data-[swipe-direction=up]:transform-[translateY(calc(var(--toast-swipe-movement-y)-100%-var(--toast-inset)))]",
                 "data-expanded:data-ending-style:data-[swipe-direction=down]:transform-[translateY(calc(var(--toast-swipe-movement-y)+100%+var(--toast-inset)))]",
+                "data-expanded:data-ending-style:data-[swipe-direction=down]:transform-[translateY(calc(var(--toast-swipe-movement-y)+100%+var(--toast-inset)))]",
+                toast.type === "success" &&
+                  "border-green-200 bg-green-50 text-green-700 **:data-[slot=toast-icon]:text-green-700",
+                toast.type === "error" &&
+                  "border-red-200 bg-red-50 text-red-700 **:data-[slot=toast-icon]:text-red-700",
+                toast.type === "info" &&
+                  "border-primary/30 bg-primary/20 text-primary **:data-[slot=toast-icon]:text-primary",
+                toast.type === "warning" &&
+                  "border-yellow-200 bg-yellow-50 text-yellow-700 **:data-[slot=toast-icon]:text-yellow-700",
                 upsertReplayClassName(toast)
               )}
               {...toastData?.rootProps}
@@ -151,7 +160,7 @@ function Toasts({
                       className="[&_svg]:pointer-events-none [&_svg]:shrink-0 [&>svg]:h-lh [&>svg]:w-4"
                       data-slot="toast-icon"
                     >
-                      <Icon className="in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=loading]:animate-spin in-data-[type=loading]:opacity-80 in-data-[type=success]:text-success in-data-[type=warning]:text-warning" />
+                      <Icon className="in-data-[type=loading]:animate-spin in-data-[type=loading]:opacity-80" />
                     </div>
                   )}
 
@@ -222,6 +231,14 @@ function AnchoredToasts({
                   tooltipStyle
                     ? "rounded-md shadow-md/5 before:rounded-[calc(var(--radius-md)-1px)]"
                     : "rounded-lg shadow-lg/5 before:rounded-[calc(var(--radius-lg)-1px)]",
+                  toast.type === "success" &&
+                    "border-green-200 bg-green-50 text-green-700 **:data-[slot=toast-icon]:text-green-700",
+                  toast.type === "error" &&
+                    "border-red-200 bg-red-50 text-red-700 **:data-[slot=toast-icon]:text-red-700",
+                  toast.type === "info" &&
+                    "border-primary/30 bg-primary/20 text-primary **:data-[slot=toast-icon]:text-primary",
+                  toast.type === "warning" &&
+                    "border-yellow-200 bg-yellow-50 text-yellow-700 **:data-[slot=toast-icon]:text-yellow-700",
                   upsertReplayClassName(toast)
                 )}
                 {...toastData?.rootProps}
@@ -240,7 +257,7 @@ function AnchoredToasts({
                           className="[&_svg]:pointer-events-none [&_svg]:shrink-0 [&>svg]:h-lh [&>svg]:w-4"
                           data-slot="toast-icon"
                         >
-                          <Icon className="in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=loading]:animate-spin in-data-[type=loading]:opacity-80 in-data-[type=success]:text-success in-data-[type=warning]:text-warning" />
+                          <Icon className="in-data-[type=loading]:animate-spin in-data-[type=loading]:opacity-80" />
                         </div>
                       )}
 
