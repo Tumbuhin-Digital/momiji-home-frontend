@@ -4,6 +4,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
 
+import { X } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -16,11 +18,11 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetPanel,
   SheetTitle,
+  SheetClose,
 } from "@/components/ui/sheet"
 
 import { CartSheetItemRow } from "@/components/features/cart/cart-sheet-item-row"
@@ -89,18 +91,23 @@ export function CartSheet() {
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent
-          closeProps={{
-            className:
-              "z-20 h-8 w-8 rounded-full text-alternate hover:bg-alternate/10",
-          }}
+          showCloseButton={false}
           className="flex w-full max-w-91.75 flex-col px-0 sm:w-150.5 sm:max-w-150.5"
         >
-          <SheetHeader className="border-b">
-            <SheetTitle>Cart</SheetTitle>
-            <SheetDescription>
-              Your selected items are saved here. Take a final look before
-              placing your order.
-            </SheetDescription>
+          <SheetHeader className="flex flex-row items-center justify-between border-b px-6 pt-6 pb-4">
+            <SheetTitle className="text-xl font-semibold text-[#2F3E46]">
+              Cart
+            </SheetTitle>
+            <SheetClose>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 rounded-md text-alternate"
+              >
+                <X className="h-5 w-5" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </SheetClose>
           </SheetHeader>
 
           {allItemsLength === 0 ? (
