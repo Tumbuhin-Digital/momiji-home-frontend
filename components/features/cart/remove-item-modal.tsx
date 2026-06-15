@@ -24,8 +24,9 @@ export function RemoveItemModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-sm" showCloseButton={false}>
         <DialogPanel className="flex flex-col items-center gap-6 p-4!">
-          <div className="flex size-16 items-center justify-center rounded-full bg-destructive/10 p-3">
-            <InfoIcon className="size-8 text-destructive" />
+          <div className="relative flex size-16 items-center justify-center rounded-full bg-destructive/10 p-3">
+            <div className="absolute inset-0 animate-ping rounded-full bg-destructive/20 opacity-20 duration-3000" />
+            <InfoIcon className="relative z-10 size-8 text-destructive" />
           </div>
           <div className="w-full">
             <DialogHeader className="p-0 text-center">
