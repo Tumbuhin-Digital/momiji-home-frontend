@@ -33,9 +33,8 @@ export interface CheckoutSummary {
 }
 
 export interface CheckoutSummaryInput {
-  address_id?: number
-  email?: string
-  shipping_method: string
+  address_id: number
+  shipping_method?: string
 }
 
 export interface CheckoutCreateInput {

@@ -173,11 +173,14 @@ export default function CheckoutPageClient() {
           })
         }
 
-        const summary = await checkoutSummaryMutation.mutateAsync({
+        const payload: { address_id: number; shipping_method?: string } = {
           address_id: 0,
-          shipping_method: formValues.shippingMethod || "",
-          email: formValues.email || "guest@example.com",
-        })
+        }
+        if (formValues.shippingMethod) {
+          payload.shipping_method = formValues.shippingMethod
+        }
+
+        const summary = await checkoutSummaryMutation.mutateAsync(payload)
 
         const shippingCost = parseFloat(summary.dueNow.shipping || "0")
         const shipReadyTotal = parseFloat(summary.dueNow.shipReadyTotal || "0")
