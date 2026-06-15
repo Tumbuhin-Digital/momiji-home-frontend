@@ -51,7 +51,7 @@ export function LogoutConfirmModal({
         className="bg-secondary sm:max-w-sm"
         showCloseButton={false}
       >
-        <DialogPanel className="flex flex-col items-center gap-6 sm:py-4">
+        <DialogPanel className="flex flex-col items-center gap-6 p-4!">
           <div className="w-full">
             <DialogHeader className="p-0 text-center">
               <DialogTitle className="tracking-wide text-destructive sm:text-[22px]">
