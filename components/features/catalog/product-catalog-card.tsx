@@ -117,50 +117,36 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
           targetPreOrderQty = newTotal
         }
 
-        const promises: Promise<any>[] = []
-
         if (targetShipReadyQty <= 0 && shipReadyCartItem) {
-          promises.push(removeCartItem.mutateAsync(shipReadyCartItem.id))
+          await removeCartItem.mutateAsync(shipReadyCartItem.id)
         } else if (targetShipReadyQty > 0 && shipReadyCartItem) {
           if (shipReadyCartItem.quantity !== targetShipReadyQty) {
-            promises.push(
-              updateCartItem.mutateAsync({
-                id: shipReadyCartItem.id,
-                quantity: targetShipReadyQty,
-              })
-            )
-          }
-        } else if (targetShipReadyQty > 0 && !shipReadyCartItem) {
-          promises.push(
-            addCartItem.mutateAsync({
-              variant_id: product.sku,
+            await updateCartItem.mutateAsync({
+              id: shipReadyCartItem.id,
               quantity: targetShipReadyQty,
             })
-          )
+          }
+        } else if (targetShipReadyQty > 0 && !shipReadyCartItem) {
+          await addCartItem.mutateAsync({
+            variant_id: product.sku,
+            quantity: targetShipReadyQty,
+          })
         }
 
         if (targetPreOrderQty <= 0 && preOrderCartItem) {
-          promises.push(removeCartItem.mutateAsync(preOrderCartItem.id))
+          await removeCartItem.mutateAsync(preOrderCartItem.id)
         } else if (targetPreOrderQty > 0 && preOrderCartItem) {
           if (preOrderCartItem.quantity !== targetPreOrderQty) {
-            promises.push(
-              updateCartItem.mutateAsync({
-                id: preOrderCartItem.id,
-                quantity: targetPreOrderQty,
-              })
-            )
-          }
-        } else if (targetPreOrderQty > 0 && !preOrderCartItem) {
-          promises.push(
-            addCartItem.mutateAsync({
-              variant_id: product.sku,
+            await updateCartItem.mutateAsync({
+              id: preOrderCartItem.id,
               quantity: targetPreOrderQty,
             })
-          )
-        }
-
-        if (promises.length > 0) {
-          await Promise.all(promises)
+          }
+        } else if (targetPreOrderQty > 0 && !preOrderCartItem) {
+          await addCartItem.mutateAsync({
+            variant_id: product.sku,
+            quantity: targetPreOrderQty,
+          })
         }
       } catch (error) {
         setLocalQuantity(quantity)
