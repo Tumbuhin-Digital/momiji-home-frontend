@@ -3,7 +3,7 @@
 import { useRef, useState } from "react"
 
 import { CheckCircle, Download, FileText, Loader2, Upload } from "lucide-react"
-import { toast } from "sonner"
+import { toastManager } from "@/components/ui/toast"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -47,7 +47,11 @@ export function DimensionsCsvModal({
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
     } catch {
-      toast.error("Failed to download CSV template")
+      toastManager.add({
+        title: "Error",
+        description: "Failed to download CSV template",
+        type: "error",
+      })
     }
   }
 
@@ -57,7 +61,11 @@ export function DimensionsCsvModal({
       if (file.name.endsWith(".csv")) {
         setSelectedFile(file)
       } else {
-        toast.error("Please select a valid CSV file")
+        toastManager.add({
+          title: "Error",
+          description: "Please select a valid CSV file",
+          type: "error",
+        })
         if (fileInputRef.current) fileInputRef.current.value = ""
       }
     }
@@ -65,18 +73,30 @@ export function DimensionsCsvModal({
 
   const handleImport = async () => {
     if (!selectedFile) {
-      toast.error("Please select a file to import")
+      toastManager.add({
+        title: "Error",
+        description: "Please select a file to import",
+        type: "error",
+      })
       return
     }
 
     try {
       await importMutation.mutateAsync(selectedFile)
-      toast.success("Dimensions imported successfully")
+      toastManager.add({
+        title: "Success",
+        description: "Dimensions imported successfully",
+        type: "success",
+      })
       setSelectedFile(null)
       if (fileInputRef.current) fileInputRef.current.value = ""
       onClose()
     } catch {
-      toast.error("Failed to import dimensions")
+      toastManager.add({
+        title: "Error",
+        description: "Failed to import dimensions",
+        type: "error",
+      })
     }
   }
 

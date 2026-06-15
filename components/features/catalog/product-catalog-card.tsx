@@ -3,7 +3,7 @@
 
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
-import { toast } from "sonner"
+import { toastManager } from "@/components/ui/toast"
 
 import { Boxes } from "lucide-react"
 
@@ -164,7 +164,11 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         }
       } catch (error) {
         setLocalQuantity(quantity)
-        toast.error("Gagal memperbarui keranjang. Silakan coba lagi.")
+        toastManager.add({
+          title: "Error",
+          description: "Gagal memperbarui keranjang. Silakan coba lagi.",
+          type: "error",
+        })
         console.error("Cart update failed:", error)
       } finally {
         setIsGlobalPending(false)

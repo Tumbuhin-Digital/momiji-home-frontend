@@ -1,6 +1,6 @@
 "use client"
 
-import { toast } from "sonner"
+import { toastManager } from "@/components/ui/toast"
 
 import { Button } from "@/components/ui/button"
 
@@ -20,7 +20,11 @@ export function OrderManagementClient() {
   const handleSync = async () => {
     try {
       await forceSyncMutation.mutateAsync()
-      toast.success("Products synced successfully")
+      toastManager.add({
+        title: "Success",
+        description: "Products synced successfully",
+        type: "success",
+      })
     } catch {}
   }
 

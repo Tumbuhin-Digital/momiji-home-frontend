@@ -1,7 +1,7 @@
 "use client"
 
 import { AlignLeft, ArrowRight, BarChart3, Lock } from "lucide-react"
-import { toast } from "sonner"
+import { toastManager } from "@/components/ui/toast"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,7 +19,11 @@ export default function DashboardClient() {
   const handleSync = async () => {
     try {
       await forceSyncMutation.mutateAsync()
-      toast.success("Products synced successfully")
+      toastManager.add({
+        title: "Success",
+        description: "Products synced successfully",
+        type: "success",
+      })
     } catch {}
   }
 

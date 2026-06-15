@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Boxes, ChevronLeft, Loader2, InfoIcon } from "lucide-react"
 import { Controller, useForm } from "react-hook-form"
-import { toast } from "sonner"
+import { toastManager } from "@/components/ui/toast"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
@@ -259,7 +259,11 @@ export default function CheckoutPageClient() {
 
           setIsParsingAddress(false)
           setParsingProgress(0)
-          toast.success("Address auto-filled successfully!")
+          toastManager.add({
+            title: "Success",
+            description: "Address auto-filled successfully!",
+            type: "success",
+          })
         }, 300)
       }, 500)
     }
@@ -319,7 +323,11 @@ export default function CheckoutPageClient() {
       window.open(checkoutUrl, "_blank")
     } catch (err) {
       console.error("Checkout failed:", err)
-      toast.error("Failed to initiate checkout. Please try again.")
+      toastManager.add({
+        title: "Error",
+        description: "Failed to initiate checkout. Please try again.",
+        type: "error",
+      })
     }
   }
 

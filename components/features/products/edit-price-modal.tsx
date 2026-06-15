@@ -3,7 +3,7 @@
 import { useState } from "react"
 
 import { Loader2 } from "lucide-react"
-import { toast } from "sonner"
+import { toastManager } from "@/components/ui/toast"
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogPanel } from "@/components/ui/dialog"
@@ -27,7 +27,11 @@ export function EditPriceModal({
   const handleSave = async () => {
     const wsPrice = parseFloat(price)
     if (isNaN(wsPrice) || wsPrice < 0) {
-      toast.error("Please enter a valid price")
+      toastManager.add({
+        title: "Error",
+        description: "Please enter a valid price",
+        type: "error",
+      })
       return
     }
 
@@ -36,10 +40,18 @@ export function EditPriceModal({
         variantId,
         input: { ws_price: wsPrice },
       })
-      toast.success("Price updated successfully")
+      toastManager.add({
+        title: "Success",
+        description: "Price updated successfully",
+        type: "success",
+      })
       onClose()
     } catch {
-      toast.error("Failed to update price")
+      toastManager.add({
+        title: "Error",
+        description: "Failed to update price",
+        type: "error",
+      })
     }
   }
 

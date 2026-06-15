@@ -3,7 +3,7 @@
 import { useState } from "react"
 
 import { Loader2 } from "lucide-react"
-import { toast } from "sonner"
+import { toastManager } from "@/components/ui/toast"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -37,7 +37,11 @@ export function UpdateBatchModal({
 
   const handleSave = async () => {
     if (!batchLabel.trim()) {
-      toast.error("Batch label is required")
+      toastManager.add({
+        title: "Error",
+        description: "Batch label is required",
+        type: "error",
+      })
       return
     }
 
@@ -49,12 +53,20 @@ export function UpdateBatchModal({
           expected_ship_date: shipDate ? shipDate : undefined,
         },
       })
-      toast.success("Batch updated successfully")
+      toastManager.add({
+        title: "Success",
+        description: "Batch updated successfully",
+        type: "success",
+      })
       setBatchLabel("")
       setShipDate("")
       onClose()
     } catch {
-      toast.error("Failed to update batch")
+      toastManager.add({
+        title: "Error",
+        description: "Failed to update batch",
+        type: "error",
+      })
     }
   }
 
