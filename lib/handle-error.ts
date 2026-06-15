@@ -1,105 +1,147 @@
-import { toast } from "sonner"
-
+import { isCancel } from "axios"
+import { toastManager } from "@/components/ui/toast"
 import { deleteCookie } from "./cookie"
 import { ApiError } from "@/lib/api/axios"
 
-type NotificationType = "success" | "destructive" | "default"
-
-const DEFAULT_ERROR_MESSAGE = "An unknown error occurred."
-const NETWORK_ERROR_MESSAGE =
-  "There was a problem connecting to the server. Please check your connection or contact the admin."
-
-const showNotification = (
-  type: NotificationType,
-  message: string,
-  description: string
-) => {
-  switch (type) {
-    case "destructive":
-      toast.error(message, { description })
-      break
-
-    default:
-      toast(message, { description })
-      break
-  }
+export function isAbortError(error: unknown): boolean {
+  if (isCancel(error)) return true
+  if (error instanceof Error && error.name === "AbortError") return true
+  return false
 }
 
-const getErrorDescription = (error: Error | ApiError): string => {
-  if (error instanceof ApiError && error.payload) {
-    // If the payload has an "error.details" nested structure
-    // (This matches the previous error.response.data.error.details logic)
-    const errorData = error.payload as Record<string, unknown>
-    const nestedError = errorData.error as Record<string, unknown> | undefined
-    const details = nestedError?.details || errorData.details
-    if (details) {
-      return Array.isArray(details) ? details.join(", ") : String(details)
+export function getErrorMessage(error: unknown): {
+  title: string
+  description: string
+} {
+  if (error instanceof ApiError) {
+    const status = error.status
+
+    if (!status) {
+      return {
+        title: "Connection Failed",
+        description: "Please check your internet connection.",
+      }
     }
-    return String(errorData.message || error.message)
-  }
-  return error.message || DEFAULT_ERROR_MESSAGE
-}
 
-const handleSpecificError = (
-  status: number | undefined,
-  description: string
-): { message: string; errorMessage: string } => {
-  switch (status) {
-    case 400:
-      return { message: "An error occurred", errorMessage: description }
-    case 401:
-      return {
-        message: "Unauthorized",
-        errorMessage: description || "Incorrect email or password.",
+    let descriptionFromPayload = ""
+    if (error.payload) {
+      const errorData = error.payload as Record<string, unknown>
+      const nestedError = errorData.error as Record<string, unknown> | undefined
+      const details = nestedError?.details || errorData.details
+      if (details) {
+        descriptionFromPayload = Array.isArray(details)
+          ? details.join(", ")
+          : String(details)
+      } else if (errorData.message) {
+        descriptionFromPayload = String(errorData.message)
       }
-    case 403:
-      return {
-        message: "Forbidden",
-        errorMessage:
-          "You do not have the required permissions to access this resource. Contact the system administrator to request access.",
-      }
-    case 404:
-      return { message: "Page Not Found", errorMessage: description }
-    case 500:
-      return {
-        message: "Server Error",
-        errorMessage:
-          description ||
-          "A server error occurred. Please contact the admin and try again later.",
-      }
-    default:
-      return {
-        message: "Error",
-        errorMessage: description || DEFAULT_ERROR_MESSAGE,
-      }
+    }
+
+    switch (status) {
+      case 400:
+        return {
+          title: "Invalid Request",
+          description:
+            descriptionFromPayload || "The request parameters are incorrect.",
+        }
+      case 401:
+        return {
+          title: "Unauthenticated",
+          description: descriptionFromPayload || "Your session has expired.",
+        }
+      case 403:
+        return {
+          title: "Access Denied",
+          description:
+            descriptionFromPayload ||
+            "You do not have permission to access this resource.",
+        }
+      case 404:
+        return {
+          title: "Data Not Found",
+          description:
+            descriptionFromPayload || "The requested resource is unavailable.",
+        }
+      case 408:
+        return {
+          title: "Request Timeout",
+          description:
+            descriptionFromPayload || "The server took too long to respond.",
+        }
+      case 429:
+        return {
+          title: "Too Many Requests",
+          description:
+            descriptionFromPayload ||
+            "Request limit reached, please try again later.",
+        }
+      case 500:
+        return {
+          title: "Server Error",
+          description:
+            descriptionFromPayload || "An error occurred on the server.",
+        }
+      case 502:
+        return {
+          title: "Bad Gateway",
+          description:
+            descriptionFromPayload || "Gateway error, please try again later.",
+        }
+      case 503:
+        return {
+          title: "Service Unavailable",
+          description:
+            descriptionFromPayload ||
+            "The server is currently under maintenance.",
+        }
+      default:
+        if (descriptionFromPayload) {
+          return {
+            title: "Error Occurred",
+            description: descriptionFromPayload,
+          }
+        }
+        break
+    }
+  }
+
+  const message =
+    error instanceof Error ? error.message : "A system error occurred."
+  if (message.includes("Network")) {
+    return {
+      title: "Connection Failed",
+      description: "Please check your internet connection.",
+    }
+  }
+
+  return {
+    title: "Error Occurred",
+    description: message,
   }
 }
 
 export const handleApiError = async (err: Error | unknown) => {
   console.error("Global Error Caught: ", err)
 
-  if (!(err instanceof Error)) {
-    showNotification("destructive", "Error", DEFAULT_ERROR_MESSAGE)
-    return { error: true, message: DEFAULT_ERROR_MESSAGE }
+  if (isAbortError(err)) {
+    return { error: true, message: "Request cancelled" }
   }
 
   if (err instanceof ApiError) {
     const status = err.status
 
     if (status === 401) {
-      // Dynamic import to avoid circular dependencies
       const { useAuthStore } = await import("@/lib/stores/auth.store")
       const isAuthenticated = useAuthStore.getState().isAuthenticated
 
       if (isAuthenticated) {
-        // If they were authenticated, their session expired.
         await deleteCookie("isLoggedIn")
 
-        showNotification(
-          "destructive",
-          "Session Expired",
-          "Your session has expired. Please log in again."
-        )
+        toastManager.add({
+          title: "Session Expired",
+          description: "Your session has expired. Please log in again.",
+          type: "error",
+        })
 
         setTimeout(() => {
           if (typeof window !== "undefined") {
@@ -109,29 +151,17 @@ export const handleApiError = async (err: Error | unknown) => {
 
         return { error: true, message: "Session expired" }
       }
-
-      // If they were never authenticated (guest), fail silently for endpoints like /cart
       return { error: true, message: "Unauthorized" }
     }
-
-    if (!status && err.message === "Network Error") {
-      showNotification("destructive", "Network Issue", NETWORK_ERROR_MESSAGE)
-      return { error: true, message: NETWORK_ERROR_MESSAGE }
-    }
-
-    const description = getErrorDescription(err)
-    const { message, errorMessage } = handleSpecificError(status, description)
-
-    showNotification("destructive", message, errorMessage)
-    return { error: true, message: errorMessage }
   }
 
-  // Generic Error handling
-  if (err.message === "Network Error" || err.message.includes("Network")) {
-    showNotification("destructive", "Network Issue", NETWORK_ERROR_MESSAGE)
-    return { error: true, message: NETWORK_ERROR_MESSAGE }
-  }
+  const { title, description } = getErrorMessage(err)
 
-  showNotification("destructive", "Error", err.message || DEFAULT_ERROR_MESSAGE)
-  return { error: true, message: err.message }
+  toastManager.add({
+    title,
+    description,
+    type: "error",
+  })
+
+  return { error: true, message: description }
 }
