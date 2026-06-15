@@ -35,7 +35,7 @@ export function AppNavbar() {
             alt="Momiji Logo"
             width={231}
             height={44}
-            className="h-8 w-41.75 object-contain transition-transform duration-500 hover:scale-105 sm:h-11 sm:w-57.75"
+            className="h-8 w-41.75 object-contain transition-transform duration-500 sm:h-11 sm:w-57.75"
             priority
           />
         </Link>
