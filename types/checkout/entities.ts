@@ -51,7 +51,22 @@ export interface CheckoutCreateInput {
   zip?: string
 }
 
+export interface CheckoutConfirmItem {
+  title: string
+  amountCharged: number
+  balanceDue: number
+  itemStatus: string
+  quantity: number
+  type: string
+}
+
 export interface CheckoutConfirmResult {
   orderNumber: string
-  status: string
+  financialStatus: string
+  customerEmail: string
+  orderDate: string
+  totalBalanceDue: number
+  totalChargedNow: number
+  totalPrice: number
+  items: CheckoutConfirmItem[]
 }

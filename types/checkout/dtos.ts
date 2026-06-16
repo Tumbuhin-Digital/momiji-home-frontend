@@ -37,7 +37,24 @@ export interface CheckoutCreateResponseDto {
   checkout_url: string
 }
 
+export interface CheckoutConfirmItemDto {
+  amount_charged: string | null
+  balance_due: string | null
+  item_status: string
+  quantity: number
+  title: string
+  type: string
+}
+
 export interface CheckoutConfirmResponseDto {
+  currency: string
+  customer_email: string
+  financial_status: string
+  items: CheckoutConfirmItemDto[]
+  order_date: string
+  order_id: string
   order_number: string
-  status: string
+  total_balance_due: string | null
+  total_charged_now: string | null
+  total_price: string
 }

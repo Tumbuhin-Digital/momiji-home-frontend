@@ -3,6 +3,7 @@ import { apiClient } from "@/lib/api"
 import type {
   CheckoutConfirmResponseDto,
   CheckoutConfirmResult,
+  CheckoutCreateInput,
   CheckoutCreateResponseDto,
   CheckoutItem,
   CheckoutItemDto,
@@ -73,7 +74,7 @@ async function getSummary(
 }
 
 async function createCheckout(
-  input: CheckoutSummaryInput
+  input: CheckoutCreateInput
 ): Promise<{ checkoutUrl: string; checkoutReference: string }> {
   const response = await apiClient.post<
     BaseResponse<CheckoutCreateResponseDto>
@@ -101,9 +102,23 @@ async function getCheckoutConfirm(
     throw new Error("Failed to get checkout confirmation")
   }
 
+  const d = response.data
   return {
-    orderNumber: response.data.order_number,
-    status: response.data.status,
+    orderNumber: d.order_number,
+    financialStatus: d.financial_status,
+    customerEmail: d.customer_email,
+    orderDate: d.order_date,
+    totalBalanceDue: parseFloat(d.total_balance_due || "0"),
+    totalChargedNow: parseFloat(d.total_charged_now || "0"),
+    totalPrice: parseFloat(d.total_price || "0"),
+    items: (d.items || []).map((item) => ({
+      title: item.title,
+      amountCharged: parseFloat(item.amount_charged || "0"),
+      balanceDue: parseFloat(item.balance_due || "0"),
+      itemStatus: item.item_status,
+      quantity: item.quantity,
+      type: item.type,
+    })),
   }
 }
 
