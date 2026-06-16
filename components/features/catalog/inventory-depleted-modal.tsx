@@ -15,11 +15,13 @@ import {
   DialogPanel,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Spinner } from "@/components/ui/spinner"
 
 import type { InventoryDepletedModalProps } from "@/types/products"
 
 export function InventoryDepletedModal({
   isOpen,
+  isPending,
   onClose,
   onConfirm,
   product,
@@ -65,6 +67,7 @@ export function InventoryDepletedModal({
                 size="lg"
                 className="w-full font-medium text-slate-500"
                 onClick={onClose}
+                disabled={isPending}
               />
             }
           >
@@ -75,8 +78,16 @@ export function InventoryDepletedModal({
             onClick={onConfirm}
             size="lg"
             className="w-full bg-primary font-medium text-white"
+            disabled={isPending}
           >
-            Continue
+            {isPending ? (
+              <>
+                <Spinner className="mr-2" />
+                Processing...
+              </>
+            ) : (
+              "Continue"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

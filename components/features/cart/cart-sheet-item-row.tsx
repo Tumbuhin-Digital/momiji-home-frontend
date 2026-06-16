@@ -18,6 +18,7 @@ export interface CartSheetItemRowProps {
   maxStock?: number
   onExceedStock?: (desiredQuantity: number, revert: () => void) => void
   formatCurrency: (val: number) => string
+  onDecreaseIntercept?: () => boolean
   onRemove: () => void
   onUpdateQuantity: (q: number) => void
 }
@@ -31,6 +32,7 @@ export function CartSheetItemRow({
   maxStock,
   onExceedStock,
   formatCurrency,
+  onDecreaseIntercept,
   onRemove,
   onUpdateQuantity,
 }: CartSheetItemRowProps) {
@@ -64,7 +66,7 @@ export function CartSheetItemRow({
 
     debounceTimer.current = setTimeout(() => {
       onUpdateQuantity(newQty)
-    }, 600)
+    }, 1500)
   }
 
   const handleIncrease = () => {
@@ -73,7 +75,10 @@ export function CartSheetItemRow({
       if (debounceTimer.current) clearTimeout(debounceTimer.current)
       const next = localQuantity + 1
       setLocalQuantity(next)
-      onExceedStock?.(next, () => setLocalQuantity(maxStock))
+      onExceedStock?.(next, () => {
+        setLocalQuantity(maxStock)
+        setResetKey((prev) => prev + 1)
+      })
       return
     }
     handleUpdate(localQuantity + 1)
@@ -105,47 +110,57 @@ export function CartSheetItemRow({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+      <div className="flex flex-1 flex-col">
         <div className="flex flex-col gap-1.5 sm:w-70">
-          <h3 className="line-clamp-2 text-sm leading-tight font-medium text-alternate sm:text-base">
-            {displayTitle}
-          </h3>
-
+          <h3 className="text-xs text-alternate">{displayTitle}</h3>
           <div className="flex flex-col gap-0.5">
-            <p className="text-sm font-medium text-alternate/80">
-              {formatCurrency(price)}
-            </p>
+            <p className="text-alternate/80">{formatCurrency(price)}</p>
             {isPreOrder && (
-              <p className="text-[10px] text-alternate/60 sm:text-xs">
+              <p className="text-xs text-alternate/60">
                 50% Deposit = {formatCurrency(deposit)}
               </p>
             )}
           </div>
         </div>
 
-        <div className="mt-2 flex items-center gap-4 sm:mt-0 sm:flex-col sm:items-end sm:gap-2">
+        <div className="mt-2 flex items-center gap-4">
           <QuantitySelector
             key={resetKey}
             quantity={localQuantity}
             isPending={isPending}
             onIncrease={handleIncrease}
-            onDecrease={() => handleUpdate(localQuantity - 1)}
+            onDecrease={() => {
+              if (onDecreaseIntercept && onDecreaseIntercept()) return
+              handleUpdate(localQuantity - 1)
+            }}
             onChange={(q) => {
+              if (
+                q < localQuantity &&
+                onDecreaseIntercept &&
+                onDecreaseIntercept()
+              ) {
+                setLocalQuantity(localQuantity)
+                setResetKey((prev) => prev + 1)
+                return
+              }
               if (maxStock !== undefined && q > maxStock) {
                 if (debounceTimer.current) clearTimeout(debounceTimer.current)
                 setLocalQuantity(q)
-                onExceedStock?.(q, () => setLocalQuantity(maxStock))
+                onExceedStock?.(q, () => {
+                  setLocalQuantity(maxStock)
+                  setResetKey((prev) => prev + 1)
+                })
                 return
               }
               handleUpdate(q)
             }}
-            className="h-7 w-20 sm:h-8 sm:w-24"
+            className="h-9 w-29.75 sm:w-35.5"
             disabledIncrease={disableIncrease}
           />
           <button
             type="button"
             onClick={onRemove}
-            className="relative cursor-pointer text-xs font-medium text-alternate after:absolute after:-bottom-1 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-100 after:bg-alternate after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-0 sm:text-sm"
+            className="relative cursor-pointer text-xs text-alternate after:absolute after:-bottom-1 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-100 after:bg-alternate after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-0 sm:text-base"
           >
             Remove
           </button>

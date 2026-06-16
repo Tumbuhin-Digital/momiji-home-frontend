@@ -7,6 +7,7 @@ export interface ProductCatalogCardProps {
 export interface InventoryDepletedModalProps {
   isOpen: boolean
   product: Product | { title: string; imageUrl?: string } | null
+  isPending?: boolean
   onClose: () => void
   onConfirm: () => void
 }

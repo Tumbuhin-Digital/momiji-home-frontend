@@ -15,11 +15,9 @@ import { QuantitySelector } from "@/components/global/quantity-selector"
 import { IconBag } from "@/public/icons/icon-bag"
 
 import {
-  useAddCartItem,
   useCart,
   useCreateCartSession,
-  useRemoveCartItem,
-  useUpdateCartItem,
+  useUpdateVariantQuantity,
 } from "@/hooks"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
@@ -27,17 +25,21 @@ import { formatCurrency } from "@/lib/utils"
 import type { ProductCatalogCardProps } from "@/types/products"
 
 export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
-  const { market, sessionId, expiresAt, setSessionId, setIsGlobalPending } =
-    useCartStore()
+  const {
+    market,
+    sessionId,
+    expiresAt,
+    setSessionId,
+    isGlobalPending,
+    setIsGlobalPending,
+  } = useCartStore()
 
   const [localQuantity, setLocalQuantity] = useState(0)
   const [showDepletedModal, setShowDepletedModal] = useState(false)
   const debounceTimer = useRef<NodeJS.Timeout | null>(null)
 
   const { data: cartData } = useCart()
-  const addCartItem = useAddCartItem()
-  const updateCartItem = useUpdateCartItem()
-  const removeCartItem = useRemoveCartItem()
+  const updateVariantQuantity = useUpdateVariantQuantity()
   const createSession = useCreateCartSession()
 
   const isShipReady = product.category === "ship-ready"
@@ -69,11 +71,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     setLocalQuantity(quantity)
   }, [quantity])
 
-  const isPending =
-    addCartItem.isPending ||
-    updateCartItem.isPending ||
-    removeCartItem.isPending ||
-    createSession.isPending
+  const isPending = updateVariantQuantity.isPending || createSession.isPending
 
   const ensureSession = async (): Promise<boolean> => {
     const isExpired = expiresAt && new Date(expiresAt).getTime() < Date.now()
@@ -105,49 +103,10 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
       setIsGlobalPending(true)
 
       try {
-        const maxShipReady = product.inventory.quantity
-        let targetShipReadyQty = newTotal
-        let targetPreOrderQty = 0
-
-        if (isShipReady && maxShipReady > 0) {
-          targetShipReadyQty = Math.min(newTotal, maxShipReady)
-          targetPreOrderQty = Math.max(0, newTotal - maxShipReady)
-        } else if (!isShipReady || maxShipReady === 0) {
-          targetShipReadyQty = 0
-          targetPreOrderQty = newTotal
-        }
-
-        if (targetShipReadyQty <= 0 && shipReadyCartItem) {
-          await removeCartItem.mutateAsync(shipReadyCartItem.id)
-        } else if (targetShipReadyQty > 0 && shipReadyCartItem) {
-          if (shipReadyCartItem.quantity !== targetShipReadyQty) {
-            await updateCartItem.mutateAsync({
-              id: shipReadyCartItem.id,
-              quantity: targetShipReadyQty,
-            })
-          }
-        } else if (targetShipReadyQty > 0 && !shipReadyCartItem) {
-          await addCartItem.mutateAsync({
-            variant_id: product.sku,
-            quantity: targetShipReadyQty,
-          })
-        }
-
-        if (targetPreOrderQty <= 0 && preOrderCartItem) {
-          await removeCartItem.mutateAsync(preOrderCartItem.id)
-        } else if (targetPreOrderQty > 0 && preOrderCartItem) {
-          if (preOrderCartItem.quantity !== targetPreOrderQty) {
-            await updateCartItem.mutateAsync({
-              id: preOrderCartItem.id,
-              quantity: targetPreOrderQty,
-            })
-          }
-        } else if (targetPreOrderQty > 0 && !preOrderCartItem) {
-          await addCartItem.mutateAsync({
-            variant_id: product.sku,
-            quantity: targetPreOrderQty,
-          })
-        }
+        await updateVariantQuantity.mutateAsync({
+          variantId: product.sku,
+          totalQuantity: newTotal,
+        })
       } catch (error) {
         setLocalQuantity(quantity)
         toastManager.add({
@@ -162,7 +121,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     }
 
     if (immediate) {
-      doUpdate()
+      return doUpdate()
     } else {
       debounceTimer.current = setTimeout(doUpdate, 1500)
     }
@@ -290,10 +249,11 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
           setShowDepletedModal(false)
           setLocalQuantity(Math.max(1, quantity))
         }}
-        onConfirm={() => {
+        onConfirm={async () => {
+          await triggerUpdate(localQuantity, true)
           setShowDepletedModal(false)
-          triggerUpdate(localQuantity, true)
         }}
+        isPending={isGlobalPending}
       />
     </>
   )

@@ -11,11 +11,13 @@ import {
   DialogPanel,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Spinner } from "@/components/ui/spinner"
 
 import type { RemoveItemModalProps } from "@/types/cart"
 
 export function RemoveItemModal({
   isOpen,
+  isPending,
   onClose,
   onConfirm,
   productName,
@@ -63,8 +65,16 @@ export function RemoveItemModal({
             onClick={onConfirm}
             size="lg"
             className="w-full font-medium"
+            disabled={isPending}
           >
-            Remove
+            {isPending ? (
+              <>
+                <Spinner className="mr-2" />
+                Removing...
+              </>
+            ) : (
+              "Remove"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

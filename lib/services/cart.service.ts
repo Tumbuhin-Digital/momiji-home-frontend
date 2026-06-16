@@ -37,6 +37,16 @@ async function updateItem(
   await apiClient.patch<BaseResponse<void>>(`/cart/items/${id}`, input)
 }
 
+async function updateVariantQuantity(
+  variantId: string,
+  totalQuantity: number
+): Promise<void> {
+  await apiClient.patch<BaseResponse<void>>(`/cart/items/variant`, {
+    variant_id: variantId,
+    total_quantity: totalQuantity,
+  })
+}
+
 async function createSession(): Promise<CartSessionDto> {
   const response =
     await apiClient.post<BaseResponse<CartSessionDto>>("/cart/session")
@@ -68,4 +78,5 @@ export const cartService = {
   mergeSession,
   removeItem,
   updateItem,
+  updateVariantQuantity,
 }

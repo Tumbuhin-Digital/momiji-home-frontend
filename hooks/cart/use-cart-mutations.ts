@@ -116,3 +116,21 @@ export function useUpdateCartItem() {
     },
   })
 }
+
+export function useUpdateVariantQuantity() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationKey: ["cart", "updateVariant"],
+    mutationFn: ({
+      variantId,
+      totalQuantity,
+    }: {
+      variantId: string
+      totalQuantity: number
+    }) => cartService.updateVariantQuantity(variantId, totalQuantity),
+    onSuccess: () => {
+      return queryClient.invalidateQueries({ queryKey: queryKeys.cart.all() })
+    },
+  })
+}

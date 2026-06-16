@@ -30,12 +30,7 @@ import { RemoveItemModal } from "@/components/features/cart/remove-item-modal"
 import { InventoryDepletedModal } from "@/components/features/catalog/inventory-depleted-modal"
 import { IconBag } from "@/public/icons/icon-bag"
 
-import {
-  useAddCartItem,
-  useCart,
-  useRemoveCartItem,
-  useUpdateCartItem,
-} from "@/hooks"
+import { useCart, useUpdateVariantQuantity } from "@/hooks"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
 
@@ -49,9 +44,14 @@ export function CartSheet() {
 
   const isOpen = useCartStore((state) => state.isOpen)
   const setIsOpen = useCartStore((state) => state.setIsOpen)
+  const isGlobalPending = useCartStore((state) => state.isGlobalPending)
   const setIsGlobalPending = useCartStore((state) => state.setIsGlobalPending)
 
-  const [itemToRemove, setItemToRemove] = useState<string | null>(null)
+  const [itemToRemove, setItemToRemove] = useState<{
+    variantId: string
+    newTotal: number
+    title: string
+  } | null>(null)
   const [depletedProduct, setDepletedProduct] = useState<{
     title: string
     imageUrl?: string
@@ -65,11 +65,12 @@ export function CartSheet() {
   const [blinkingProductKey, setBlinkingProductKey] = useState<string | null>(
     null
   )
+  const [blinkingMessage, setBlinkingMessage] = useState<
+    "add" | "reduce" | null
+  >(null)
 
   const { data: cartData } = useCart()
-  const addCartItem = useAddCartItem()
-  const updateCartItem = useUpdateCartItem()
-  const removeCartItem = useRemoveCartItem()
+  const updateVariantQuantity = useUpdateVariantQuantity()
 
   const shipReadyItems = cartData?.ship_ready || []
   const preOrderItems = cartData?.pre_order || []
@@ -82,10 +83,7 @@ export function CartSheet() {
   }
 
   const allItemsLength = shipReadyItems.length + preOrderItems.length
-  const isPending =
-    addCartItem.isPending ||
-    updateCartItem.isPending ||
-    removeCartItem.isPending
+  const isPending = updateVariantQuantity.isPending
 
   return (
     <>
@@ -148,7 +146,7 @@ export function CartSheet() {
             <SheetPanel className="flex flex-col space-y-8 px-6">
               {shipReadyItems.length > 0 && (
                 <div className="flex flex-col gap-4">
-                  <h3 className="text-base font-semibold text-header sm:text-lg">
+                  <h3 className="font-semibold text-header sm:text-lg">
                     Ship-Ready
                   </h3>
                   <div className="flex flex-col gap-4">
@@ -173,20 +171,50 @@ export function CartSheet() {
                             setDepletedQuantity(desired)
                             setRevertQuantity(() => revert)
                           }}
-                          onUpdateQuantity={(q) =>
-                            updateCartItem.mutate({ id: item.id, quantity: q })
+                          onUpdateQuantity={(q) => {
+                            const currentPreOrderQty =
+                              preOrderItems.find(
+                                (i) => i.variant_id === item.variant_id
+                              )?.quantity || 0
+                            updateVariantQuantity.mutate({
+                              variantId: item.variant_id,
+                              totalQuantity: q + currentPreOrderQty,
+                            })
+                          }}
+                          onDecreaseIntercept={
+                            hasPreOrder
+                              ? () => {
+                                  setBlinkingProductKey(item.variant_id)
+                                  setBlinkingMessage("reduce")
+                                  setTimeout(() => {
+                                    setBlinkingProductKey(null)
+                                    setBlinkingMessage(null)
+                                  }, 3000)
+                                  return true
+                                }
+                              : undefined
                           }
-                          onRemove={() => setItemToRemove(item.id)}
+                          onRemove={() => {
+                            const currentPreOrderQty =
+                              preOrderItems.find(
+                                (i) => i.variant_id === item.variant_id
+                              )?.quantity || 0
+                            setItemToRemove({
+                              variantId: item.variant_id,
+                              newTotal: currentPreOrderQty,
+                              title: item.title,
+                            })
+                          }}
                           disableIncrease={isPending || hasPreOrder}
                         />
                       )
                     })}
                   </div>
                   <div className="flex items-center justify-between border-b-2 border-black/80 pt-2 pb-2">
-                    <span className="text-xs font-semibold text-alternate uppercase sm:text-sm">
+                    <span className="font-medium text-alternate uppercase">
                       TOTAL DUE NOW
                     </span>
-                    <span className="text-sm font-semibold text-alternate sm:text-base">
+                    <span className="font-medium text-alternate">
                       {formatCurrency(
                         parseFloat(summary.total_ship_ready || "0")
                       )}
@@ -198,12 +226,15 @@ export function CartSheet() {
               {preOrderItems.length > 0 && (
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-base font-semibold text-header sm:text-lg">
+                    <h3 className="font-semibold text-header sm:text-lg">
                       Pre-Order
                     </h3>
-                    {blinkingProductKey && (
+                    {blinkingProductKey && blinkingMessage && (
                       <span className="animate-bounce rounded px-1 text-[10px] font-medium text-destructive sm:text-xs">
-                        *Add Quantity Here
+                        *
+                        {blinkingMessage === "add"
+                          ? "Add Quantity Here"
+                          : "Reduce Pre-Order First"}
                       </span>
                     )}
                   </div>
@@ -217,20 +248,37 @@ export function CartSheet() {
                           isBlinking={blinkingProductKey === item.variant_id}
                           isPending={isPending}
                           isPreOrder
-                          onRemove={() => setItemToRemove(item.id)}
-                          onUpdateQuantity={(q) =>
-                            updateCartItem.mutate({ id: item.id, quantity: q })
-                          }
+                          onRemove={() => {
+                            const currentShipReadyQty =
+                              shipReadyItems.find(
+                                (i) => i.variant_id === item.variant_id
+                              )?.quantity || 0
+                            setItemToRemove({
+                              variantId: item.variant_id,
+                              newTotal: currentShipReadyQty,
+                              title: item.title,
+                            })
+                          }}
+                          onUpdateQuantity={(q) => {
+                            const currentShipReadyQty =
+                              shipReadyItems.find(
+                                (i) => i.variant_id === item.variant_id
+                              )?.quantity || 0
+                            updateVariantQuantity.mutate({
+                              variantId: item.variant_id,
+                              totalQuantity: currentShipReadyQty + q,
+                            })
+                          }}
                           disableIncrease={isPending}
                         />
                       )
                     })}
                   </div>
-                  <div className="flex items-center justify-between border-b-2 border-black/80 pt-2 pb-2">
-                    <span className="text-xs font-semibold text-alternate uppercase sm:text-sm">
+                  <div className="flex items-center justify-between border-b-2 border-black/60 pt-2 pb-2">
+                    <span className="font-medium text-alternate uppercase">
                       TOTAL DUE NOW
                     </span>
-                    <span className="text-sm font-semibold text-alternate sm:text-base">
+                    <span className="font-medium text-alternate">
                       {formatCurrency(parseFloat(summary.total_deposit || "0"))}
                     </span>
                   </div>
@@ -240,31 +288,31 @@ export function CartSheet() {
           )}
 
           {allItemsLength > 0 && (
-            <SheetFooter className="flex flex-col sm:flex-col">
+            <SheetFooter className="flex flex-col bg-popover sm:flex-col">
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between border-b border-alternate/10 pb-2">
-                  <span className="text-xs font-medium text-alternate sm:text-sm">
+                  <span className="text-sm font-medium text-alternate">
                     Total Ship Ready
                   </span>
-                  <span className="text-sm font-semibold text-alternate sm:text-base">
+                  <span className="font-medium text-alternate">
                     {formatCurrency(
                       parseFloat(summary.total_ship_ready || "0")
                     )}
                   </span>
                 </div>
                 <div className="flex justify-between border-b border-alternate/10 pb-2">
-                  <span className="text-xs font-medium text-alternate sm:text-sm">
+                  <span className="text-sm font-medium text-alternate">
                     Total Pre-Order Deposit
                   </span>
-                  <span className="text-sm font-semibold text-alternate sm:text-base">
+                  <span className="font-medium text-alternate">
                     {formatCurrency(parseFloat(summary.total_deposit || "0"))}
                   </span>
                 </div>
                 <div className="flex justify-between pb-1">
-                  <span className="text-xs font-medium text-alternate sm:text-sm">
+                  <span className="text-sm font-medium text-alternate">
                     Total Balance Due {nextMonthName}
                   </span>
-                  <span className="text-sm font-semibold text-alternate sm:text-base">
+                  <span className="font-medium text-alternate">
                     {formatCurrency(
                       parseFloat(summary.total_balance_due || "0")
                     )}
@@ -279,11 +327,11 @@ export function CartSheet() {
                   onClick={() => setIsOpen(false)}
                   render={<Link href="/checkout" />}
                 >
-                  <span className="text-base font-medium uppercase">
+                  <span className="font-medium uppercase">
                     Proceed To Checkout
                   </span>
                 </Button>
-                <p className="text-center text-xs font-medium text-alternate sm:text-sm">
+                <p className="text-center text-sm text-alternate">
                   shipping calculated at checkout
                 </p>
               </div>
@@ -297,17 +345,19 @@ export function CartSheet() {
         onClose={() => setItemToRemove(null)}
         onConfirm={() => {
           if (itemToRemove) {
-            removeCartItem.mutate(itemToRemove)
-            setItemToRemove(null)
+            updateVariantQuantity.mutate(
+              {
+                variantId: itemToRemove.variantId,
+                totalQuantity: itemToRemove.newTotal,
+              },
+              {
+                onSuccess: () => setItemToRemove(null),
+              }
+            )
           }
         }}
-        productName={(() => {
-          if (!itemToRemove) return ""
-          const item = [...shipReadyItems, ...preOrderItems].find(
-            (i) => i.id === itemToRemove
-          )
-          return item ? item.title : ""
-        })()}
+        productName={itemToRemove?.title || ""}
+        isPending={updateVariantQuantity.isPending}
       />
 
       {depletedProduct && (
@@ -323,59 +373,32 @@ export function CartSheet() {
             const currentProduct = depletedProduct
             const currentQuantity = depletedQuantity
 
-            setDepletedProduct(null)
-            setRevertQuantity(null)
+            if (!currentProduct) return
 
-            if (currentProduct) {
-              setBlinkingProductKey(currentProduct.sku)
-              setIsGlobalPending(true)
-              try {
-                const maxStock = currentProduct.maxStock
-                const targetShipReadyQty = Math.min(currentQuantity, maxStock)
-                const targetPreOrderQty = Math.max(
-                  0,
-                  currentQuantity - maxStock
-                )
-                const shipReadyItem = shipReadyItems.find(
-                  (i) => i.variant_id === currentProduct.sku
-                )
-                const preOrderItem = preOrderItems.find(
-                  (i) => i.variant_id === currentProduct.sku
-                )
-                if (
-                  shipReadyItem &&
-                  shipReadyItem.quantity !== targetShipReadyQty
-                ) {
-                  await updateCartItem.mutateAsync({
-                    id: shipReadyItem.id,
-                    quantity: targetShipReadyQty,
-                  })
-                } else if (!shipReadyItem && targetShipReadyQty > 0) {
-                  await addCartItem.mutateAsync({
-                    variant_id: currentProduct.sku,
-                    quantity: targetShipReadyQty,
-                  })
-                }
-                if (
-                  preOrderItem &&
-                  preOrderItem.quantity !== targetPreOrderQty
-                ) {
-                  await updateCartItem.mutateAsync({
-                    id: preOrderItem.id,
-                    quantity: targetPreOrderQty,
-                  })
-                } else if (!preOrderItem && targetPreOrderQty > 0) {
-                  await addCartItem.mutateAsync({
-                    variant_id: currentProduct.sku,
-                    quantity: targetPreOrderQty,
-                  })
-                }
-                setTimeout(() => setBlinkingProductKey(null), 3000)
-              } finally {
-                setIsGlobalPending(false)
-              }
+            const currentPreOrderQty =
+              preOrderItems.find((i) => i.variant_id === currentProduct.sku)
+                ?.quantity || 0
+
+            setBlinkingProductKey(currentProduct.sku)
+            setBlinkingMessage("add")
+            setIsGlobalPending(true)
+            try {
+              await updateVariantQuantity.mutateAsync({
+                variantId: currentProduct.sku,
+                totalQuantity: currentQuantity + currentPreOrderQty,
+              })
+              setTimeout(() => {
+                setBlinkingProductKey(null)
+                setBlinkingMessage(null)
+              }, 3000)
+            } finally {
+              setIsGlobalPending(false)
+              setDepletedProduct(null)
+              if (revertQuantity) revertQuantity()
+              setRevertQuantity(null)
             }
           }}
+          isPending={isGlobalPending}
         />
       )}
     </>
