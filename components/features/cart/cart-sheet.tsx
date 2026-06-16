@@ -113,19 +113,22 @@ export function CartSheet() {
           </SheetHeader>
 
           {allItemsLength === 0 ? (
-            <Empty className="animate-in duration-700 ease-out fade-in slide-in-from-bottom-8">
-              <EmptyMedia>
+            <Empty className="animate-in gap-0! duration-700 ease-out fade-in slide-in-from-bottom-8">
+              <EmptyMedia className="flex flex-col gap-4">
                 <div className="relative flex size-16 items-center justify-center rounded-full bg-primary/20">
                   <div className="absolute inset-0 animate-ping rounded-full bg-primary/40 opacity-20 duration-3000" />
                   <IconBag className="size-8 text-white" />
                 </div>
+                <EmptyHeader>
+                  <EmptyTitle className="text-alternate">
+                    Your Cart is Empty
+                  </EmptyTitle>
+                  <EmptyDescription>
+                    Explore our exclusive collection and find your favorite
+                    items.
+                  </EmptyDescription>
+                </EmptyHeader>
               </EmptyMedia>
-              <EmptyHeader>
-                <EmptyTitle>Your Cart is Empty</EmptyTitle>
-                <EmptyDescription>
-                  Explore our exclusive collection and find your favorite items.
-                </EmptyDescription>
-              </EmptyHeader>
               <EmptyContent>
                 <Button
                   type="button"

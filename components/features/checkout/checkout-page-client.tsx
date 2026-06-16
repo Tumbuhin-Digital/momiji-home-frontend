@@ -18,6 +18,7 @@ import {
   EmptyContent,
   EmptyDescription,
   EmptyHeader,
+  EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
 import { PhoneInput } from "@/components/ui/phone-input"
@@ -341,7 +342,7 @@ export default function CheckoutPageClient() {
         try {
           const res =
             await checkoutService.getCheckoutConfirm(checkoutReference)
-          if (res && res.status !== "failed") {
+          if (res && res.orderNumber) {
             window.location.href = `/order-confirmed?checkout_reference=${checkoutReference}`
           }
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -349,7 +350,7 @@ export default function CheckoutPageClient() {
       }
       checkPayment()
 
-      interval = setInterval(checkPayment, 30000)
+      interval = setInterval(checkPayment, 15000)
     }
     return () => clearInterval(interval)
   }, [isWaitingForPayment, checkoutReference])
@@ -361,26 +362,25 @@ export default function CheckoutPageClient() {
   if (allItemsLength === 0) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center px-4">
-        <Empty className="max-w-2xl animate-in border-none bg-transparent text-center duration-700 ease-out fade-in slide-in-from-bottom-8">
-          <div className="mb-8 flex justify-center">
-            <div className="relative flex size-20 items-center justify-center rounded-full bg-primary/20">
+        <Empty className="animate-in gap-0! duration-700 ease-out fade-in slide-in-from-bottom-8">
+          <EmptyMedia className="flex flex-col gap-4">
+            <div className="relative flex size-16 items-center justify-center rounded-full bg-primary/20">
               <div className="absolute inset-0 animate-ping rounded-full bg-primary/40 opacity-20 duration-3000" />
-              <IconBag className="size-10 text-white" />
+              <IconBag className="size-8 text-white" />
             </div>
-          </div>
-          <EmptyHeader className="max-w-none space-y-3 pb-6">
-            <EmptyTitle className="text-3xl font-bold tracking-tight text-header sm:text-4xl md:text-5xl">
-              Your Cart is Empty
-            </EmptyTitle>
-            <EmptyDescription className="text-base text-muted-foreground sm:text-lg">
-              It looks like you haven&apos;t found what you&apos;re looking for
-              yet.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent className="max-w-none pt-2">
+            <EmptyHeader>
+              <EmptyTitle className="text-alternate">
+                Your Cart is Empty
+              </EmptyTitle>
+              <EmptyDescription>
+                Explore our exclusive collection and find your favorite items.
+              </EmptyDescription>
+            </EmptyHeader>
+          </EmptyMedia>
+          <EmptyContent>
             <Button
               type="button"
-              className="h-17.75 w-57.5 gap-2.5 border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
+              className="h-17.75 w-57.5 gap-2.5 rounded-full border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
               render={<Link href="/" />}
             >
               <span className="text-base font-medium uppercase">
