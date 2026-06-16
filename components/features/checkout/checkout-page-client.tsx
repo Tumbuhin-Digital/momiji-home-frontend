@@ -22,6 +22,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { PhoneInput } from "@/components/ui/phone-input"
+import { Spinner } from "@/components/ui/spinner"
 import {
   PreviewCard,
   PreviewCardPopup,
@@ -537,7 +538,7 @@ export default function CheckoutPageClient() {
                         type="text"
                         onPaste={handleAddressPaste}
                         placeholder=" "
-                        className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                        className="w-full bg-transparent pr-10 font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
                       />
                       <label
                         htmlFor="address"
@@ -545,6 +546,35 @@ export default function CheckoutPageClient() {
                       >
                         Address
                       </label>
+                      <div className="absolute top-1/2 right-4 -translate-y-1/2">
+                        <PreviewCard>
+                          <PreviewCardTrigger
+                            render={
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-6 rounded-full"
+                              />
+                            }
+                          >
+                            <InfoIcon className="size-4 text-muted-foreground" />
+                          </PreviewCardTrigger>
+                          <PreviewCardPopup>
+                            <div className="flex max-w-xs flex-col gap-2 p-1">
+                              <h4 className="text-sm font-medium">
+                                Auto-fill Address
+                              </h4>
+                              <p className="text-xs text-pretty text-muted-foreground">
+                                You can paste your full address here, and we
+                                will automatically fill in the City, State, and
+                                ZIP Code for you. Example: 90 Dayton Avenue Ste
+                                10-2G, Passaic, NJ 07055, United States
+                              </p>
+                            </div>
+                          </PreviewCardPopup>
+                        </PreviewCard>
+                      </div>
                     </div>
                     {errors.address && (
                       <p className="mt-1 text-sm text-red-500">
@@ -643,7 +673,7 @@ export default function CheckoutPageClient() {
                             value={value}
                             onChange={onChange}
                             placeholder=" "
-                            className="w-full border-none bg-transparent p-0 font-inter text-base leading-[140%] font-normal text-foreground ring-0 outline-none focus-visible:ring-0 [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                            className="w-full border-none bg-transparent p-0 pr-10 font-inter text-base leading-[140%] font-normal text-foreground ring-0 outline-none focus-visible:ring-0 [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
                           />
                           <label
                             htmlFor="phone"
@@ -651,6 +681,33 @@ export default function CheckoutPageClient() {
                           >
                             Phone
                           </label>
+                          <div className="absolute top-1/2 right-4 -translate-y-1/2">
+                            <PreviewCard>
+                              <PreviewCardTrigger
+                                render={
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-6 rounded-full"
+                                  />
+                                }
+                              >
+                                <InfoIcon className="size-4 text-muted-foreground" />
+                              </PreviewCardTrigger>
+                              <PreviewCardPopup>
+                                <div className="flex max-w-xs flex-col gap-2 p-1">
+                                  <h4 className="text-sm font-medium">
+                                    Phone Number Format
+                                  </h4>
+                                  <p className="text-xs text-pretty text-muted-foreground">
+                                    Please enter your 10-digit US phone number.
+                                    Example: 123-456-7890.
+                                  </p>
+                                </div>
+                              </PreviewCardPopup>
+                            </PreviewCard>
+                          </div>
                         </div>
                       )}
                     />
@@ -663,12 +720,12 @@ export default function CheckoutPageClient() {
                 </div>
               </section>
 
-              {/* Shipping Method */}
+              {/* Pre-Order Shipping Method */}
               {preOrderItems.length > 0 && (
                 <section className="space-y-4">
                   <div className="flex items-center gap-2">
                     <h2 className="text-2xl font-medium text-alternate">
-                      Shipping Method
+                      Pre-Order Shipping Method
                     </h2>
                     <PreviewCard>
                       <PreviewCardTrigger
@@ -676,7 +733,7 @@ export default function CheckoutPageClient() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 rounded-full"
+                            className="size-6 rounded-full"
                           />
                         }
                       >
@@ -685,14 +742,12 @@ export default function CheckoutPageClient() {
                       <PreviewCardPopup>
                         <div className="flex max-w-xs flex-col gap-2 p-1">
                           <h4 className="text-sm font-medium">
-                            Shipping Information
+                            Pre-Order Shipping Information
                           </h4>
                           <p className="text-xs text-pretty text-muted-foreground">
-                            Shipping for &quot;Ship Ready&quot; items will be
-                            calculated directly at checkout on Shopify. Shipping
-                            for &quot;Pre-Order&quot; items is calculated here
-                            and will be due later when the item is ready to
-                            ship.
+                            The shipping cost shown is an estimate. You&apos;ll
+                            pay the shipping fee when your pre-order item is
+                            ready to ship
                           </p>
                         </div>
                       </PreviewCardPopup>
@@ -997,9 +1052,14 @@ export default function CheckoutPageClient() {
                       className="w-full"
                     >
                       <span className="text-base font-medium uppercase">
-                        {createCheckoutMutation.isPending
-                          ? "Processing..."
-                          : "Checkout"}
+                        {createCheckoutMutation.isPending ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Spinner className="text-current" />
+                            Processing...
+                          </span>
+                        ) : (
+                          "Checkout"
+                        )}
                       </span>
                     </Button>
                     <div className="flex w-full justify-center">
