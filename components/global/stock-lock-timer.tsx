@@ -2,22 +2,20 @@
 
 import { useEffect, useState } from "react"
 
-import { Timer } from "lucide-react"
-
 import { Badge } from "@/components/ui/badge"
 
 import { cn } from "@/lib/utils"
 
 interface StockLockTimerProps {
+  className?: string
   expiresAt: number | string
   onExpire?: () => void
-  className?: string
 }
 
 export function StockLockTimer({
+  className,
   expiresAt,
   onExpire,
-  className,
 }: StockLockTimerProps) {
   const [timeLeft, setTimeLeft] = useState("")
 
@@ -58,13 +56,12 @@ export function StockLockTimer({
     <Badge
       variant="destructive"
       className={cn(
-        "flex h-7.5 w-full max-w-89.5 items-center justify-center gap-2.5 rounded-full! px-4 py-3 font-semibold",
+        "flex h-7.5 w-fit max-w-89.5 items-center justify-center gap-1.5 rounded-full! bg-destructive/20! px-4 py-3 font-semibold text-destructive/80",
         className
       )}
     >
-      <Timer className="size-4" />
       <span className="truncate text-xs">
-        Complete your payment within {timeLeft}
+        Complete Your Payment Within {timeLeft}
       </span>
     </Badge>
   )

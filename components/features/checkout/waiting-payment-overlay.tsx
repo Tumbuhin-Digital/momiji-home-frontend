@@ -3,13 +3,7 @@
 import { Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 
 import { StockLockTimer } from "@/components/global/stock-lock-timer"
 
@@ -23,7 +17,6 @@ interface WaitingPaymentOverlayProps {
 
 export function WaitingPaymentOverlay({
   isOpen,
-  onOpenChange,
   checkoutUrl,
   expiresAt,
   onExpire,
@@ -31,56 +24,45 @@ export function WaitingPaymentOverlay({
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent
-        className="rounded-2xl border-none shadow-2xl sm:max-w-md"
+        className="rounded-[24px] border-none p-6 sm:max-w-115"
         showCloseButton={false}
       >
-        <DialogHeader className="space-y-4 pt-4 pb-2">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10">
-            <Loader2 className="size-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-8 text-center">
+          <div className="relative flex size-14 items-center justify-center rounded-full bg-primary/5">
+            <div className="absolute inset-0 animate-ping rounded-full bg-primary/10 opacity-50 duration-3000" />
+            <Loader2
+              className="relative z-10 size-8 animate-spin text-primary"
+              strokeWidth={2.5}
+            />
           </div>
-          <div className="space-y-2">
-            <DialogTitle className="text-center text-2xl font-semibold tracking-tight text-header">
-              Waiting for Payment
-            </DialogTitle>
-            <DialogDescription className="text-center text-base">
-              Please complete your checkout in the securely opened Shopify
-              window.
-            </DialogDescription>
-          </div>
-        </DialogHeader>
 
-        <div className="flex flex-col items-center justify-center gap-3 p-6">
+          <div className="flex w-full flex-col items-center gap-2 text-center">
+            <p className="font-medium text-primary">Securing Your Order</p>
+            <h2 className="text-2xl text-alternate">Taking you to Payment</h2>
+            <p className="max-w-85 text-alternate/60">
+              We&apos;re setting up a secure checkout for your order. This
+              usually takes just a moment.
+            </p>
+          </div>
+
           {expiresAt && (
-            <div className="flex w-fit justify-center">
+            <div className="flex w-full justify-center">
               <StockLockTimer expiresAt={expiresAt} onExpire={onExpire} />
             </div>
           )}
 
-          <div className="rounded-md bg-muted p-4 text-center">
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Once you complete your payment on Shopify, this window will
-              automatically redirect you to your receipt.
+          <div className="flex w-full flex-col items-center gap-2.25">
+            <p className="text-center text-alternate">
+              Not redirected automatically?
             </p>
-          </div>
-
-          <div className="flex w-full flex-col gap-2 pt-2">
             <Button
               type="button"
-              size="xl"
               onClick={() => {
                 if (checkoutUrl) window.open(checkoutUrl, "_blank")
               }}
-              className="w-full rounded-full"
+              className="h-13! w-full rounded-[6px] text-lg font-medium"
             >
-              Reopen Payment Window
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-auto bg-transparent p-2 text-destructive hover:bg-transparent hover:opacity-80"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel & Return
+              Take me to payment
             </Button>
           </div>
         </div>
