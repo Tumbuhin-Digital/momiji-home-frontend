@@ -1,19 +1,7 @@
-export interface ShippingMethod {
+export interface ShippingRate {
   cost: string
-  estimatedArrival: string
-  id: string
-  label: string
-}
-
-export interface ShippingMethodsResult {
   currency: string
-  methods: ShippingMethod[]
-}
-
-export interface ShippingCalculateInput {
-  address_id?: number
-  country?: string
-  province?: string
-  shipping_method: string
-  zip?: string
+  deliveryDays: number
+  label: string
+  serviceCode: string
 }

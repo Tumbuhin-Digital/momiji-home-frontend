@@ -1,13 +1,9 @@
-export interface ShippingMethodDto {
+export interface ShippingRateDto {
   cost: string
-  estimated_arrival: string
-  id: string
-  label: string
-}
-
-export interface ShippingMethodsResultDto {
   currency: string
-  methods: ShippingMethodDto[]
+  delivery_days: number
+  label: string
+  service_code: string
 }
 
 export interface ValidateAddressRequest {

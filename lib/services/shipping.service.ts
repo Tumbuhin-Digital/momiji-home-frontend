@@ -2,41 +2,37 @@ import { apiClient } from "@/lib/api"
 
 import type { BaseResponse } from "@/types/core"
 import type {
-  ShippingCalculateInput,
-  ShippingMethodsResult,
-  ShippingMethodsResultDto,
+  ShippingRate,
+  ShippingRateDto,
   ValidateAddressRequest,
 } from "@/types/shipping"
 
-function mapShippingMethodsToDomain(
-  dto: ShippingMethodsResultDto
-): ShippingMethodsResult {
+function mapShippingRateDtoToDomain(dto: ShippingRateDto): ShippingRate {
   return {
+    cost: dto.cost,
     currency: dto.currency,
-    methods: dto.methods.map((m) => ({
-      id: m.id,
-      label: m.label,
-      cost: m.cost,
-      estimatedArrival: m.estimated_arrival,
-    })),
+    deliveryDays: dto.delivery_days,
+    label: dto.label,
+    serviceCode: dto.service_code,
   }
 }
 
-async function getMethods(): Promise<ShippingMethodsResult> {
-  const response =
-    await apiClient.get<BaseResponse<ShippingMethodsResultDto>>(
-      "/shipping/methods"
-    )
+async function getShippingRates(
+  zip: string,
+  country?: string
+): Promise<ShippingRate[]> {
+  const response = await apiClient.get<BaseResponse<ShippingRateDto[]>>(
+    "/shipping/rates",
+    {
+      params: { zip, country },
+    }
+  )
 
   if (!response.data) {
-    throw new Error("Failed to load shipping methods")
+    throw new Error("Failed to load shipping rates")
   }
 
-  return mapShippingMethodsToDomain(response.data)
-}
-
-async function calculateShipping(input: ShippingCalculateInput): Promise<void> {
-  await apiClient.post<BaseResponse<void>>("/shipping/calculate", input)
+  return response.data.map(mapShippingRateDtoToDomain)
 }
 
 async function validateAddress(data: ValidateAddressRequest): Promise<void> {
@@ -44,7 +40,6 @@ async function validateAddress(data: ValidateAddressRequest): Promise<void> {
 }
 
 export const shippingService = {
-  calculateShipping,
-  getMethods,
+  getShippingRates,
   validateAddress,
 }

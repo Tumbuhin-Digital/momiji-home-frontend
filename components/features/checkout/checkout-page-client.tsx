@@ -50,11 +50,7 @@ import {
   useCheckoutSummaryMutation,
   useCreateCheckout,
 } from "@/hooks/use-checkout"
-import {
-  useCalculateShipping,
-  useShippingMethods,
-  useValidateAddress,
-} from "@/hooks/use-shipping"
+import { useShippingRates, useValidateAddress } from "@/hooks/use-shipping"
 import { checkoutService } from "@/lib/services/checkout.service"
 import { formatCurrency } from "@/lib/utils"
 
@@ -127,7 +123,6 @@ export default function CheckoutPageClient() {
 
   const { data: cartData, isLoading: isCartLoading } = useCart()
 
-  const calculateShippingMutation = useCalculateShipping()
   const checkoutSummaryMutation = useCheckoutSummaryMutation()
   const createCheckoutMutation = useCreateCheckout()
   const validateAddressMutation = useValidateAddress()
@@ -136,9 +131,13 @@ export default function CheckoutPageClient() {
   const preOrderItems = cartData?.pre_order || []
   const allItemsLength = shipReadyItems.length + preOrderItems.length
 
-  const { data: shippingMethodsResponse, isPending: isLoadingShipping } =
-    useShippingMethods({ enabled: allItemsLength > 0 })
-  const shippingMethods = shippingMethodsResponse?.methods || []
+  const { data: shippingRates, isPending: isLoadingShipping } =
+    useShippingRates(formValues.zipCode || "", formValues.country || "US", {
+      enabled:
+        preOrderItems.length > 0 &&
+        !!formValues.zipCode &&
+        formValues.zipCode.length >= 5,
+    })
 
   const isInitialLoading = isCartLoading
 
@@ -165,16 +164,6 @@ export default function CheckoutPageClient() {
 
     const doRecalculate = async () => {
       try {
-        if (preOrderItems.length > 0 && formValues.shippingMethod) {
-          await calculateShippingMutation.mutateAsync({
-            address_id: 0,
-            country: formValues.country!,
-            province: formValues.state || "",
-            zip: formValues.zipCode!,
-            shipping_method: formValues.shippingMethod,
-          })
-        }
-
         const payload: { address_id: number; shipping_method?: string } = {
           address_id: 0,
         }
@@ -759,32 +748,39 @@ export default function CheckoutPageClient() {
                   ) : (
                     <div className="overflow-hidden rounded-lg border bg-white">
                       <RadioGroup
+                        value={formValues.shippingMethod}
                         onValueChange={(v) => {
                           setValue("shippingMethod", v)
                           clearErrors("shippingMethod")
                         }}
-                        value={formValues.shippingMethod}
-                        className="gap-0"
+                        className="flex flex-col gap-0"
                       >
-                        {shippingMethods.map((method, idx) => (
+                        {(shippingRates || []).map((rate, idx) => (
                           <div
-                            key={method.id}
-                            className={`flex items-center justify-between p-4 ${idx !== shippingMethods.length - 1 ? "border-b" : ""}`}
+                            key={rate.serviceCode}
+                            className={`flex items-center justify-between p-4 ${idx !== (shippingRates?.length || 0) - 1 ? "border-b" : ""}`}
                           >
-                            <div className="flex items-center space-x-3">
+                            <div className="flex items-center gap-3">
                               <RadioGroupItem
-                                value={method.id}
-                                id={method.id}
+                                value={rate.serviceCode}
+                                id={`shipping-${rate.serviceCode}`}
                               />
                               <label
-                                htmlFor={method.id}
-                                className="cursor-pointer text-sm font-medium"
+                                htmlFor={`shipping-${rate.serviceCode}`}
+                                className="flex cursor-pointer flex-col gap-1"
                               >
-                                {method.label}
+                                <span className="font-medium text-slate-800">
+                                  {rate.label}
+                                </span>
+                                <span className="text-sm text-slate-500">
+                                  Estimated Delivery: {rate.deliveryDays} Days
+                                </span>
                               </label>
                             </div>
-                            <span className="text-sm font-medium">
-                              {formatCurrency(parseFloat(method.cost))}
+                            <span className="font-medium text-slate-800">
+                              {rate.cost === "0" || rate.cost === "0.00"
+                                ? "Free"
+                                : formatCurrency(parseFloat(rate.cost))}
                             </span>
                           </div>
                         ))}
@@ -999,8 +995,8 @@ export default function CheckoutPageClient() {
                         Total Due now
                       </h3>
                       <div className="flex items-center gap-3">
-                        {(calculateShippingMutation.isPending ||
-                          checkoutSummaryMutation.isPending) && (
+                        {(checkoutSummaryMutation.isPending ||
+                          isParsingAddress) && (
                           <Loader2 className="size-5 animate-spin text-alternate/50" />
                         )}
                         <span className="text-xl font-medium text-black sm:text-2xl">
@@ -1025,8 +1021,8 @@ export default function CheckoutPageClient() {
                             Due Later
                           </h3>
                           <div className="flex items-center gap-3">
-                            {(calculateShippingMutation.isPending ||
-                              checkoutSummaryMutation.isPending) && (
+                            {(checkoutSummaryMutation.isPending ||
+                              isParsingAddress) && (
                               <Loader2 className="size-5 animate-spin text-alternate/50" />
                             )}
                             <span className="text-xl font-medium text-black sm:text-2xl">
