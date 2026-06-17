@@ -11,3 +11,21 @@ export interface PreorderSettlement {
   paidAt: string | null
   status: SettlementStatus
 }
+
+export interface PreorderGroupSettlement {
+  balanceDue: string
+  batchLabel: string
+  customerEmail: string
+  dueDate: string
+  orderId: string
+  orderNumber: string
+  quantity: number
+  settlementId: string
+  settlementStatus: SettlementStatus
+}
+
+export interface PreorderGroup {
+  productName: string
+  settlements: PreorderGroupSettlement[]
+  totalQuantity: number
+}

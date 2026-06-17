@@ -3,6 +3,10 @@ import { apiClient } from "@/lib/api"
 
 import type { BaseResponse } from "@/types/core"
 import type {
+  PreorderGroup,
+  PreorderGroupResponseDto,
+  PreorderGroupSettlement,
+  PreorderGroupSettlementDto,
   PreorderQueryParams,
   PreorderSettlement,
   PreorderSettlementDto,
@@ -25,22 +29,45 @@ function mapPreorderDtoToDomain(
   }
 }
 
+function mapGroupSettlementDtoToDomain(
+  dto: PreorderGroupSettlementDto
+): PreorderGroupSettlement {
+  return {
+    balanceDue: dto.balance_due,
+    batchLabel: dto.batch_label,
+    customerEmail: dto.customer_email,
+    dueDate: dto.due_date,
+    orderId: dto.order_id,
+    orderNumber: dto.order_number,
+    quantity: dto.quantity,
+    settlementId: dto.settlement_id,
+    settlementStatus: dto.settlement_status as SettlementStatus,
+  }
+}
+
+function mapPreorderGroupDtoToDomain(
+  dto: PreorderGroupResponseDto
+): PreorderGroup {
+  return {
+    productName: dto.product_name,
+    settlements: dto.settlements.map(mapGroupSettlementDtoToDomain),
+    totalQuantity: dto.total_quantity,
+  }
+}
+
 async function getSettlements(
   params: PreorderQueryParams = {}
-): Promise<PreorderSettlement[]> {
+): Promise<PreorderGroup[]> {
   const response = await apiClient.get<BaseResponse<any>>("/preorders", {
     params,
   })
 
   const responseData = response.data || {}
-  const items = Array.isArray(responseData)
+  const items: PreorderGroupResponseDto[] = Array.isArray(responseData)
     ? responseData
-    : (responseData.settlements ??
-      responseData.preorders ??
-      responseData.data ??
-      [])
+    : (responseData.preorders ?? responseData.data ?? [])
 
-  return items.map(mapPreorderDtoToDomain)
+  return items.map(mapPreorderGroupDtoToDomain)
 }
 
 async function getSettlementById(
@@ -81,7 +108,17 @@ async function paidSettlement(id: string): Promise<PreorderSettlement> {
   return mapPreorderDtoToDomain(response.data)
 }
 
+async function exportPreorders(
+  params: { batch_label?: string; status?: string } = {}
+): Promise<Blob> {
+  return await apiClient.get<Blob>("/preorders/export", {
+    params,
+    responseType: "blob",
+  })
+}
+
 export const preorderService = {
+  exportPreorders,
   getSettlementById,
   getSettlements,
   invoiceSettlement,

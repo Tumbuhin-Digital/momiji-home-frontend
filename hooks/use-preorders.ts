@@ -5,6 +5,13 @@ import { preorderService } from "@/lib/services/preorder.service"
 
 import type { PreorderQueryParams } from "@/types/preorders"
 
+export function useExportPreorders() {
+  return useMutation({
+    mutationFn: (params: { batch_label?: string; status?: string } = {}) =>
+      preorderService.exportPreorders(params),
+  })
+}
+
 export function useInvoiceSettlement() {
   const queryClient = useQueryClient()
 
