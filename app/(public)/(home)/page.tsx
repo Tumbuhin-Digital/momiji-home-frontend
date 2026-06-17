@@ -34,14 +34,13 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-[url('/images/assets/bg-card-in-stock.png')] bg-cover bg-bottom transition-transform duration-1000 group-hover:scale-105" />
           <div className="absolute inset-0 bg-black/20" />
           <div className="absolute inset-0 flex flex-col items-center justify-start pt-6 text-center">
-            <Link href="/shop-in-stock">
+            <Link href="/shop-ship-ready">
               <Button
                 type="button"
-                className="h-17.75 w-57.5 gap-2.5 rounded-full p-6 backdrop-blur-md transition-all duration-200 hover:scale-105"
+                size="2xl"
+                className="w-57.5 rounded-full uppercase hover:bg-primary sm:h-17.75!"
               >
-                <span className="text-base font-medium uppercase">
-                  SHOP SHIP-READY
-                </span>
+                SHOP SHIP-READY
               </Button>
             </Link>
           </div>
@@ -53,11 +52,10 @@ export default function HomePage() {
             <Link href="/shop-preorder">
               <Button
                 type="button"
-                className="h-17.75 w-57.5 gap-2.5 rounded-full p-6 backdrop-blur-md transition-all duration-200 hover:scale-105"
+                size="2xl"
+                className="w-57.5 rounded-full uppercase hover:bg-primary sm:h-17.75!"
               >
-                <span className="text-base font-medium uppercase">
-                  SHOP PRE-ORDER
-                </span>
+                SHOP PRE-ORDER
               </Button>
             </Link>
           </div>

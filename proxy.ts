@@ -8,18 +8,18 @@ const PUBLIC_ROUTES = [
   "/api",
   "/auth/login",
   "/cart",
-  "/order-confirmed",
-  "/shop-in-stock",
-  "/shop-preorder",
   "/checkout",
+  "/order-confirmed",
+  "/shop-preorder",
+  "/shop-ship-ready",
 ]
 
 const BUYER_ROUTES = [
   "/cart",
-  "/order-confirmed",
-  "/shop-in-stock",
-  "/shop-preorder",
   "/checkout",
+  "/order-confirmed",
+  "/shop-preorder",
+  "/shop-ship-ready",
 ]
 
 export function proxy(request: NextRequest) {
