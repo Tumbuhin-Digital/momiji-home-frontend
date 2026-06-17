@@ -39,11 +39,9 @@ export function ProductCatalogPageClient({
   bottomNavText,
 }: ProductCatalogPageClientProps) {
   const [isInitialized, setIsInitialized] = useState(false)
-  const [windowWidth, setWindowWidth] = useState(0)
+  const [itemsPerPage, setItemsPerPage] = useState(8)
 
   const observerTarget = useRef<HTMLDivElement>(null)
-
-  const itemsPerPage = windowWidth >= 1280 ? 6 : windowWidth >= 768 ? 6 : 8
 
   const fulfillmentType =
     category === "ship-ready"
@@ -53,27 +51,28 @@ export function ProductCatalogPageClient({
         : undefined
 
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useInfiniteProducts({
-      fulfillment_type: fulfillmentType,
-      limit: itemsPerPage,
-    })
+    useInfiniteProducts(
+      {
+        fulfillment_type: fulfillmentType,
+        limit: itemsPerPage,
+      },
+      {
+        enabled: isInitialized,
+      }
+    )
 
   const allVariants = data?.pages.flatMap((page) => page.data) ?? []
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsInitialized(true)
       if (typeof window !== "undefined") {
-        setWindowWidth(window.innerWidth)
+        setItemsPerPage(window.innerWidth >= 1280 ? 8 : 4)
       }
+      setIsInitialized(true)
     }, 0)
-
-    const handleResize = () => setWindowWidth(window.innerWidth)
-    window.addEventListener("resize", handleResize)
 
     return () => {
       clearTimeout(timer)
-      window.removeEventListener("resize", handleResize)
     }
   }, [])
 
@@ -106,8 +105,20 @@ export function ProductCatalogPageClient({
         </header>
         <div className="grid w-full grid-cols-1 gap-4 px-4 xl:grid-cols-2 xl:gap-6 xl:px-10">
           {Array.from({ length: itemsPerPage }).map((_, idx) => (
-            <ProductCatalogCardSkeleton key={idx} />
+            <div key={idx} className="h-full py-2.5">
+              <ProductCatalogCardSkeleton />
+            </div>
           ))}
+        </div>
+        <div className="flex items-center justify-center pb-2">
+          <Button
+            disabled
+            type="button"
+            size="2xl"
+            className="w-57.5 rounded-full uppercase sm:h-17.75!"
+          >
+            {bottomNavText}
+          </Button>
         </div>
       </div>
     )
@@ -163,11 +174,9 @@ export function ProductCatalogPageClient({
 
           {isFetchingNextPage && (
             <>
-              {Array.from({ length: windowWidth >= 768 ? 3 : 2 }).map(
-                (_, idx) => (
-                  <ProductCatalogCardSkeleton key={`skeleton-load-${idx}`} />
-                )
-              )}
+              {Array.from({ length: 2 }).map((_, idx) => (
+                <ProductCatalogCardSkeleton key={`skeleton-load-${idx}`} />
+              ))}
             </>
           )}
         </div>
@@ -185,12 +194,11 @@ export function ProductCatalogPageClient({
       <div className="flex items-center justify-center pb-2">
         <Button
           type="button"
-          className="w-57.5 gap-2.5 rounded-full p-6 backdrop-blur-md transition-all duration-200 hover:scale-105 sm:h-17.75"
+          size="2xl"
+          className="w-57.5 rounded-full uppercase sm:h-17.75!"
           render={<Link href={bottomNavLink} />}
         >
-          <span className="text-base font-medium uppercase">
-            {bottomNavText}
-          </span>
+          {bottomNavText}
         </Button>
       </div>
     </div>
