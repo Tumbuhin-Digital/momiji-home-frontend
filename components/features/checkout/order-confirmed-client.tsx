@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { Check, Clock, Loader2, Mail } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -33,6 +34,12 @@ export default function OrderConfirmedClient({
   const { data, isLoading, error } = useCheckoutConfirm(checkoutReference)
   const clearCart = useClearCart()
   const setSessionId = useCartStore((state) => state.setSessionId)
+
+  useEffect(() => {
+    if (data) {
+      setSessionId(null, null)
+    }
+  }, [data, setSessionId])
 
   const handleContinueShopping = () => {
     clearCart.mutate()
