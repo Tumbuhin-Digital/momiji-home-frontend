@@ -1,32 +1,14 @@
 "use client"
 
-import { toastManager } from "@/components/ui/toast"
-
 import { Button } from "@/components/ui/button"
 
 import { OrderManagementTable } from "@/components/features/orders/order-management-table"
-import { Iconsax3dRotate } from "@/public/icons/iconsax-3d-rotate"
 
 import { useOrders } from "@/hooks/use-orders"
-import { useForceSync } from "@/hooks/use-sync"
 import { formatLastSynced } from "@/lib/utils"
 
 export function OrderManagementClient() {
-  const { data: orders, isLoading, isFetching, isError, refetch } = useOrders()
-  const forceSyncMutation = useForceSync()
-
-  const isSyncing = isFetching || forceSyncMutation.isPending
-
-  const handleSync = async () => {
-    try {
-      await forceSyncMutation.mutateAsync()
-      toastManager.add({
-        title: "Success",
-        description: "Products synced successfully",
-        type: "success",
-      })
-    } catch {}
-  }
+  const { data: orders, isLoading, isError, refetch } = useOrders()
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -39,17 +21,6 @@ export function OrderManagementClient() {
             {formatLastSynced(new Date())}
           </p>
         </div>
-        <Button
-          type="button"
-          onClick={handleSync}
-          disabled={isSyncing}
-          className="h-10 w-full gap-1.5 bg-primary/20 px-4 py-2 text-primary hover:bg-primary/30 hover:text-primary sm:w-fit"
-        >
-          <Iconsax3dRotate
-            className={`size-6 ${isSyncing ? "animate-spin" : ""}`}
-          />
-          <span className="text-sm font-medium">Syncing Shopify Product</span>
-        </Button>
       </div>
 
       {isError ? (

@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
+import { formatCurrency } from "@/lib/utils"
 
 import type { AcceptOrderModalProps } from "@/types/orders"
 
@@ -23,13 +24,6 @@ export function AcceptOrderModal({
   onConfirm,
   isConfirming,
 }: AcceptOrderModalProps) {
-  const formatCurrency = (value: number, currency: string) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(value)
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="overflow-hidden border-none p-0 shadow-2xl ring-1 ring-foreground/5 sm:max-w-125">
@@ -84,10 +78,7 @@ export function AcceptOrderModal({
                     </p>
                   </div>
                   <Badge variant="secondary" className="text-[10px] font-black">
-                    {formatCurrency(
-                      item.unitPrice * item.quantity,
-                      item.currency
-                    )}
+                    {formatCurrency(item.unitPrice * item.quantity)} USD
                   </Badge>
                 </div>
               ))}
@@ -102,10 +93,7 @@ export function AcceptOrderModal({
                 DP Collected
               </p>
               <p className="text-xl font-black tracking-tighter">
-                {formatCurrency(
-                  order.preOrderInfo?.dpAmount ?? 0,
-                  order.currency
-                )}
+                {formatCurrency(order.preOrderInfo?.dpAmount ?? 0)} USD
               </p>
             </div>
             <div className="space-y-1">
@@ -113,10 +101,7 @@ export function AcceptOrderModal({
                 Balance Pending
               </p>
               <p className="text-xl font-black tracking-tighter">
-                {formatCurrency(
-                  order.preOrderInfo?.remainingAmount ?? 0,
-                  order.currency
-                )}
+                {formatCurrency(order.preOrderInfo?.remainingAmount ?? 0)} USD
               </p>
             </div>
           </div>

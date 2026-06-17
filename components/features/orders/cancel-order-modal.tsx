@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
+import { formatCurrency } from "@/lib/utils"
 
 import type { CancelOrderModalProps } from "@/types/orders"
 
@@ -23,13 +24,6 @@ export function CancelOrderModal({
   onConfirm,
   isConfirming,
 }: CancelOrderModalProps) {
-  const formatCurrency = (value: number, currency: string) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(value)
-  }
-
   const isExpired = order.preOrderState === "EXPIRED"
   const refundPercentage = isExpired ? 0.8 : 1.0
   const refundAmount = order.totalPrice * refundPercentage
@@ -75,14 +69,14 @@ export function CancelOrderModal({
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Original Total</span>
                 <span className="font-medium">
-                  {formatCurrency(order.totalPrice, order.currency)}
+                  {formatCurrency(order.totalPrice)} USD
                 </span>
               </div>
               {adminFee > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Admin Fee (20%)</span>
                   <span className="font-medium text-destructive">
-                    -{formatCurrency(adminFee, order.currency)}
+                    -{formatCurrency(adminFee)} USD
                   </span>
                 </div>
               )}
@@ -90,7 +84,7 @@ export function CancelOrderModal({
               <div className="flex justify-between font-black">
                 <span>Net Refund</span>
                 <span className="text-lg text-primary">
-                  {formatCurrency(refundAmount, order.currency)}
+                  {formatCurrency(refundAmount)} USD
                 </span>
               </div>
             </div>

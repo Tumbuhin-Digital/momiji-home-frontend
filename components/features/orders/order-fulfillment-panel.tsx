@@ -28,6 +28,7 @@ import {
   useUpdateItemStep,
   useUpdateItemTracking,
 } from "@/hooks/use-orders"
+import { formatCurrency } from "@/lib/utils"
 
 import type { Order } from "@/types/orders"
 import type { OrderLineItem } from "@/types/orders/entities"
@@ -136,13 +137,6 @@ export function OrderFulfillmentPanel({
     }
   }
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(amount)
-  }
-
   const currentStep = items.reduce(
     (max, item) => Math.max(max, item.fulfillmentStep || 1),
     1
@@ -161,8 +155,7 @@ export function OrderFulfillmentPanel({
           {item.title}
         </p>
         <p className="mt-1 text-sm text-slate-500">
-          {item.quantity} pcs -{" "}
-          {formatCurrency(item.unitPrice * item.quantity, item.currency)}
+          {item.quantity} pcs - {formatCurrency(item.unitPrice)} USD
         </p>
       </div>
     </div>

@@ -16,6 +16,7 @@ import {
 import { OrderFulfillmentPanel } from "@/components/features/orders/order-fulfillment-panel"
 
 import { useOrderById } from "@/hooks/use-orders"
+import { formatCurrency } from "@/lib/utils"
 
 import type { Order } from "@/types/orders"
 
@@ -48,13 +49,6 @@ export function ManageOrderModal({
     }
   }, [isOpen, order?.id])
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(amount)
-  }
-
   const totalItems = currentOrder.lineItems.reduce(
     (acc, item) => acc + item.quantity,
     0
@@ -85,8 +79,7 @@ export function ManageOrderModal({
               {currentOrder.orderNumber}
             </DialogTitle>
             <span className="text-lg text-[#7F8C8D]">
-              {totalItems} items -{" "}
-              {formatCurrency(currentOrder.totalPrice, currentOrder.currency)}
+              {totalItems} items - {formatCurrency(currentOrder.totalPrice)} USD
             </span>
           </div>
           <Button
