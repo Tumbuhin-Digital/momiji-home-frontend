@@ -57,7 +57,7 @@ function mapPreorderGroupDtoToDomain(
 
 async function getSettlements(
   params: PreorderQueryParams = {}
-): Promise<PreorderGroup[]> {
+): Promise<{ data: PreorderGroup[]; total: number }> {
   const response = await apiClient.get<BaseResponse<any>>("/preorders", {
     params,
   })
@@ -67,7 +67,12 @@ async function getSettlements(
     ? responseData
     : (responseData.preorders ?? responseData.data ?? [])
 
-  return items.map(mapPreorderGroupDtoToDomain)
+  const total = responseData.total ?? items.length
+
+  return {
+    data: items.map(mapPreorderGroupDtoToDomain),
+    total,
+  }
 }
 
 async function getSettlementById(
