@@ -268,7 +268,7 @@ export default function ProductsPageClient() {
                     setSort(null)
                     setPage(1)
                   }}
-                  className="h-11! gap-2 rounded-[6px] border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
+                  className="size-11! gap-2 rounded-[6px] border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
                 >
                   <RotateCcw className="size-5" strokeWidth={1.5} />
                 </Button>
