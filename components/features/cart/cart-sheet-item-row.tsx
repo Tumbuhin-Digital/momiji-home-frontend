@@ -88,7 +88,7 @@ export function CartSheetItemRow({
     <div
       className={cn(
         "flex items-start gap-4 transition-colors duration-300",
-        isBlinking && "animate-pulse rounded-md bg-primary/20 p-2"
+        isBlinking && "animate-pulse rounded bg-primary/20 p-2"
       )}
     >
       <div className="relative aspect-square w-20 shrink-0 overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5 sm:w-24">
@@ -160,7 +160,7 @@ export function CartSheetItemRow({
           <button
             type="button"
             onClick={onRemove}
-            className="relative cursor-pointer text-xs text-alternate after:absolute after:-bottom-1 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-100 after:bg-alternate after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-0 sm:text-base"
+            className="relative cursor-pointer text-xs text-alternate after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-100 after:bg-alternate after:transition-transform after:duration-300 after:ease-out hover:after:scale-x-0 sm:text-base"
           >
             Remove
           </button>

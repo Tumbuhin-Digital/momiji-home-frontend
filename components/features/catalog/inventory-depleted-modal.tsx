@@ -30,13 +30,13 @@ export function InventoryDepletedModal({
     <Dialog open={isOpen}>
       <DialogContent className="sm:max-w-150" showCloseButton={false}>
         <DialogPanel className="flex flex-col items-center gap-6 p-4! sm:flex-row">
-          <div className="relative mx-auto flex size-32 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#F8F9FA] sm:size-40">
+          <div className="relative mx-auto flex size-32 shrink-0 items-center justify-center overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5 sm:size-40">
             {product?.imageUrl ? (
               <Image
                 src={product.imageUrl}
                 alt={product?.title || "Product Image"}
                 fill
-                className="object-contain p-2 mix-blend-multiply"
+                className="object-contain mix-blend-multiply"
               />
             ) : (
               <Boxes className="size-8 text-slate-300" />

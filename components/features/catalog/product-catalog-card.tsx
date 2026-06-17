@@ -165,17 +165,9 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
 
   return (
     <>
-      <Card className="group flex h-auto min-h-23.75 w-full cursor-pointer flex-row items-stretch overflow-hidden rounded-lg border-none bg-card transition-all duration-300">
+      <Card className="group flex h-auto min-h-23.75 w-full cursor-pointer flex-row items-stretch gap-3 overflow-hidden rounded border-none bg-card p-3 transition-all duration-300">
         {/* Image */}
-        <div className="relative h-23.75 w-27 shrink-0 overflow-hidden rounded-l-lg bg-linear-to-b from-white via-white to-black/5">
-          {(!isShipReady || isBackendPreOrder || isConvertedToPreorder) && (
-            <Badge
-              size="sm"
-              className="absolute top-1 left-1 z-10 rounded-sm text-xs uppercase"
-            >
-              Pre-Order
-            </Badge>
-          )}
+        <div className="relative h-23.75 w-27 shrink-0 overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5">
           {product.imageUrl ? (
             <Image
               src={product.imageUrl}
@@ -195,19 +187,18 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         </div>
 
         {/* Content */}
-        <div className="flex flex-1 flex-col justify-center px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div className="mb-2 flex-1 sm:mb-0 sm:pr-4">
-            {isShipReady && (isBackendPreOrder || isConvertedToPreorder) && (
-              <span className="block text-xs font-medium text-destructive sm:text-sm">
+        <div className="justify-cente flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-1 flex-col gap-2">
+            {(!isShipReady || isBackendPreOrder || isConvertedToPreorder) && (
+              <Badge className="h-5.5! w-fit rounded p-1 text-xs font-normal! uppercase">
                 Pre-Order
-              </span>
+              </Badge>
             )}
-            <h3 className="text-left text-xs text-alternate capitalize sm:text-base">
+            <h3 className="text-left text-sm text-alternate capitalize sm:text-xl">
               {product.title}
             </h3>
           </div>
-
-          <div className="flex items-center justify-between gap-4 sm:justify-end sm:gap-6">
+          <div className="flex items-center justify-between gap-3 sm:justify-end">
             <div className="flex flex-col text-left sm:text-right">
               <span className="text-xs font-semibold text-alternate sm:text-lg">
                 WS$ {formatCurrency(price)}
@@ -216,7 +207,6 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
                 RPP ${formatCurrency(rpp)}
               </span>
             </div>
-
             <div className="flex items-center justify-end">
               <QuantitySelector
                 quantity={localQuantity}
@@ -225,7 +215,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
                 onChange={handleCustomChange}
                 disabled={isPending}
                 isPending={isPending}
-                className="h-9 w-27 sm:w-32.5"
+                className="h-9 w-27 border-none sm:w-32.5"
               />
             </div>
           </div>

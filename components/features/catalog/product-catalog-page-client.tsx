@@ -105,7 +105,7 @@ export function ProductCatalogPageClient({
         </header>
         <div className="grid w-full grid-cols-1 gap-4 px-4 xl:grid-cols-2 xl:gap-6 xl:px-10">
           {Array.from({ length: itemsPerPage }).map((_, idx) => (
-            <div key={idx} className="h-full py-2.5">
+            <div key={idx} className="h-full xl:py-2.5">
               <ProductCatalogCardSkeleton />
             </div>
           ))}
@@ -166,7 +166,7 @@ export function ProductCatalogPageClient({
               }}
               className="h-full"
             >
-              <div className="h-full py-2.5">
+              <div className="h-full xl:py-2.5">
                 <ProductCatalogCard product={product} />
               </div>
             </motion.div>
