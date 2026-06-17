@@ -8,7 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   Edit2,
-  Filter,
+  ListFilter,
   Loader2,
   RotateCcw,
   Search,
@@ -170,18 +170,24 @@ export default function ProductsPageClient() {
             type="button"
             size="xl"
             onClick={() => setCsvModalOpen(true)}
-            className="w-full sm:w-fit"
+            className="h-13! w-full sm:w-fit"
           >
             <Upload className="size-4" />
-            Upload CSV
+            Upload Dimension
           </Button>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2">
-            <InputGroup className="h-11 flex-1 rounded-[8px] border-slate-200 shadow-sm has-[input:focus-visible]:border-[#8CAEBA] has-[input:focus-visible]:ring-[#8CAEBA]">
+            <InputGroup className="h-11 flex-1 rounded-[8px] border-primary shadow-sm has-[input:focus-visible]:border-primary has-[input:focus-visible]:ring-primary">
               <InputGroupAddon>
-                <Search className="size-4 text-slate-400" aria-hidden="true" />
+                <div className="flex size-6 items-center justify-center gap-2 rounded-full bg-primary/20">
+                  <Search
+                    className="size-3 text-primary"
+                    aria-hidden="true"
+                    strokeWidth={1.5}
+                  />
+                </div>
               </InputGroupAddon>
               <InputGroupInput
                 value={search}
@@ -190,15 +196,14 @@ export default function ProductsPageClient() {
                 className="text-sm"
               />
             </InputGroup>
-
             <div className="flex gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="h-11! gap-2 rounded-[8px] border-slate-200 px-5 text-sm font-medium text-slate-600 shadow-sm"
+                    className="h-11! gap-2 rounded-[6px] border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
                   >
-                    <Filter className="size-4" /> Filter
+                    <ListFilter className="size-5" strokeWidth={1.5} /> Filter
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -247,7 +252,6 @@ export default function ProductsPageClient() {
                   </DropdownMenuCheckboxItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
               {isFilterActive && (
                 <Button
                   variant="outline"
@@ -258,18 +262,18 @@ export default function ProductsPageClient() {
                     setSort(null)
                     setPage(1)
                   }}
-                  className="size-11! shrink-0 rounded-[8px] text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                  className="h-11! gap-2 rounded-[6px] border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
                 >
-                  <RotateCcw className="size-4" />
+                  <RotateCcw className="size-5" strokeWidth={1.5} />
                 </Button>
               )}
             </div>
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-t-[8px] border border-primary/50 bg-white">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-[14px] text-slate-600">
-                <thead className="bg-[#8CAEBA] text-white">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-primary text-white">
                   <tr>
                     <th className="px-6 py-4 font-medium">Product</th>
                     <th className="px-6 py-4 font-medium">Stock (Shopify)</th>
@@ -279,7 +283,7 @@ export default function ProductsPageClient() {
                     <th className="px-6 py-4 font-medium">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-primary/50">
                   {rows.map((group) => {
                     const hasVariants = group.variants.length > 1
                     const isExpanded =
@@ -298,8 +302,8 @@ export default function ProductsPageClient() {
                     )
                     const priceRange =
                       minPrice === maxPrice
-                        ? formatCurrency(minPrice, "USD ")
-                        : `${formatCurrency(minPrice, "USD ")} - ${formatCurrency(maxPrice, "USD ")}`
+                        ? `${formatCurrency(minPrice)} USD`
+                        : `${formatCurrency(minPrice)} USD - ${formatCurrency(maxPrice)} USD`
 
                     const minRpp = Math.min(
                       ...group.variants.map((v) => v.retailPrice ?? 0)
@@ -309,8 +313,15 @@ export default function ProductsPageClient() {
                     )
                     const rppRange =
                       minRpp === maxRpp
-                        ? formatCurrency(minRpp, "USD ")
-                        : `${formatCurrency(minRpp, "USD ")} - ${formatCurrency(maxRpp, "USD ")}`
+                        ? `${formatCurrency(minRpp)} USD`
+                        : `${formatCurrency(minRpp)} USD - ${formatCurrency(maxRpp)} USD`
+
+                    const isUniformCategory = group.variants.every(
+                      (v) => v.category === group.variants[0].category
+                    )
+                    const groupCategory = isUniformCategory
+                      ? group.variants[0].category
+                      : "mixed"
 
                     const singleVariant = !hasVariants
                       ? group.variants[0]
@@ -322,18 +333,24 @@ export default function ProductsPageClient() {
                         <tr className="transition-colors hover:bg-slate-50/50">
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-start gap-4">
-                              <div className="relative size-12 overflow-hidden rounded-md border border-slate-200 bg-white p-1">
+                              <div className="relative size-12 overflow-hidden rounded-md border border-slate-200 bg-linear-to-b from-white via-white to-black/5">
                                 {group.imageUrl ? (
                                   <Image
                                     src={group.imageUrl}
                                     alt={group.title}
                                     fill
-                                    className="object-contain"
+                                    className="relative block aspect-square h-auto max-w-full align-middle transition-opacity duration-200"
                                     unoptimized
                                   />
                                 ) : (
-                                  <div className="flex h-full w-full items-center justify-center bg-slate-50">
-                                    <Boxes className="size-5 text-slate-300" />
+                                  <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-b from-white via-white to-black/5">
+                                    <Boxes
+                                      className="size-4 text-neutral-400"
+                                      strokeWidth={0.5}
+                                    />
+                                    <span className="text-[8px] font-light text-neutral-400">
+                                      No Image
+                                    </span>
                                   </div>
                                 )}
                               </div>
@@ -368,99 +385,88 @@ export default function ProductsPageClient() {
                             {totalStock}
                           </td>
                           <td className="px-6 py-4">
-                            {singleVariant ? (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    className="h-9 w-40 justify-between rounded-lg border-slate-200 bg-white px-3 text-left text-slate-700 hover:bg-white hover:text-slate-700"
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <div
-                                        className={`size-2.5 rounded-full ${
-                                          singleVariant.category ===
-                                          "ship-ready"
-                                            ? "bg-[#34D399]"
-                                            : singleVariant.category ===
-                                                "pre-order"
-                                              ? "bg-[#FBBF24]"
-                                              : "bg-[#94A3B8]"
-                                        }`}
-                                      />
-                                      <span className="capitalize">
-                                        {singleVariant.category.replace(
-                                          "-",
-                                          " "
-                                        )}
-                                      </span>
-                                    </div>
-                                    <ChevronDown className="size-4 text-slate-400" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  align="start"
-                                  className="w-40 rounded-xl bg-white shadow-lg"
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="h-10! w-40 justify-between border-black/20 bg-white px-3 text-left text-slate-700 hover:bg-white hover:text-slate-700"
                                 >
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      updateProductStatusMutation.mutate({
-                                        productId: singleVariant.originalId,
-                                        input: {
-                                          fulfillment_type: "ship_ready",
-                                        },
-                                      })
-                                    }
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <div className="size-2.5 rounded-full bg-[#34D399]" />
-                                      Ship Ready
-                                    </div>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      updateProductStatusMutation.mutate({
-                                        productId: singleVariant.originalId,
-                                        input: {
-                                          fulfillment_type: "pre_order",
-                                        },
-                                      })
-                                    }
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <div className="size-2.5 rounded-full bg-[#FBBF24]" />
-                                      Pre-Order
-                                    </div>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem disabled>
-                                    <div className="flex items-center gap-2">
-                                      <div className="size-2.5 rounded-full bg-[#94A3B8]" />
-                                      Inactive
-                                    </div>
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            ) : (
-                              <span className="text-xs text-slate-400">
-                                Mixed
-                              </span>
-                            )}
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={`size-2.5 rounded-full ${
+                                        groupCategory === "ship-ready"
+                                          ? "bg-success"
+                                          : groupCategory === "pre-order"
+                                            ? "bg-warning"
+                                            : "bg-destructive"
+                                      }`}
+                                    />
+                                    <span className="capitalize">
+                                      {groupCategory.replace("-", " ")}
+                                    </span>
+                                  </div>
+                                  <ChevronDown className="size-4 text-slate-400" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align="start"
+                                className="w-40 rounded-xl bg-white shadow-lg"
+                              >
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    updateProductStatusMutation.mutate({
+                                      productId: group.variants[0].originalId,
+                                      input: {
+                                        fulfillment_type: "ship_ready",
+                                      },
+                                    })
+                                  }
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className="size-2.5 rounded-full bg-success" />
+                                    Ship Ready
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    updateProductStatusMutation.mutate({
+                                      productId: group.variants[0].originalId,
+                                      input: {
+                                        fulfillment_type: "pre_order",
+                                      },
+                                    })
+                                  }
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className="size-2.5 rounded-full bg-warning" />
+                                    Pre-Order
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem disabled>
+                                  <div className="flex items-center gap-2">
+                                    <div className="size-2.5 rounded-full bg-destructive" />
+                                    Inactive
+                                  </div>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </td>
-                          <td className="px-6 py-4 font-medium text-slate-600">
+                          <td className="px-6 py-4 font-medium text-slate-600/60">
                             {rppRange}
                           </td>
                           <td className="px-6 py-4 font-medium text-slate-800">
                             {priceRange}
                           </td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-6 py-4">
                             {singleVariant && (
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-start gap-2">
                                 <Button
                                   variant="outline"
-                                  size="sm"
-                                  className="h-8 gap-2 rounded-md border-slate-200 font-medium text-slate-500 hover:text-slate-800"
+                                  size="xl"
+                                  className="border-primary text-primary"
                                   onClick={() => openEditModal(singleVariant)}
                                 >
-                                  <Edit2 className="size-3.5" />
+                                  <Edit2 className="size-4" />
                                   Edit
                                 </Button>
                               </div>
@@ -475,104 +481,49 @@ export default function ProductsPageClient() {
                             const variantName =
                               variant.title.split(" - ")[1] || variant.title
                             return (
-                              <tr
-                                key={variant.id}
-                                className="bg-slate-50/50 hover:bg-slate-100/50"
-                              >
-                                <td className="px-6 py-3 pl-16">
+                              <tr key={variant.id}>
+                                <td className="px-6 py-4 pl-12">
                                   <div className="flex items-center gap-3">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />
+                                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                                     <span className="text-sm text-slate-600">
                                       {variantName}
                                     </span>
                                   </div>
                                 </td>
-                                <td className="px-6 py-3 text-slate-600">
+                                <td className="px-6 py-4 text-slate-600">
                                   {variant.inventory.quantity}
                                 </td>
-                                <td className="px-6 py-3">
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button
-                                        variant="outline"
-                                        className="h-8 w-40 justify-between rounded-lg border-slate-200 bg-white px-3 text-left text-xs text-slate-700 hover:bg-white hover:text-slate-700"
-                                      >
-                                        <div className="flex items-center gap-2">
-                                          <div
-                                            className={`size-2 rounded-full ${
-                                              variant.category === "ship-ready"
-                                                ? "bg-[#34D399]"
-                                                : variant.category ===
-                                                    "pre-order"
-                                                  ? "bg-[#FBBF24]"
-                                                  : "bg-[#94A3B8]"
-                                            }`}
-                                          />
-                                          <span className="capitalize">
-                                            {variant.category.replace("-", " ")}
-                                          </span>
-                                        </div>
-                                        <ChevronDown className="size-3 text-slate-400" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                      align="start"
-                                      className="w-40 rounded-xl bg-white text-xs shadow-lg"
-                                    >
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          updateProductStatusMutation.mutate({
-                                            productId: variant.originalId,
-                                            input: {
-                                              fulfillment_type: "ship_ready",
-                                            },
-                                          })
-                                        }
-                                      >
-                                        <div className="flex items-center gap-2">
-                                          <div className="size-2 rounded-full bg-[#34D399]" />
-                                          Ship Ready
-                                        </div>
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          updateProductStatusMutation.mutate({
-                                            productId: variant.originalId,
-                                            input: {
-                                              fulfillment_type: "pre_order",
-                                            },
-                                          })
-                                        }
-                                      >
-                                        <div className="flex items-center gap-2">
-                                          <div className="size-2 rounded-full bg-[#F59E0B]" />
-                                          Pre-Order
-                                        </div>
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem disabled>
-                                        <div className="flex items-center gap-2">
-                                          <div className="size-2 rounded-full bg-[#EF4444]" />
-                                          Inactive
-                                        </div>
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
+                                <td className="px-6 py-4">
+                                  <div className="flex h-10 w-40 items-center justify-start gap-2 rounded-lg border border-black/20 bg-white px-3 font-medium text-slate-700 hover:bg-white hover:text-slate-700">
+                                    <div
+                                      className={`size-2 rounded-full ${
+                                        variant.category === "ship-ready"
+                                          ? "bg-success"
+                                          : variant.category === "pre-order"
+                                            ? "bg-warning"
+                                            : "bg-destructive"
+                                      }`}
+                                    />
+                                    <span className="capitalize">
+                                      {variant.category.replace("-", " ")}
+                                    </span>
+                                  </div>
                                 </td>
-                                <td className="px-6 py-3 text-xs font-medium text-slate-500">
-                                  {formatCurrency(variant.retailPrice ?? 0)}
+                                <td className="px-6 py-4 font-medium text-slate-600/60">
+                                  {formatCurrency(variant.retailPrice ?? 0)} USD
                                 </td>
-                                <td className="px-6 py-3 text-xs font-medium text-slate-600">
-                                  {formatCurrency(effectivePrice(variant))}
+                                <td className="px-6 py-4 font-medium text-slate-800">
+                                  {formatCurrency(effectivePrice(variant))} USD
                                 </td>
-                                <td className="px-6 py-3 text-right">
-                                  <div className="flex items-center justify-end gap-2">
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center justify-start gap-2">
                                     <Button
                                       variant="outline"
-                                      size="sm"
-                                      className="h-7 gap-1 rounded-md border-slate-200 text-xs font-medium text-slate-500 hover:text-slate-800"
+                                      size="xl"
+                                      className="border-primary text-primary"
                                       onClick={() => openEditModal(variant)}
                                     >
-                                      <Edit2 className="size-3" />
+                                      <Edit2 className="size-4" />
                                       Edit
                                     </Button>
                                   </div>
@@ -586,15 +537,13 @@ export default function ProductsPageClient() {
 
                   {rows.length === 0 && !productsQuery.isLoading && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12">
-                        <Empty className="border-none py-12">
-                          <EmptyMedia variant="icon">
-                            <Search className="size-5 text-slate-400" />
+                      <td colSpan={6} className="px-6">
+                        <Empty className="gap-4 border-none">
+                          <EmptyMedia variant="icon" className="mb-0">
+                            <Search className="size-5 text-primary" />
                           </EmptyMedia>
                           <EmptyHeader>
-                            <EmptyTitle className="text-slate-800">
-                              No products found
-                            </EmptyTitle>
+                            <EmptyTitle>No products found</EmptyTitle>
                             <EmptyDescription>
                               No products found matching your search.
                             </EmptyDescription>
