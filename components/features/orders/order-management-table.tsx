@@ -75,27 +75,27 @@ export function OrderManagementTable({
 
   return (
     <>
-      <div className="overflow-hidden rounded-t-[8px] border border-primary/50 bg-white">
+      <div className="overflow-hidden rounded-t-[8px] bg-[#F9F9F9]">
         <div className="h-[calc(100vh-150px)] overflow-x-auto overflow-y-auto">
           <table className="w-full text-sm">
             <TableHeader className="sticky top-0 z-10 bg-[#F2EDE4]">
               <TableRow className="border-none">
-                <TableHead className="py-4 font-medium text-black">
+                <TableHead className="px-6 py-4 font-medium text-black">
                   ORDER ID
                 </TableHead>
-                <TableHead className="py-4 font-medium text-black">
+                <TableHead className="px-6 py-4 font-medium text-black">
                   CUSTOMER
                 </TableHead>
-                <TableHead className="py-4 font-medium text-black">
+                <TableHead className="px-6 py-4 font-medium text-black">
                   ORDER DATE
                 </TableHead>
-                <TableHead className="py-4 font-medium text-black">
+                <TableHead className="px-6 py-4 font-medium text-black">
                   STATUS
                 </TableHead>
-                <TableHead className="py-4 font-medium text-black">
+                <TableHead className="px-6 py-4 font-medium text-black">
                   ITEM RECEIVED
                 </TableHead>
-                <TableHead className="py-4 font-medium text-black">
+                <TableHead className="px-6 py-4 font-medium text-black">
                   ACTION
                 </TableHead>
               </TableRow>
@@ -133,16 +133,16 @@ export function OrderManagementTable({
                   return (
                     <TableRow
                       key={order.id}
-                      className="border-b last:border-0 hover:bg-muted/50"
+                      className="border-b border-black/10 last:border-0 hover:bg-muted/50"
                     >
-                      <TableCell className="py-4">
+                      <TableCell className="px-6 py-4">
                         <div className="font-medium">#{order.orderNumber}</div>
                         <div className="text-sm text-muted-foreground">
                           {totalItems} item - {formatCurrency(order.totalPrice)}{" "}
                           USD
                         </div>
                       </TableCell>
-                      <TableCell className="py-4">
+                      <TableCell className="px-6 py-4">
                         <div className="font-medium">
                           {order.customer?.name || "-"}
                         </div>
@@ -150,17 +150,17 @@ export function OrderManagementTable({
                           {order.customer?.email || "-"}
                         </div>
                       </TableCell>
-                      <TableCell className="py-4">
+                      <TableCell className="px-6 py-4">
                         <div className="font-medium">
                           {order.orderDate
                             ? format(new Date(order.orderDate), "d/MM/yyyy")
                             : "-"}
                         </div>
                       </TableCell>
-                      <TableCell className="py-4">
+                      <TableCell className="px-6 py-4">
                         {getStatusBadge(displayStatus)}
                       </TableCell>
-                      <TableCell className="py-4">
+                      <TableCell className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="h-1.5 w-24 overflow-hidden rounded-full bg-neutral-200">
                             <div
@@ -173,7 +173,7 @@ export function OrderManagementTable({
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-4">
+                      <TableCell className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
