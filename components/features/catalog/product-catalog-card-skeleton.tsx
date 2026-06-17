@@ -1,26 +1,30 @@
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export function ProductCatalogCardSkeleton() {
   return (
-    <Card className="h-full overflow-hidden rounded-[14px] border-none transition-all duration-300">
-      <CardContent className="relative grid gap-5 p-3 sm:p-5">
-        <div className="relative aspect-square w-full overflow-hidden rounded-[14px]">
-          <Skeleton className="h-full w-full" />
-        </div>
+    <Card className="flex h-auto min-h-23.75 w-full flex-row items-stretch overflow-hidden rounded-lg border-none bg-card transition-all duration-300">
+      {/* Image */}
+      <div className="relative aspect-square w-27 shrink-0 overflow-hidden rounded-lg">
+        <Skeleton className="h-full w-full" />
+      </div>
 
-        <div className="mr-6 flex flex-col justify-center-safe gap-1">
+      {/* Content */}
+      <div className="flex flex-1 flex-col justify-center px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="mb-2 flex-1 sm:mb-0 sm:pr-4">
           <Skeleton className="h-4 w-3/4 sm:h-5" />
-          <div className="mt-1 flex w-full flex-col flex-wrap justify-start gap-1 self-baseline sm:flex-row sm:gap-2">
-            <Skeleton className="h-4 w-1/3 sm:h-5" />
-            <Skeleton className="h-4 w-1/4 sm:h-5" />
+          <Skeleton className="mt-2 h-4 w-1/2 sm:hidden" />
+        </div>
+        <div className="flex items-center justify-between gap-4 sm:justify-end sm:gap-6">
+          <div className="flex flex-col items-start gap-1 text-left sm:items-end sm:text-right">
+            <Skeleton className="h-4 w-20 sm:h-5 sm:w-24" />
+            <Skeleton className="h-3 w-16 sm:h-4 sm:w-20" />
+          </div>
+          <div className="flex items-center justify-end">
+            <Skeleton className="h-8 w-24 sm:h-10 sm:w-28" />
           </div>
         </div>
-
-        <div className="flex justify-end">
-          <Skeleton className="size-7.5 rounded-full sm:size-13" />
-        </div>
-      </CardContent>
+      </div>
     </Card>
   )
 }

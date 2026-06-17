@@ -8,11 +8,10 @@ import { toastManager } from "@/components/ui/toast"
 import { Boxes } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 
 import { InventoryDepletedModal } from "@/components/features/catalog/inventory-depleted-modal"
 import { QuantitySelector } from "@/components/global/quantity-selector"
-import { IconBag } from "@/public/icons/icon-bag"
 
 import {
   useCart,
@@ -166,54 +165,59 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
 
   return (
     <>
-      <Card className="group h-full cursor-pointer overflow-hidden rounded-[14px] border-none transition-all duration-300">
-        <CardContent className="relative grid gap-5 p-3 sm:p-5">
-          <div className="relative aspect-square w-full overflow-hidden rounded-[14px] bg-white">
-            {(!isShipReady || isBackendPreOrder || isConvertedToPreorder) && (
-              <Badge
-                size="lg"
-                className="absolute top-2.5 left-2.5 z-10 text-sm tracking-wider uppercase shadow-sm sm:top-3 sm:left-3"
-              >
-                Pre-Order
-              </Badge>
-            )}
-            {product.imageUrl ? (
-              <Image
-                src={product.imageUrl}
-                alt={product.title}
-                fill
-                className="relative block aspect-square h-auto max-w-full align-middle transition-opacity duration-200"
-                sizes="(max-width: 640px) 200px, 400px"
-              />
-            ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-1">
-                <Boxes
-                  className="size-8 text-neutral-400 sm:size-12"
-                  strokeWidth={0.5}
-                />
-                <span className="font-light text-neutral-400 sm:text-lg">
-                  No Image
-                </span>
-              </div>
-            )}
-          </div>
+      <Card className="group flex h-auto min-h-23.75 w-full cursor-pointer flex-row items-stretch overflow-hidden rounded-lg border-none bg-card transition-all duration-300">
+        {/* Image */}
+        <div className="relative h-23.75 w-27 shrink-0 overflow-hidden rounded-lg bg-linear-to-b from-white via-white to-black/5">
+          {(!isShipReady || isBackendPreOrder || isConvertedToPreorder) && (
+            <Badge
+              size="sm"
+              className="absolute top-1 left-1 z-10 rounded-full text-xs uppercase"
+            >
+              Pre-Order
+            </Badge>
+          )}
+          {product.imageUrl ? (
+            <Image
+              src={product.imageUrl}
+              alt={product.title}
+              fill
+              className="relative block aspect-square h-auto max-w-full align-middle transition-opacity duration-200"
+              sizes="108px"
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center">
+              <Boxes className="size-8 text-neutral-400" strokeWidth={0.5} />
+              <span className="text-sm font-light text-neutral-400">
+                No Image
+              </span>
+            </div>
+          )}
+        </div>
 
-          <div className="mr-6 flex flex-col justify-center-safe gap-1">
-            <h3 className="max-h-10 overflow-hidden text-left text-sm capitalize sm:max-h-14 sm:text-lg">
+        {/* Content */}
+        <div className="flex flex-1 flex-col justify-center px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="mb-2 flex-1 sm:mb-0 sm:pr-4">
+            {isShipReady && (isBackendPreOrder || isConvertedToPreorder) && (
+              <span className="block text-xs font-medium text-destructive sm:text-sm">
+                Pre-Order
+              </span>
+            )}
+            <h3 className="text-left text-xs text-alternate capitalize sm:text-base">
               {product.title}
             </h3>
-            <div className="flex w-full flex-col flex-wrap justify-start gap-0 self-baseline sm:flex-row sm:gap-2">
-              <p className="text-sm font-medium text-alternate sm:text-base">
-                {formatCurrency(price)} USD
-              </p>
-              <p className="text-sm text-alternate/60 sm:text-base">
-                RPP {formatCurrency(rpp)} USD
-              </p>
-            </div>
           </div>
 
-          <div className="flex justify-end">
-            {localQuantity > 0 ? (
+          <div className="flex items-center justify-between gap-4 sm:justify-end sm:gap-6">
+            <div className="flex flex-col text-left sm:text-right">
+              <span className="text-xs font-semibold text-alternate sm:text-lg">
+                WS$ {formatCurrency(price)}
+              </span>
+              <span className="text-xs text-alternate/60 sm:text-base">
+                RPP ${formatCurrency(rpp)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-end">
               <QuantitySelector
                 quantity={localQuantity}
                 onIncrease={handleIncrease}
@@ -221,25 +225,11 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
                 onChange={handleCustomChange}
                 disabled={isPending}
                 isPending={isPending}
-                className="h-8 w-24 sm:h-10 sm:w-28"
+                className="h-9 w-27 sm:w-32.5"
               />
-            ) : (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  handleIncrease()
-                }}
-                disabled={isPending}
-                aria-label="Add to cart"
-                className="flex size-7.5 cursor-pointer items-center justify-center rounded-full bg-white transition-all hover:bg-card hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50 sm:size-13"
-              >
-                <IconBag className="pointer-events-none size-4.5 text-alternate sm:size-8" />
-              </button>
-            )}
+            </div>
           </div>
-        </CardContent>
+        </div>
       </Card>
 
       <InventoryDepletedModal
