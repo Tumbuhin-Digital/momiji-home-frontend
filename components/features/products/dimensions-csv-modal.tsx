@@ -103,10 +103,10 @@ export function DimensionsCsvModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
-        <DialogPanel className="flex flex-col gap-6 sm:py-4">
-          <DialogHeader>
+        <DialogPanel className="flex flex-col gap-2 sm:py-4">
+          <DialogHeader className="gap-0 p-0">
             <DialogTitle className="text-lg font-bold text-slate-800">
-              Variant Dimensions (CSV)
+              Variant Dimensions
             </DialogTitle>
             <DialogDescription className="text-sm text-slate-500">
               Manage product dimensions in bulk using CSV format
@@ -115,9 +115,9 @@ export function DimensionsCsvModal({
 
           <div className="flex flex-col gap-4">
             {/* Download Template */}
-            <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-4">
+            <div className="rounded-lg border border-primary/30 bg-primary/20 p-4">
               <div className="mb-3 flex items-center gap-2 font-medium text-slate-700">
-                <Download className="size-4 text-slate-400" />
+                <Download className="size-4 text-primary" />
                 1. Download Template
               </div>
               <p className="mb-4 text-xs text-slate-500">
@@ -126,9 +126,9 @@ export function DimensionsCsvModal({
               <Button
                 variant="outline"
                 size="sm"
+                className="w-full bg-white hover:bg-white sm:w-auto"
                 onClick={handleDownloadTemplate}
                 disabled={downloadMutation.isPending}
-                className="w-full bg-white sm:w-auto"
               >
                 {downloadMutation.isPending ? (
                   <Loader2 className="mr-2 size-4 animate-spin" />
@@ -140,9 +140,9 @@ export function DimensionsCsvModal({
             </div>
 
             {/* Upload File */}
-            <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-4">
+            <div className="rounded-lg border border-primary/30 bg-primary/20 p-4">
               <div className="mb-3 flex items-center gap-2 font-medium text-slate-700">
-                <Upload className="size-4 text-slate-400" />
+                <Upload className="size-4 text-primary" />
                 2. Upload CSV File
               </div>
               <p className="mb-4 text-xs text-slate-500">
@@ -159,7 +159,7 @@ export function DimensionsCsvModal({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-white text-slate-600"
+                  className="bg-white hover:bg-white"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={importMutation.isPending}
                 >

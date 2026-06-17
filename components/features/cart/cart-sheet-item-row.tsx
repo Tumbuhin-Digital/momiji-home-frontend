@@ -91,7 +91,7 @@ export function CartSheetItemRow({
         isBlinking && "animate-pulse rounded-md bg-primary/20 p-2"
       )}
     >
-      <div className="relative aspect-square w-20 shrink-0 overflow-hidden rounded bg-white sm:w-24">
+      <div className="relative aspect-square w-20 shrink-0 overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5 sm:w-24">
         {displayImage ? (
           <Image
             src={displayImage}

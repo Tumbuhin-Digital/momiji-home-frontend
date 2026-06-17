@@ -817,7 +817,7 @@ export default function CheckoutPageClient() {
                     {shipReadyItems.map((item) => {
                       return (
                         <div key={item.id} className="flex items-center gap-4">
-                          <div className="relative size-16 shrink-0 overflow-hidden rounded bg-white">
+                          <div className="relative size-16 shrink-0 overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5">
                             {item.image_src ? (
                               <Image
                                 src={item.image_src}
@@ -827,12 +827,12 @@ export default function CheckoutPageClient() {
                                 sizes="64px"
                               />
                             ) : (
-                              <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border">
+                              <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border bg-linear-to-b from-white via-white to-black/5">
                                 <Boxes
                                   className="size-5 text-neutral-400"
                                   strokeWidth={0.5}
                                 />
-                                <span className="text-[10px] font-light text-neutral-400">
+                                <span className="text-xs font-light text-neutral-400">
                                   No Image
                                 </span>
                               </div>
@@ -863,7 +863,7 @@ export default function CheckoutPageClient() {
                     {preOrderItems.map((item) => {
                       return (
                         <div key={item.id} className="flex items-center gap-4">
-                          <div className="relative size-16 shrink-0 overflow-hidden rounded bg-muted">
+                          <div className="relative size-16 shrink-0 overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5">
                             {item.image_src ? (
                               <Image
                                 src={item.image_src}
@@ -873,12 +873,12 @@ export default function CheckoutPageClient() {
                                 sizes="64px"
                               />
                             ) : (
-                              <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border bg-white">
+                              <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border bg-linear-to-b from-white via-white to-black/5">
                                 <Boxes
                                   className="size-5 text-neutral-400"
                                   strokeWidth={0.5}
                                 />
-                                <span className="text-[10px] font-light text-neutral-400">
+                                <span className="text-xs font-light text-neutral-400">
                                   No Image
                                 </span>
                               </div>
