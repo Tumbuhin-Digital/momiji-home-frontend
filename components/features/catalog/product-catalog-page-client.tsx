@@ -98,13 +98,13 @@ export function ProductCatalogPageClient({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-8">
+      <div className="flex flex-col items-center justify-center gap-6 xl:gap-8">
         <header className="px-4 pt-10 pb-6 text-center sm:px-10">
-          <h1 className="text-[32px] font-medium tracking-widest text-header md:text-4xl lg:text-6xl">
+          <h1 className="text-[32px] font-medium tracking-widest text-header sm:text-5xl xl:text-6xl">
             {title}
           </h1>
         </header>
-        <div className="grid w-full grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:gap-8 sm:px-10">
+        <div className="grid w-full grid-cols-1 gap-4 px-4 xl:grid-cols-2 xl:gap-6 xl:px-10">
           {Array.from({ length: itemsPerPage }).map((_, idx) => (
             <ProductCatalogCardSkeleton key={idx} />
           ))}
@@ -114,9 +114,9 @@ export function ProductCatalogPageClient({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center gap-8">
+    <div className="flex flex-col items-center justify-center gap-6 xl:gap-8">
       <header className="px-4 pt-10 pb-6 text-center sm:px-10">
-        <h1 className="text-[32px] font-medium tracking-widest text-header md:text-4xl lg:text-6xl">
+        <h1 className="text-[32px] font-medium tracking-widest text-header sm:text-5xl xl:text-6xl">
           {title}
         </h1>
       </header>
@@ -142,7 +142,7 @@ export function ProductCatalogPageClient({
           </Empty>
         </div>
       ) : (
-        <div className="grid w-full grid-cols-2 gap-4 px-4 sm:gap-6 sm:px-10 md:grid-cols-3">
+        <div className="grid w-full grid-cols-1 gap-4 px-4 xl:grid-cols-2 xl:gap-6 xl:px-10">
           {allVariants.map((product, index) => (
             <motion.div
               key={product.id}
@@ -185,7 +185,7 @@ export function ProductCatalogPageClient({
       <div className="flex items-center justify-center pb-2">
         <Button
           type="button"
-          className="h-17.75 w-57.5 gap-2.5 rounded-full p-6 backdrop-blur-md transition-all duration-200 hover:scale-105"
+          className="w-57.5 gap-2.5 rounded-full p-6 backdrop-blur-md transition-all duration-200 hover:scale-105 sm:h-17.75"
           render={<Link href={bottomNavLink} />}
         >
           <span className="text-base font-medium uppercase">
