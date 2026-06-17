@@ -33,9 +33,9 @@ export function AppNavbar() {
           <Image
             src="/images/logo.png"
             alt="Momiji Logo"
-            width={231}
-            height={44}
-            className="h-8 w-41.75 object-contain transition-transform duration-500 sm:h-11 sm:w-57.75"
+            width={210}
+            height={24}
+            className="h-6 w-auto object-contain transition-transform duration-500 sm:h-8 lg:h-10"
             priority
           />
         </Link>
