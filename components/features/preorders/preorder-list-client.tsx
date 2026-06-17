@@ -23,6 +23,14 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { Skeleton } from "@/components/ui/skeleton"
 
 import { InvoiceSettlementModal } from "@/components/features/preorders/invoice-settlement-modal"
@@ -50,7 +58,12 @@ export function PreorderListClient() {
     type: null,
   })
 
-  const { data: groups, isLoading } = usePreorders({ page, limit: 20 })
+  const limit = 20
+  const { data: queryData, isLoading } = usePreorders({ page, limit })
+
+  const groups = queryData?.data
+  const total = queryData?.total || 0
+  const totalPages = Math.max(1, Math.ceil(total / limit))
   const exportMutation = useExportPreorders()
 
   const filteredGroups = groups
@@ -297,26 +310,53 @@ export function PreorderListClient() {
 
       {/* Pagination */}
       {!isLoading && filteredGroups && filteredGroups.length > 0 && (
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="rounded"
-          >
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">Page {page}</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={!groups || groups.length < 20}
-            className="rounded"
-          >
-            Next
-          </Button>
+        <div className="flex items-center justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (page > 1) setPage(page - 1)
+                  }}
+                  className={
+                    page <= 1
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <PaginationItem key={p}>
+                  <PaginationLink
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setPage(p)
+                    }}
+                    isActive={page === p}
+                    className="cursor-pointer"
+                  >
+                    {p}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (page < totalPages) setPage(page + 1)
+                  }}
+                  className={
+                    page >= totalPages
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
 
@@ -331,6 +371,7 @@ export function PreorderListClient() {
           orderId={confirmModal.settlement.orderId}
         />
       )}
+
       {confirmModal.settlement && confirmModal.type === "paid" && (
         <PaidSettlementModal
           isOpen={confirmModal.isOpen}
