@@ -180,7 +180,7 @@ export default function ProductsPageClient() {
 
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2">
-            <InputGroup className="h-11 flex-1 rounded-[8px] border-primary shadow-sm has-[input:focus-visible]:border-primary has-[input:focus-visible]:ring-primary">
+            <InputGroup className="h-11 flex-1 rounded-[8px] border-primary shadow-sm has-[input:focus-visible]:border-primary/20 has-[input:focus-visible]:ring-primary/20">
               <InputGroupAddon>
                 <div className="flex size-6 items-center justify-center gap-2 rounded-full bg-primary/20">
                   <Search
