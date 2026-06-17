@@ -47,6 +47,7 @@ import {
 
 import { DimensionsCsvModal } from "@/components/features/products/dimensions-csv-modal"
 import { EditPriceModal } from "@/components/features/products/edit-price-modal"
+import { ProductTableSkeleton } from "@/components/features/products/product-table-skeleton"
 
 import { useProducts, useUpdateProductStatus } from "@/hooks"
 import { formatCurrency, formatLastSynced } from "@/lib/utils"
@@ -290,256 +291,260 @@ export default function ProductsPageClient() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-primary/50">
-                  {rows.map((group) => {
-                    const hasVariants = group.variants.length > 1
-                    const isExpanded =
-                      !!expandedProducts[group.shopifyProductId]
+                  {productsQuery.isLoading && <ProductTableSkeleton />}
+                  {!productsQuery.isLoading &&
+                    rows.map((group) => {
+                      const hasVariants = group.variants.length > 1
+                      const isExpanded =
+                        !!expandedProducts[group.shopifyProductId]
 
-                    const totalStock = group.variants.reduce(
-                      (sum, v) => sum + v.inventory.quantity,
-                      0
-                    )
+                      const totalStock = group.variants.reduce(
+                        (sum, v) => sum + v.inventory.quantity,
+                        0
+                      )
 
-                    const minPrice = Math.min(
-                      ...group.variants.map((v) => effectivePrice(v))
-                    )
-                    const maxPrice = Math.max(
-                      ...group.variants.map((v) => effectivePrice(v))
-                    )
-                    const priceRange =
-                      minPrice === maxPrice
-                        ? `${formatCurrency(minPrice)} USD`
-                        : `${formatCurrency(minPrice)} USD - ${formatCurrency(maxPrice)} USD`
+                      const minPrice = Math.min(
+                        ...group.variants.map((v) => effectivePrice(v))
+                      )
+                      const maxPrice = Math.max(
+                        ...group.variants.map((v) => effectivePrice(v))
+                      )
+                      const priceRange =
+                        minPrice === maxPrice
+                          ? `${formatCurrency(minPrice)} USD`
+                          : `${formatCurrency(minPrice)} USD - ${formatCurrency(maxPrice)} USD`
 
-                    const minRpp = Math.min(
-                      ...group.variants.map((v) => v.retailPrice ?? 0)
-                    )
-                    const maxRpp = Math.max(
-                      ...group.variants.map((v) => v.retailPrice ?? 0)
-                    )
-                    const rppRange =
-                      minRpp === maxRpp
-                        ? `${formatCurrency(minRpp)} USD`
-                        : `${formatCurrency(minRpp)} USD - ${formatCurrency(maxRpp)} USD`
+                      const minRpp = Math.min(
+                        ...group.variants.map((v) => v.retailPrice ?? 0)
+                      )
+                      const maxRpp = Math.max(
+                        ...group.variants.map((v) => v.retailPrice ?? 0)
+                      )
+                      const rppRange =
+                        minRpp === maxRpp
+                          ? `${formatCurrency(minRpp)} USD`
+                          : `${formatCurrency(minRpp)} USD - ${formatCurrency(maxRpp)} USD`
 
-                    const isUniformCategory = group.variants.every(
-                      (v) => v.category === group.variants[0].category
-                    )
-                    const groupCategory = isUniformCategory
-                      ? group.variants[0].category
-                      : "mixed"
+                      const isUniformCategory = group.variants.every(
+                        (v) => v.category === group.variants[0].category
+                      )
+                      const groupCategory = isUniformCategory
+                        ? group.variants[0].category
+                        : "mixed"
 
-                    const singleVariant = !hasVariants
-                      ? group.variants[0]
-                      : null
+                      const singleVariant = !hasVariants
+                        ? group.variants[0]
+                        : null
 
-                    return (
-                      <Fragment key={group.shopifyProductId}>
-                        {/* Parent/Main Row */}
-                        <tr className="transition-colors hover:bg-slate-50/50">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center justify-start gap-4">
-                              <div className="relative size-12 overflow-hidden rounded-md border border-slate-200 bg-linear-to-b from-white via-white to-black/5">
-                                {group.imageUrl ? (
-                                  <Image
-                                    src={group.imageUrl}
-                                    alt={group.title}
-                                    fill
-                                    className="relative block aspect-square h-auto max-w-full align-middle transition-opacity duration-200"
-                                    unoptimized
-                                  />
-                                ) : (
-                                  <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-b from-white via-white to-black/5">
-                                    <Boxes
-                                      className="size-4 text-neutral-400"
-                                      strokeWidth={0.5}
+                      return (
+                        <Fragment key={group.shopifyProductId}>
+                          {/* Parent/Main Row */}
+                          <tr className="transition-colors hover:bg-slate-50/50">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center justify-start gap-4">
+                                <div className="relative size-12 overflow-hidden rounded-md border border-slate-200 bg-linear-to-b from-white via-white to-black/5">
+                                  {group.imageUrl ? (
+                                    <Image
+                                      src={group.imageUrl}
+                                      alt={group.title}
+                                      fill
+                                      className="relative block aspect-square h-auto max-w-full align-middle transition-opacity duration-200"
+                                      unoptimized
                                     />
-                                    <span className="text-[8px] font-light text-neutral-400">
-                                      No Image
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="font-medium text-slate-800">
-                                  {group.title}
-                                </span>
-                                {hasVariants && (
-                                  <span className="text-xs text-slate-400">
-                                    {group.variants.length} variants
-                                  </span>
-                                )}
-                              </div>
-                              {hasVariants && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    toggleExpand(group.shopifyProductId)
-                                  }
-                                  className="flex size-6 cursor-pointer items-center justify-center rounded text-slate-500 hover:bg-slate-100"
-                                >
-                                  {isExpanded ? (
-                                    <ChevronDown className="size-4" />
                                   ) : (
-                                    <ChevronRight className="size-4" />
+                                    <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-b from-white via-white to-black/5">
+                                      <Boxes
+                                        className="size-4 text-neutral-400"
+                                        strokeWidth={0.5}
+                                      />
+                                      <span className="text-[8px] font-light text-neutral-400">
+                                        No Image
+                                      </span>
+                                    </div>
                                   )}
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 font-medium text-slate-800">
-                            {totalStock}
-                          </td>
-                          <td className="px-6 py-4">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className="h-10! w-40 justify-between border-black/20 bg-white px-3 text-left text-slate-700 hover:bg-white hover:text-slate-700"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className={`size-2.5 rounded-full ${
-                                        groupCategory === "ship-ready"
-                                          ? "bg-success"
-                                          : groupCategory === "pre-order"
-                                            ? "bg-warning"
-                                            : "bg-destructive"
-                                      }`}
-                                    />
-                                    <span className="capitalize">
-                                      {groupCategory.replace("-", " ")}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-slate-800">
+                                    {group.title}
+                                  </span>
+                                  {hasVariants && (
+                                    <span className="text-xs text-slate-400">
+                                      {group.variants.length} variants
                                     </span>
-                                  </div>
-                                  <ChevronDown className="size-4 text-slate-400" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="start"
-                                className="w-40 rounded-xl bg-white shadow-lg"
-                              >
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    updateProductStatusMutation.mutate({
-                                      productId: group.variants[0].originalId,
-                                      input: {
-                                        fulfillment_type: "ship_ready",
-                                      },
-                                    })
-                                  }
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <div className="size-2.5 rounded-full bg-success" />
-                                    Ship Ready
-                                  </div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    updateProductStatusMutation.mutate({
-                                      productId: group.variants[0].originalId,
-                                      input: {
-                                        fulfillment_type: "pre_order",
-                                      },
-                                    })
-                                  }
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <div className="size-2.5 rounded-full bg-warning" />
-                                    Pre-Order
-                                  </div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem disabled>
-                                  <div className="flex items-center gap-2">
-                                    <div className="size-2.5 rounded-full bg-destructive" />
-                                    Inactive
-                                  </div>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                          <td className="px-6 py-4 font-medium text-slate-600/60">
-                            {rppRange}
-                          </td>
-                          <td className="px-6 py-4 font-medium text-slate-800">
-                            {priceRange}
-                          </td>
-                          <td className="px-6 py-4">
-                            {singleVariant && (
-                              <div className="flex items-center justify-start gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="xl"
-                                  className="border-primary text-primary"
-                                  onClick={() => openEditModal(singleVariant)}
-                                >
-                                  <Edit2 className="size-4" />
-                                  Edit
-                                </Button>
+                                  )}
+                                </div>
+                                {hasVariants && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      toggleExpand(group.shopifyProductId)
+                                    }
+                                    className="flex size-6 cursor-pointer items-center justify-center rounded text-slate-500 hover:bg-slate-100"
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronDown className="size-4" />
+                                    ) : (
+                                      <ChevronRight className="size-4" />
+                                    )}
+                                  </button>
+                                )}
                               </div>
-                            )}
-                          </td>
-                        </tr>
+                            </td>
+                            <td className="px-6 py-4 font-medium text-slate-800">
+                              {totalStock}
+                            </td>
+                            <td className="px-6 py-4">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className="h-10! w-40 justify-between border-black/20 bg-white px-3 text-left text-slate-700 hover:bg-white hover:text-slate-700"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div
+                                        className={`size-2.5 rounded-full ${
+                                          groupCategory === "ship-ready"
+                                            ? "bg-success"
+                                            : groupCategory === "pre-order"
+                                              ? "bg-warning"
+                                              : "bg-destructive"
+                                        }`}
+                                      />
+                                      <span className="capitalize">
+                                        {groupCategory.replace("-", " ")}
+                                      </span>
+                                    </div>
+                                    <ChevronDown className="size-4 text-slate-400" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="start"
+                                  className="w-40 rounded-xl bg-white shadow-lg"
+                                >
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      updateProductStatusMutation.mutate({
+                                        productId: group.variants[0].originalId,
+                                        input: {
+                                          fulfillment_type: "ship_ready",
+                                        },
+                                      })
+                                    }
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div className="size-2.5 rounded-full bg-success" />
+                                      Ship Ready
+                                    </div>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      updateProductStatusMutation.mutate({
+                                        productId: group.variants[0].originalId,
+                                        input: {
+                                          fulfillment_type: "pre_order",
+                                        },
+                                      })
+                                    }
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div className="size-2.5 rounded-full bg-warning" />
+                                      Pre-Order
+                                    </div>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem disabled>
+                                    <div className="flex items-center gap-2">
+                                      <div className="size-2.5 rounded-full bg-destructive" />
+                                      Inactive
+                                    </div>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </td>
+                            <td className="px-6 py-4 font-medium text-slate-600/60">
+                              {rppRange}
+                            </td>
+                            <td className="px-6 py-4 font-medium text-slate-800">
+                              {priceRange}
+                            </td>
+                            <td className="px-6 py-4">
+                              {singleVariant && (
+                                <div className="flex items-center justify-start gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="xl"
+                                    className="border-primary text-primary"
+                                    onClick={() => openEditModal(singleVariant)}
+                                  >
+                                    <Edit2 className="size-4" />
+                                    Edit
+                                  </Button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
 
-                        {/* Expanded Variant Sub-rows */}
-                        {hasVariants &&
-                          isExpanded &&
-                          group.variants.map((variant) => {
-                            const variantName =
-                              variant.title.split(" - ")[1] || variant.title
-                            return (
-                              <tr key={variant.id}>
-                                <td className="px-6 py-4 pl-12">
-                                  <div className="flex items-center gap-3">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                    <span className="text-sm text-slate-600">
-                                      {variantName}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-slate-600">
-                                  {variant.inventory.quantity}
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex h-10 w-40 items-center justify-start gap-2 rounded-lg border border-black/20 bg-white px-3 font-medium text-slate-700 hover:bg-white hover:text-slate-700">
-                                    <div
-                                      className={`size-2 rounded-full ${
-                                        variant.category === "ship-ready"
-                                          ? "bg-success"
-                                          : variant.category === "pre-order"
-                                            ? "bg-warning"
-                                            : "bg-destructive"
-                                      }`}
-                                    />
-                                    <span className="capitalize">
-                                      {variant.category.replace("-", " ")}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 font-medium text-slate-600/60">
-                                  {formatCurrency(variant.retailPrice ?? 0)} USD
-                                </td>
-                                <td className="px-6 py-4 font-medium text-slate-800">
-                                  {formatCurrency(effectivePrice(variant))} USD
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center justify-start gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="xl"
-                                      className="border-primary text-primary"
-                                      onClick={() => openEditModal(variant)}
-                                    >
-                                      <Edit2 className="size-4" />
-                                      Edit
-                                    </Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            )
-                          })}
-                      </Fragment>
-                    )
-                  })}
+                          {/* Expanded Variant Sub-rows */}
+                          {hasVariants &&
+                            isExpanded &&
+                            group.variants.map((variant) => {
+                              const variantName =
+                                variant.title.split(" - ")[1] || variant.title
+                              return (
+                                <tr key={variant.id}>
+                                  <td className="px-6 py-4 pl-16">
+                                    <div className="flex items-center gap-3">
+                                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                                      <span className="text-sm text-slate-600">
+                                        {variantName}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 text-slate-600">
+                                    {variant.inventory.quantity}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex h-10 w-40 items-center justify-start gap-2 rounded-lg border border-black/20 bg-white px-3 font-medium text-slate-700 hover:bg-white hover:text-slate-700">
+                                      <div
+                                        className={`size-2 rounded-full ${
+                                          variant.category === "ship-ready"
+                                            ? "bg-success"
+                                            : variant.category === "pre-order"
+                                              ? "bg-warning"
+                                              : "bg-destructive"
+                                        }`}
+                                      />
+                                      <span className="capitalize">
+                                        {variant.category.replace("-", " ")}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 font-medium text-slate-600/60">
+                                    {formatCurrency(variant.retailPrice ?? 0)}{" "}
+                                    USD
+                                  </td>
+                                  <td className="px-6 py-4 font-medium text-slate-800">
+                                    {formatCurrency(effectivePrice(variant))}{" "}
+                                    USD
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center justify-start gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="xl"
+                                        className="border-primary text-primary"
+                                        onClick={() => openEditModal(variant)}
+                                      >
+                                        <Edit2 className="size-4" />
+                                        Edit
+                                      </Button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                        </Fragment>
+                      )
+                    })}
 
                   {rows.length === 0 && !productsQuery.isLoading && (
                     <tr>
