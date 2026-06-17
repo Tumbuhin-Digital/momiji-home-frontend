@@ -8,7 +8,7 @@ import { Pencil } from "lucide-react"
 
 import { formatCurrency } from "@/lib/utils"
 
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/global/status-badge"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -37,36 +37,12 @@ export function OrderManagementTable({
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
   const getStatusBadge = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "on progress":
-      case "processing":
-      case "pending":
-        return (
-          <Badge className="w-28 justify-center rounded-full bg-neutral-100 px-4 py-3 text-center text-neutral-500 hover:bg-neutral-100/80">
-            Pending
-          </Badge>
-        )
-      case "in progress":
-        return (
-          <Badge className="w-28 justify-center rounded-full bg-orange-50 px-4 py-3 text-center text-[#F97316] hover:bg-orange-50/80">
-            On Progress
-          </Badge>
-        )
-      case "completed":
-      case "shipped":
-      case "delivered":
-        return (
-          <Badge className="w-28 justify-center rounded-full bg-emerald-100 px-4 py-3 text-center text-emerald-600 hover:bg-emerald-100/80">
-            Completed
-          </Badge>
-        )
-      default:
-        return (
-          <Badge className="w-28 justify-center rounded-full bg-neutral-100 px-4 py-3 text-center text-neutral-500 hover:bg-neutral-100/80">
-            {status || "Pending"}
-          </Badge>
-        )
-    }
+    return (
+      <StatusBadge
+        status={status || "Pending"}
+        className="w-28 rounded-full px-4 py-3 text-center"
+      />
+    )
   }
 
   if (!isLoading && !orders.length) {
