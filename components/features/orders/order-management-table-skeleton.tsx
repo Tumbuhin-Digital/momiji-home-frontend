@@ -4,7 +4,7 @@ import { TableRow, TableCell } from "@/components/ui/table"
 export function OrderManagementTableSkeleton() {
   return (
     <>
-      {Array.from({ length: 5 }).map((_, i) => (
+      {Array.from({ length: 12 }).map((_, i) => (
         <TableRow
           key={i}
           className="border-b border-primary/50 last:border-0 hover:bg-muted/50"

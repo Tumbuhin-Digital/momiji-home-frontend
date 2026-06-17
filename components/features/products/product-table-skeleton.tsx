@@ -2,7 +2,7 @@ import { Fragment } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export function ProductTableSkeleton() {
-  const rows = Array.from({ length: 5 }, (_, i) => i)
+  const rows = Array.from({ length: 12 }, (_, i) => i)
 
   return (
     <>
