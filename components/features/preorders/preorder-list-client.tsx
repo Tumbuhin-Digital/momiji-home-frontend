@@ -3,7 +3,7 @@
 import { useState } from "react"
 
 import { format } from "date-fns"
-import { Download, Search, SlidersHorizontal } from "lucide-react"
+import { CloudDownload, Loader2, Search, SlidersHorizontal } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -19,7 +19,7 @@ import { InvoiceSettlementModal } from "@/components/features/preorders/invoice-
 import { PaidSettlementModal } from "@/components/features/preorders/paid-settlement-modal"
 
 import { useExportPreorders, usePreorders } from "@/hooks/use-preorders"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, formatSystemStatus } from "@/lib/utils"
 
 import type { PreorderGroupSettlement } from "@/types/preorders"
 
@@ -43,8 +43,6 @@ export function PreorderListClient() {
   const { data: groups, isLoading } = usePreorders({ page, limit: 20 })
   const exportMutation = useExportPreorders()
 
-  const currentDateStr = format(new Date(), "EEEE, MMM d yyyy")
-
   const filteredGroups = groups
     ?.filter((g) =>
       g.productName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -67,8 +65,8 @@ export function PreorderListClient() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-    } catch {
-      // error silently handled
+    } catch (e) {
+      console.error("Failed to export orders", e)
     }
   }
 
@@ -77,26 +75,30 @@ export function PreorderListClient() {
   }
 
   return (
-    <div className="flex w-full flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 p-6">
       {/* Header */}
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-800">
-            Pre-Order List
+          <h1 className="text-[32px] font-medium text-neutral-800">
+            Sales Report
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {currentDateStr} - All System Running
+          <p className="text-lg text-neutral-400">
+            {formatSystemStatus(new Date())}
           </p>
         </div>
-
         <Button
-          variant="secondary"
-          className="bg-[#7EA4B3] font-medium text-white hover:bg-[#688A98]"
+          type="button"
+          size="xl"
+          className="h-13! w-full sm:w-fit"
           onClick={handleExport}
           disabled={exportMutation.isPending}
         >
-          <Download className="mr-2 h-4 w-4" />
-          {exportMutation.isPending ? "Downloading..." : "Download Excel"}
+          {exportMutation.isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <CloudDownload className="size-4" />
+          )}
+          Download Excel
         </Button>
       </div>
 
