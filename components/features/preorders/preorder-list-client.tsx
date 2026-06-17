@@ -19,6 +19,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
+import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
@@ -31,10 +38,10 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { Skeleton } from "@/components/ui/skeleton"
 
 import { InvoiceSettlementModal } from "@/components/features/preorders/invoice-settlement-modal"
 import { PaidSettlementModal } from "@/components/features/preorders/paid-settlement-modal"
+import { PreorderListSkeleton } from "@/components/features/preorders/preorder-list-skeleton"
 
 import { useExportPreorders, usePreorders } from "@/hooks/use-preorders"
 import { formatCurrency, formatSystemStatus } from "@/lib/utils"
@@ -201,39 +208,20 @@ export function PreorderListClient() {
       {/* Groups */}
       <div className="space-y-4">
         {isLoading ? (
-          <>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div
-                key={i}
-                className="overflow-hidden rounded border border-[#EBEBEB] bg-white shadow-sm"
-              >
-                {/* Group header skeleton */}
-                <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-                  <div className="flex flex-col gap-2">
-                    <Skeleton className="h-5 w-40 rounded" />
-                    <Skeleton className="h-3.5 w-16 rounded" />
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <Skeleton className="h-3 w-20 rounded" />
-                    <Skeleton className="h-7 w-12 rounded" />
-                  </div>
-                </div>
-                {/* Row skeleton */}
-                <div className="divide-y divide-slate-100 px-6">
-                  {Array.from({ length: 2 }).map((_, j) => (
-                    <div key={j} className="flex items-center gap-8 py-3">
-                      <Skeleton className="h-4 w-28 rounded" />
-                      <Skeleton className="h-4 w-20 rounded" />
-                      <Skeleton className="h-4 w-12 rounded" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </>
+          <PreorderListSkeleton />
         ) : !filteredGroups || filteredGroups.length === 0 ? (
-          <div className="flex h-40 items-center justify-center rounded border border-dashed border-slate-200 bg-white text-sm text-muted-foreground">
-            No pre-order groups found.
+          <div className="flex h-[calc(100vh-360px)] items-center justify-center rounded border border-dashed border-slate-200 bg-white">
+            <Empty className="gap-4 border-none">
+              <EmptyMedia variant="icon" className="mb-0">
+                <Search className="size-5 text-primary" />
+              </EmptyMedia>
+              <EmptyHeader>
+                <EmptyTitle>No pre-orders found</EmptyTitle>
+                <EmptyDescription>
+                  No pre-order groups matching your criteria.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           </div>
         ) : (
           filteredGroups.map((group) => (

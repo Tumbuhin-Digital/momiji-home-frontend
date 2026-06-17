@@ -1,8 +1,15 @@
 "use client"
 
-import { CloudDownload, Loader2 } from "lucide-react"
+import { CloudDownload, Loader2, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
 
 import { SalesReportTableSkeleton } from "@/components/features/sales-report/sales-report-table-skeleton"
 
@@ -78,21 +85,32 @@ export function SalesReportClient() {
           <table className="w-full text-left text-sm text-slate-600">
             <thead className="sticky top-0 z-10 bg-[#F2EDE4] text-black">
               <tr>
-                <th className="px-6 py-4 font-medium">ORDER ID</th>
-                <th className="px-6 py-4 font-medium">CUSTOMER</th>
-                <th className="px-6 py-4 font-medium">PRODUCT</th>
-                <th className="px-6 py-4 font-medium">TOTAL PRICE</th>
+                <th className="px-6 py-4 font-medium text-black">ORDER ID</th>
+                <th className="px-6 py-4 font-medium text-black">CUSTOMER</th>
+                <th className="px-6 py-4 font-medium text-black">PRODUCT</th>
+                <th className="px-6 py-4 font-medium text-black">
+                  TOTAL PRICE
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-primary/50">
               {isLoading && <SalesReportTableSkeleton />}
               {!isLoading && orders?.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={4}
-                    className="h-32 text-center text-muted-foreground"
-                  >
-                    No orders found.
+                  <td colSpan={4} className="p-0">
+                    <div className="flex h-[calc(100vh-360px)] items-center justify-center">
+                      <Empty className="gap-4 border-none">
+                        <EmptyMedia variant="icon" className="mb-0">
+                          <Search className="size-5 text-primary" />
+                        </EmptyMedia>
+                        <EmptyHeader>
+                          <EmptyTitle>No orders found</EmptyTitle>
+                          <EmptyDescription>
+                            There are no orders matching your criteria.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -120,32 +138,32 @@ export function SalesReportClient() {
                       key={order.id}
                       className="border-b border-black/10 last:border-0 hover:bg-slate-50/50"
                     >
-                      <td className="px-6 py-4 align-top">
-                        <div className="font-medium text-black">
+                      <td className="gap-1 px-6 py-4 align-middle">
+                        <div className="text-base font-medium text-black">
                           #{order.orderNumber}
                         </div>
-                        <div className="mt-0.5 text-xs font-medium text-black/60">
+                        <div className="text-xs text-black/60">
                           {formatOrderDate(order.orderDate)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 align-top">
-                        <div className="font-medium text-black">
+                      <td className="gap-1 px-6 py-4 align-middle">
+                        <div className="text-base font-medium text-black">
                           {order.customer?.name || "Guest"}
                         </div>
-                        <div className="mt-0.5 text-xs font-medium text-black/60">
+                        <div className="text-xs text-black/60">
                           {order.customer?.email || "-"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 align-top">
-                        <div className="font-medium text-black">
+                      <td className="gap-1 px-6 py-4 align-middle">
+                        <div className="text-base font-medium text-black">
                           {totalItems} {totalItems === 1 ? "Order" : "Orders"}
                         </div>
-                        <div className="mt-0.5 text-xs font-medium text-black/60">
+                        <div className="text-xs text-black/60">
                           {breakdownText.join(", ") || "-"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 align-top">
-                        <div className="font-medium text-black">
+                      <td className="px-6 py-4 align-middle">
+                        <div className="text-base font-medium text-[#3D3D3D]">
                           {formatCurrency(order.totalPrice)} USD
                         </div>
                       </td>

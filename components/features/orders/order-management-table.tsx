@@ -37,10 +37,6 @@ export function OrderManagementTable({
     )
   }
 
-  if (!isLoading && !orders.length) {
-    return <OrderManagementTableEmpty />
-  }
-
   return (
     <>
       <div className="overflow-hidden rounded-t-[8px] bg-[#F9F9F9]">
@@ -60,6 +56,13 @@ export function OrderManagementTable({
             </thead>
             <tbody className="divide-y divide-primary/50">
               {isLoading && <OrderManagementTableSkeleton />}
+              {!isLoading && !orders.length && (
+                <tr>
+                  <td colSpan={6} className="p-0">
+                    <OrderManagementTableEmpty />
+                  </td>
+                </tr>
+              )}
               {!isLoading &&
                 orders.map((order) => {
                   const totalItems = order.lineItems.reduce(
@@ -93,23 +96,25 @@ export function OrderManagementTable({
                       key={order.id}
                       className="border-b border-black/10 last:border-0 hover:bg-muted/50"
                     >
-                      <td className="px-6 py-4 align-middle">
-                        <div className="font-medium">#{order.orderNumber}</div>
-                        <div className="text-sm text-muted-foreground">
+                      <td className="gap-1 px-6 py-4 align-middle">
+                        <div className="text-base font-medium text-black">
+                          #{order.orderNumber}
+                        </div>
+                        <div className="text-xs text-black/60">
                           {totalItems} item - {formatCurrency(order.totalPrice)}{" "}
                           USD
                         </div>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="font-medium">
+                      <td className="gap-1 px-6 py-4 align-middle">
+                        <div className="text-base font-medium text-black">
                           {order.customer?.name || "-"}
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-xs text-black/60">
                           {order.customer?.email || "-"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="font-medium">
+                      <td className="gap-1 px-6 py-4 align-middle">
+                        <div className="text-base font-medium text-black">
                           {order.orderDate
                             ? format(new Date(order.orderDate), "d/MM/yyyy")
                             : "-"}
@@ -118,7 +123,7 @@ export function OrderManagementTable({
                       <td className="px-6 py-4 align-middle">
                         {getStatusBadge(displayStatus)}
                       </td>
-                      <td className="px-6 py-4 align-middle">
+                      <td className="gap-1 px-6 py-4 align-middle">
                         <div className="flex items-center gap-3">
                           <div className="h-1.5 w-24 overflow-hidden rounded-full bg-neutral-200">
                             <div
@@ -126,7 +131,7 @@ export function OrderManagementTable({
                               style={{ width: `${progressPercentage}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium">
+                          <span className="text-medium text-xs text-[#3D3D3D]">
                             {receivedItems}/{totalItems}
                           </span>
                         </div>

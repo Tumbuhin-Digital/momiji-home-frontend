@@ -10,10 +10,10 @@ import {
 
 export function OrderManagementTableEmpty() {
   return (
-    <div className="rounded-xl border bg-white p-6">
-      <Empty className="py-12">
-        <EmptyMedia variant="icon">
-          <Search className="size-5 text-slate-400" />
+    <div className="flex h-[calc(100vh-360px)] items-center justify-center">
+      <Empty className="gap-4 border-none">
+        <EmptyMedia variant="icon" className="mb-0">
+          <Search className="size-5 text-primary" />
         </EmptyMedia>
         <EmptyHeader>
           <EmptyTitle>No orders found</EmptyTitle>

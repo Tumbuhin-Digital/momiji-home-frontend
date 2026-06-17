@@ -548,18 +548,20 @@ export default function ProductsPageClient() {
 
                   {rows.length === 0 && !productsQuery.isLoading && (
                     <tr>
-                      <td colSpan={6} className="px-6">
-                        <Empty className="gap-4 border-none">
-                          <EmptyMedia variant="icon" className="mb-0">
-                            <Search className="size-5 text-primary" />
-                          </EmptyMedia>
-                          <EmptyHeader>
-                            <EmptyTitle>No products found</EmptyTitle>
-                            <EmptyDescription>
-                              No products found matching your search.
-                            </EmptyDescription>
-                          </EmptyHeader>
-                        </Empty>
+                      <td colSpan={6} className="p-0">
+                        <div className="flex h-[calc(100vh-360px)] items-center justify-center">
+                          <Empty className="gap-4 border-none">
+                            <EmptyMedia variant="icon" className="mb-0">
+                              <Search className="size-5 text-primary" />
+                            </EmptyMedia>
+                            <EmptyHeader>
+                              <EmptyTitle>No products found</EmptyTitle>
+                              <EmptyDescription>
+                                No products found matching your search.
+                              </EmptyDescription>
+                            </EmptyHeader>
+                          </Empty>
+                        </div>
                       </td>
                     </tr>
                   )}

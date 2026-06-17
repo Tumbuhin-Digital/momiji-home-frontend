@@ -131,8 +131,14 @@ export default function CheckoutPageClient() {
   const preOrderItems = cartData?.pre_order || []
   const allItemsLength = shipReadyItems.length + preOrderItems.length
 
+  const mappedCountryForRates =
+    formValues.country?.toLowerCase() === "united states" ||
+    formValues.country?.toLowerCase() === "amerika serikat"
+      ? "US"
+      : formValues.country || "US"
+
   const { data: shippingRates, isFetching: isLoadingShipping } =
-    useShippingRates(formValues.zipCode || "", formValues.country || "US", {
+    useShippingRates(formValues.zipCode || "", mappedCountryForRates, {
       enabled:
         preOrderItems.length > 0 &&
         !!formValues.zipCode &&
