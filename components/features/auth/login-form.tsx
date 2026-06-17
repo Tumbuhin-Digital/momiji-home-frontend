@@ -219,8 +219,8 @@ export function LoginForm() {
         className="h-13! w-full rounded-[8px] bg-[#9A9A9A] shadow-none transition-colors hover:bg-[#8A8A8A]"
       >
         {isSubmitting ? (
-          <span className="flex items-center text-sm font-semibold text-white">
-            <Loader2 className="mr-2 size-4 animate-spin" /> Logging in...
+          <span className="flex items-center gap-2 text-sm font-semibold text-white">
+            <Loader2 className="size-4 animate-spin" /> Logging in...
           </span>
         ) : (
           <span className="text-sm font-semibold text-white">Login</span>
