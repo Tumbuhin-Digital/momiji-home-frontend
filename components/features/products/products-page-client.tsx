@@ -137,6 +137,7 @@ export default function ProductsPageClient() {
 
   const handleSearchChange = (val: string) => {
     setSearch(val || null, { throttleMs: 300 })
+    setPage(1)
   }
 
   const openEditModal = (product: Product) => {
@@ -212,41 +213,46 @@ export default function ProductsPageClient() {
                 >
                   <DropdownMenuCheckboxItem
                     checked={sort === "name_asc"}
-                    onCheckedChange={() =>
+                    onCheckedChange={() => {
                       setSort(sort === "name_asc" ? "" : "name_asc")
-                    }
+                      setPage(1)
+                    }}
                   >
                     A-Z
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={filter === "ship-ready"}
-                    onCheckedChange={() =>
+                    onCheckedChange={() => {
                       setFilter(filter === "ship-ready" ? "all" : "ship-ready")
-                    }
+                      setPage(1)
+                    }}
                   >
                     Ship Ready
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={filter === "pre-order"}
-                    onCheckedChange={() =>
+                    onCheckedChange={() => {
                       setFilter(filter === "pre-order" ? "all" : "pre-order")
-                    }
+                      setPage(1)
+                    }}
                   >
                     Pre-Order
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={sort === "stock_asc"}
-                    onCheckedChange={() =>
+                    onCheckedChange={() => {
                       setSort(sort === "stock_asc" ? "" : "stock_asc")
-                    }
+                      setPage(1)
+                    }}
                   >
                     Stock: low-high
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={sort === "stock_desc"}
-                    onCheckedChange={() =>
+                    onCheckedChange={() => {
                       setSort(sort === "stock_desc" ? "" : "stock_desc")
-                    }
+                      setPage(1)
+                    }}
                   >
                     Stock: high-low
                   </DropdownMenuCheckboxItem>
