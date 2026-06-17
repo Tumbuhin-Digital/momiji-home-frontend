@@ -131,7 +131,7 @@ export default function CheckoutPageClient() {
   const preOrderItems = cartData?.pre_order || []
   const allItemsLength = shipReadyItems.length + preOrderItems.length
 
-  const { data: shippingRates, isPending: isLoadingShipping } =
+  const { data: shippingRates, isFetching: isLoadingShipping } =
     useShippingRates(formValues.zipCode || "", formValues.country || "US", {
       enabled:
         preOrderItems.length > 0 &&
@@ -231,7 +231,10 @@ export default function CheckoutPageClient() {
           const address = parts[0]
           const city = parts[1]
           const stateZip = parts[2]
-          const country = parts[3] || "United States"
+          let country = parts[3] || "United States"
+          if (country.toLowerCase() === "amerika serikat") {
+            country = "United States"
+          }
 
           const stateZipParts = stateZip.split(" ")
           let state = stateZipParts[0]
@@ -380,10 +383,6 @@ export default function CheckoutPageClient() {
         </Empty>
       </div>
     )
-  }
-
-  if (isLoadingShipping) {
-    return <CheckoutSkeleton />
   }
 
   return (
@@ -747,44 +746,51 @@ export default function CheckoutPageClient() {
                     </div>
                   ) : (
                     <div className="overflow-hidden rounded-lg border bg-white">
-                      <RadioGroup
-                        value={formValues.shippingMethod}
-                        onValueChange={(v) => {
-                          setValue("shippingMethod", v)
-                          clearErrors("shippingMethod")
-                        }}
-                        className="flex flex-col gap-0"
-                      >
-                        {(shippingRates || []).map((rate, idx) => (
-                          <div
-                            key={rate.serviceCode}
-                            className={`flex items-center justify-between p-4 ${idx !== (shippingRates?.length || 0) - 1 ? "border-b" : ""}`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <RadioGroupItem
-                                value={rate.serviceCode}
-                                id={`shipping-${rate.serviceCode}`}
-                              />
-                              <label
-                                htmlFor={`shipping-${rate.serviceCode}`}
-                                className="flex cursor-pointer flex-col gap-1"
-                              >
-                                <span className="font-medium text-slate-800">
-                                  {rate.label}
-                                </span>
-                                <span className="text-sm text-slate-500">
-                                  Estimated Delivery: {rate.deliveryDays} Days
-                                </span>
-                              </label>
+                      {!shippingRates || shippingRates.length === 0 ? (
+                        <div className="p-6 text-center text-sm text-slate-500">
+                          Please enter your ZIP Code to see available shipping
+                          rates.
+                        </div>
+                      ) : (
+                        <RadioGroup
+                          value={formValues.shippingMethod}
+                          onValueChange={(v) => {
+                            setValue("shippingMethod", v)
+                            clearErrors("shippingMethod")
+                          }}
+                          className="flex flex-col gap-0"
+                        >
+                          {shippingRates.map((rate, idx) => (
+                            <div
+                              key={rate.serviceCode}
+                              className={`flex items-center justify-between p-4 ${idx !== shippingRates.length - 1 ? "border-b" : ""}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <RadioGroupItem
+                                  value={rate.serviceCode}
+                                  id={`shipping-${rate.serviceCode}`}
+                                />
+                                <label
+                                  htmlFor={`shipping-${rate.serviceCode}`}
+                                  className="flex cursor-pointer flex-col gap-1"
+                                >
+                                  <span className="font-medium text-slate-800">
+                                    {rate.label}
+                                  </span>
+                                  <span className="text-sm text-slate-500">
+                                    Estimated Delivery: {rate.deliveryDays} Days
+                                  </span>
+                                </label>
+                              </div>
+                              <span className="font-medium text-slate-800">
+                                {rate.cost === "0" || rate.cost === "0.00"
+                                  ? "Free"
+                                  : formatCurrency(parseFloat(rate.cost))}
+                              </span>
                             </div>
-                            <span className="font-medium text-slate-800">
-                              {rate.cost === "0" || rate.cost === "0.00"
-                                ? "Free"
-                                : formatCurrency(parseFloat(rate.cost))}
-                            </span>
-                          </div>
-                        ))}
-                      </RadioGroup>
+                          ))}
+                        </RadioGroup>
+                      )}
                     </div>
                   )}
                   {errors.shippingMethod && (
