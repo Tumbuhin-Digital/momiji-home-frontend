@@ -278,9 +278,9 @@ export default function ProductsPageClient() {
           </div>
 
           <div className="overflow-hidden rounded-t-[8px] border border-primary/50 bg-white">
-            <div className="overflow-x-auto">
+            <div className="h-[calc(100vh-300px)] overflow-x-auto overflow-y-auto">
               <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-primary text-white">
+                <thead className="sticky top-0 z-10 bg-primary text-white">
                   <tr>
                     <th className="px-6 py-4 font-medium">Product</th>
                     <th className="px-6 py-4 font-medium">Stock (Shopify)</th>
@@ -491,7 +491,7 @@ export default function ProductsPageClient() {
                                 variant.title.split(" - ")[1] || variant.title
                               return (
                                 <tr key={variant.id}>
-                                  <td className="px-6 py-4 pl-16">
+                                  <td className="px-6 py-4 pl-12">
                                     <div className="flex items-center gap-3">
                                       <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                                       <span className="text-sm text-slate-600">
