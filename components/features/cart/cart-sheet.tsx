@@ -130,15 +130,14 @@ export function CartSheet() {
               <EmptyContent>
                 <Button
                   type="button"
-                  className="h-17.75 w-57.5 gap-2.5 rounded-full border border-primary p-6 backdrop-blur-md hover:scale-105 hover:bg-primary"
+                  size="2xl"
+                  className="h-13! rounded-full uppercase"
                   onClick={() => setIsOpen(false)}
                   render={
                     <Link href={pathname.includes("/shop") ? pathname : "/"} />
                   }
                 >
-                  <span className="text-base font-medium uppercase">
-                    Continue Shopping
-                  </span>
+                  Continue Shopping
                 </Button>
               </EmptyContent>
             </Empty>
