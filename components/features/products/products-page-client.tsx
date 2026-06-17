@@ -404,10 +404,10 @@ export default function ProductsPageClient() {
                                       <div
                                         className={`size-2.5 rounded-full ${
                                           groupCategory === "ship-ready"
-                                            ? "bg-success"
+                                            ? "bg-[#29CE2D]"
                                             : groupCategory === "pre-order"
-                                              ? "bg-warning"
-                                              : "bg-destructive"
+                                              ? "bg-[#FF8D28]"
+                                              : "bg-[#FF383C]"
                                         }`}
                                       />
                                       <span className="capitalize">
@@ -432,7 +432,7 @@ export default function ProductsPageClient() {
                                     }
                                   >
                                     <div className="flex items-center gap-2">
-                                      <div className="size-2.5 rounded-full bg-success" />
+                                      <div className="size-2.5 rounded-full bg-[#29CE2D]" />
                                       Ship Ready
                                     </div>
                                   </DropdownMenuItem>
@@ -447,13 +447,13 @@ export default function ProductsPageClient() {
                                     }
                                   >
                                     <div className="flex items-center gap-2">
-                                      <div className="size-2.5 rounded-full bg-warning" />
+                                      <div className="size-2.5 rounded-full bg-[#FF8D28]" />
                                       Pre-Order
                                     </div>
                                   </DropdownMenuItem>
                                   <DropdownMenuItem disabled>
                                     <div className="flex items-center gap-2">
-                                      <div className="size-2.5 rounded-full bg-destructive" />
+                                      <div className="size-2.5 rounded-full bg-[#FF383C]" />
                                       Inactive
                                     </div>
                                   </DropdownMenuItem>
@@ -507,10 +507,10 @@ export default function ProductsPageClient() {
                                       <div
                                         className={`size-2 rounded-full ${
                                           variant.category === "ship-ready"
-                                            ? "bg-success"
+                                            ? "bg-[#29CE2D]"
                                             : variant.category === "pre-order"
-                                              ? "bg-warning"
-                                              : "bg-destructive"
+                                              ? "bg-[#FF8D28]"
+                                              : "bg-[#FF383C]"
                                         }`}
                                       />
                                       <span className="capitalize">
