@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 
-import { AlignLeft, ArrowRight, BarChart3, Lock } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,10 @@ import {
 } from "@/components/ui/chart"
 import { toastManager } from "@/components/ui/toast"
 
+import { StatusBadge } from "@/components/global/status-badge"
+
+import { IconlyBag } from "@/public/icons/iconly-bag"
+import { IconlyChart } from "@/public/icons/iconly-chart"
 import { Iconsax3dRotate } from "@/public/icons/iconsax-3d-rotate"
 
 import { useDashboardSummary } from "@/hooks/use-dashboard"
@@ -69,162 +73,155 @@ export default function DashboardClient() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="rounded-[12px] border-slate-200/60 bg-[#FFFAF0] shadow-sm">
+        <Card className="rounded-[8px] border-primary bg-secondary shadow-none">
           <CardContent className="flex flex-col gap-4 p-6">
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-[15px] font-medium text-slate-700">
-                  Total Products
-                </p>
-                <h2 className="mt-2 text-4xl font-semibold text-slate-800">
-                  {isLoading ? "-" : (data?.statCards.totalProducts ?? 0)}
-                </h2>
+                <p className="font-medium text-[#202939]">Total Products</p>
+                <div className="flex flex-col gap-2.5">
+                  <h2 className="text-[32px] font-semibold text-[#341601]">
+                    {isLoading ? "-" : (data?.statCards.totalProducts ?? 0)}
+                  </h2>
+                  <p className="text-xs font-medium text-[#341601]">
+                    Synced - <span className="text-[#34C759]">Shopify</span>
+                  </p>
+                </div>
               </div>
-              <div className="flex size-10 items-center justify-center rounded-full bg-slate-200/50">
-                <Lock className="size-5 text-slate-400" />
+              <div className="flex size-10.5 items-center justify-center rounded-full bg-primary/20">
+                <IconlyBag className="size-5.5 text-primary" />
               </div>
             </div>
-            <p className="text-xs font-medium text-slate-500">
-              Synced - <span className="text-emerald-500">Shopify</span>
-            </p>
           </CardContent>
         </Card>
 
-        <Card className="rounded-[12px] border-slate-200/60 bg-[#FFFAF0] shadow-sm">
+        <Card className="rounded-[8px] border-primary bg-secondary shadow-none">
           <CardContent className="flex flex-col gap-4 p-6">
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-[15px] font-medium text-slate-700">
-                  Available Stock
-                </p>
-                <h2 className="mt-2 text-4xl font-semibold text-slate-800">
-                  {isLoading
-                    ? "-"
-                    : (data?.statCards.availableStock.count ?? 0)}
-                </h2>
+                <p className="font-medium text-[#202939]">Available Stock</p>
+                <div className="flex flex-col gap-2.5">
+                  <h2 className="text-[32px] font-semibold text-[#341601]">
+                    {isLoading
+                      ? "-"
+                      : (data?.statCards.availableStock.count ?? 0)}
+                  </h2>
+                  <p className="text-xs font-medium text-[#341601]">
+                    Stock update -{" "}
+                    <span className="text-[#34C759]">
+                      {isLoading
+                        ? "-"
+                        : `+${data?.statCards.availableStock.deltaToday ?? 0} today`}
+                    </span>
+                  </p>
+                </div>
               </div>
-              <div className="flex size-10 items-center justify-center rounded-full bg-slate-200/50">
-                <Lock className="size-5 text-slate-400" />
+              <div className="flex size-10.5 items-center justify-center rounded-full bg-primary/20">
+                <IconlyBag className="size-5.5 text-primary" />
               </div>
             </div>
-            <p className="text-xs font-medium text-slate-500">
-              Stock update -{" "}
-              <span className="text-emerald-500">
-                {isLoading
-                  ? "-"
-                  : `+${data?.statCards.availableStock.deltaToday ?? 0} today`}
-              </span>
-            </p>
           </CardContent>
         </Card>
 
-        <Card className="rounded-[12px] border-slate-200/60 bg-[#FFFAF0] shadow-sm">
+        <Card className="rounded-[8px] border-primary bg-secondary shadow-none">
           <CardContent className="flex flex-col gap-4 p-6">
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-[15px] font-medium text-slate-700">
-                  Order in Progress
-                </p>
-                <h2 className="mt-2 text-4xl font-semibold text-slate-800">
-                  {isLoading
-                    ? "-"
-                    : (data?.statCards.ordersInProgress.count ?? 0)}
-                </h2>
+                <p className="font-medium text-[#202939]">Order in Progress</p>
+                <div className="flex flex-col gap-2.5">
+                  <h2 className="text-[32px] font-semibold text-[#341601]">
+                    {isLoading
+                      ? "-"
+                      : (data?.statCards.ordersInProgress.count ?? 0)}
+                  </h2>
+                  <p className="text-xs font-medium text-[#341601]">
+                    Pending Pickup -{" "}
+                    <span className="text-[#34C759]">
+                      {isLoading
+                        ? "-"
+                        : `${data?.statCards.ordersInProgress.deltaToday ?? 0} today`}
+                    </span>
+                  </p>
+                </div>
               </div>
-              <div className="flex size-10 items-center justify-center rounded-full bg-slate-200/50">
-                <Lock className="size-5 text-slate-400" />
+              <div className="flex size-10.5 items-center justify-center rounded-full bg-primary/20">
+                <IconlyBag className="size-5.5 text-primary" />
               </div>
             </div>
-            <p className="text-xs font-medium text-slate-500">
-              Pending Pickup -{" "}
-              <span className="text-emerald-500">
-                {isLoading
-                  ? "-"
-                  : `${data?.statCards.ordersInProgress.deltaToday ?? 0} today`}
-              </span>
-            </p>
           </CardContent>
         </Card>
 
-        <Card className="rounded-[12px] border-slate-200/60 bg-[#FFFAF0] shadow-sm">
+        <Card className="rounded-[8px] border-primary bg-secondary shadow-none">
           <CardContent className="flex flex-col gap-4 p-6">
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-[15px] font-medium text-slate-700">
-                  Pre-Orders
-                </p>
-                <h2 className="mt-2 text-4xl font-semibold text-slate-800">
-                  {isLoading ? "-" : (data?.statCards.preOrders.count ?? 0)}
-                </h2>
+                <p className="font-medium text-[#202939]">Pre-Orders</p>
+                <div className="flex flex-col gap-2.5">
+                  <h2 className="text-[32px] font-semibold text-[#341601]">
+                    {isLoading ? "-" : (data?.statCards.preOrders.count ?? 0)}
+                  </h2>
+                  <p className="text-xs font-medium text-[#341601]">
+                    Awaiting -{" "}
+                    <span className="text-[#FF8D28]">
+                      {isLoading
+                        ? "-"
+                        : data?.statCards.preOrders.statusLabel ||
+                          "Confirm Pending"}
+                    </span>
+                  </p>
+                </div>
               </div>
-              <div className="flex size-10 items-center justify-center rounded-full bg-slate-200/50">
-                <Lock className="size-5 text-slate-400" />
+              <div className="flex size-10.5 items-center justify-center rounded-full bg-primary/20">
+                <IconlyBag className="size-5.5 text-primary" />
               </div>
             </div>
-            <p className="text-xs font-medium text-slate-500">
-              Awaiting -{" "}
-              <span className="text-amber-500">
-                {isLoading
-                  ? "-"
-                  : data?.statCards.preOrders.statusLabel || "Confirm Pending"}
-              </span>
-            </p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="rounded-[12px] border-slate-200/60 bg-[#FFFAF0] shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-200/60 p-6">
+        <Card className="gap-3 rounded-[8px] border-primary bg-secondary shadow-none">
+          <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-2">
-              <AlignLeft className="size-5 text-slate-800" />
-              <h3 className="text-lg font-medium text-slate-800">
+              <IconlyChart className="size-6 text-black" />
+              <h3 className="text-xl font-medium text-black">
                 Recent Order Queue
               </h3>
             </div>
             <Link href="/order-management">
-              <button className="flex items-center gap-1 text-sm font-medium text-[#8CAEBA] transition-colors hover:text-[#6A8A96]">
-                Manage All <ArrowRight className="size-4" />
+              <button className="flex cursor-pointer items-center gap-1 text-lg font-medium text-primary transition-colors hover:text-[#6A8A96]">
+                Manage All <ArrowRight className="size-6" />
               </button>
             </Link>
           </div>
-          <CardContent className="flex flex-col gap-4 p-6">
+          <CardContent className="space-y-3 pt-0">
             {isLoading ? (
               <div className="text-sm text-slate-500">Loading orders...</div>
             ) : !data?.recentOrders.length ? (
               <div className="text-sm text-slate-500">No recent orders.</div>
             ) : (
-              data.recentOrders.map((order, i) => {
-                const isNew = order.statusLabel.toLowerCase() === "new order"
-                const isPre = order.statusLabel.toLowerCase().includes("pre")
-
-                let badgeClass = "bg-slate-100 text-slate-600"
-                if (isNew) badgeClass = "bg-blue-100 text-blue-600"
-                else if (isPre) badgeClass = "bg-orange-100 text-orange-600"
-                else if (order.statusLabel.toLowerCase().includes("confirm"))
-                  badgeClass = "bg-emerald-100 text-emerald-600"
-
+              data.recentOrders.slice(0, 4).map((order, i) => {
                 return (
                   <div
                     key={i}
-                    className="flex items-center justify-between rounded-lg border border-[#A5C1CB] bg-[#E8EFEF] p-4"
+                    className="flex items-center justify-between gap-1.75 rounded-[8px] border border-primary bg-primary/20 p-3"
                   >
-                    <div className="space-y-1">
-                      <p className="text-[11px] font-medium text-slate-500">
-                        {order.orderNumber}
+                    <div>
+                      <p className="text-xs font-medium text-[#202939]">
+                        #{order.orderNumber}
                       </p>
-                      <p className="text-sm font-semibold text-slate-800">
-                        {order.customerName}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {order.itemsPreview}
-                      </p>
+                      <span className="flex flex-col gap-1">
+                        <p className="text-lg font-semibold text-[#341601]">
+                          {order.customerName}
+                        </p>
+                        <p className="text-sm text-alternate">
+                          {order.itemsPreview}
+                        </p>
+                      </span>
                     </div>
-                    <div
-                      className={`rounded-full px-3 py-1 text-[11px] font-semibold capitalize ${badgeClass}`}
-                    >
-                      {order.statusLabel}
-                    </div>
+                    <StatusBadge
+                      status={order.statusLabel}
+                      className="h-8! w-fit rounded-full px-4 py-3 text-center"
+                    />
                   </div>
                 )
               })
@@ -232,54 +229,53 @@ export default function DashboardClient() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-[12px] border-slate-200/60 bg-[#FFFAF0] shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-200/60 p-6">
+        <Card className="gap-3 rounded-[8px] border-primary bg-secondary shadow-none">
+          <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-2">
-              <BarChart3 className="size-5 text-slate-800" />
-              <h3 className="text-lg font-medium text-slate-800">
-                Sales Report
-              </h3>
+              <IconlyChart className="size-6 text-black" />
+              <h3 className="text-xl font-medium text-black">Sales Report</h3>
             </div>
             <Link href="/sales-report">
-              <button className="flex items-center gap-1 text-sm font-medium text-[#8CAEBA] transition-colors hover:text-[#6A8A96]">
-                Details <ArrowRight className="size-4" />
+              <button className="flex cursor-pointer items-center gap-1 text-lg font-medium text-primary transition-colors hover:text-[#6A8A96]">
+                Details <ArrowRight className="size-6" />
               </button>
             </Link>
           </div>
-          <CardContent className="flex flex-col gap-6 p-6">
-            <div className="flex items-center justify-between rounded-lg border border-[#A5C1CB] bg-[#E8EFEF] p-6">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-slate-700">
-                  Total Revenue
-                </p>
-                <h3 className="text-3xl font-bold text-[#553E2A]">
-                  {isLoading
-                    ? "-"
-                    : `${formatCurrency(data?.salesReport.totalRevenueThisMonth ?? 0)} ${data?.salesReport.currency || "USD"}`}
-                </h3>
-                <p className="text-[11px] font-medium text-slate-800">
-                  This Month
-                </p>
-              </div>
-              <div className="flex size-10 items-center justify-center rounded-full bg-slate-200/50">
-                <BarChart3 className="size-5 text-slate-400" />
+          <CardContent className="space-y-3 pt-0">
+            <div className="flex items-center justify-between gap-1.75 rounded-[8px] border border-primary bg-primary/20 p-4">
+              <div className="flex w-full items-center justify-between">
+                <div>
+                  <p className="font-medium text-[#202939]">Total Revenue</p>
+                  <span className="flex flex-col gap-2">
+                    <h3 className="text-[32px] font-semibold text-[#341601]">
+                      {isLoading
+                        ? "-"
+                        : `${formatCurrency(data?.salesReport.totalRevenueThisMonth ?? 0)} ${data?.salesReport.currency || "USD"}`}
+                    </h3>
+                    <p className="text-xs font-medium text-[#341601]">
+                      This Month
+                    </p>
+                  </span>
+                </div>
+                <div className="flex size-10 items-center justify-center rounded-full bg-primary/20">
+                  <IconlyChart className="size-5 text-primary" />
+                </div>
               </div>
             </div>
-
-            <div className="flex-1">
-              <div className="mb-4 flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-[#8CAEBA]">
+            <div className="flex flex-1 flex-col gap-3">
+              <div className="flex items-center justify-between gap-2.5">
+                <h4 className="text-xl font-medium text-primary">
                   Monthly Revenue
                 </h4>
-                <div className="ml-4 h-px flex-1 bg-slate-200" />
+                <div className="h-px flex-1 bg-primary" />
               </div>
-              <div className="mt-8">
+              <div>
                 {isLoading || !data ? (
                   <div className="flex h-40 items-center justify-center text-sm text-slate-500">
                     Loading chart...
                   </div>
                 ) : (
-                  <ChartContainer config={chartConfig} className="h-40 w-full">
+                  <ChartContainer config={chartConfig} className="h-57 w-full">
                     <BarChart
                       accessibilityLayer
                       data={data.salesReport.monthlyRevenue}
@@ -291,8 +287,8 @@ export default function DashboardClient() {
                         tickMargin={10}
                         axisLine={false}
                         tick={{
-                          fill: "#1e293b",
-                          fontSize: 10,
+                          fill: "#000000",
+                          fontSize: 14,
                           fontWeight: 500,
                         }}
                       />
@@ -301,7 +297,7 @@ export default function DashboardClient() {
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             return (
-                              <div className="rounded-md bg-white px-3 py-1.5 text-[10px] font-semibold whitespace-nowrap text-[#8CAEBA] shadow-sm ring-1 ring-slate-200">
+                              <div className="rounded-sm bg-white px-3 py-1.5 text-[10px] font-semibold whitespace-nowrap text-primary shadow-sm ring-1 ring-slate-200">
                                 {data.salesReport.currency}{" "}
                                 {formatCurrency(payload[0].value as number)}
                               </div>
