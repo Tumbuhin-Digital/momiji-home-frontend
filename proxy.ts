@@ -3,33 +3,22 @@ import { NextResponse } from "next/server"
 
 const ACCESS_TOKEN_COOKIE = "access_token"
 
-const PUBLIC_ROUTES = [
-  "/",
-  "/api",
-  "/auth/login",
-  "/cart",
-  "/checkout",
-  "/order-confirmed",
-  "/shop-preorder",
-  "/shop-ship-ready",
-]
-
-const BUYER_ROUTES = [
-  "/cart",
-  "/checkout",
-  "/order-confirmed",
-  "/shop-preorder",
-  "/shop-ship-ready",
+const ADMIN_ROUTES = [
+  "/dashboard",
+  "/products",
+  "/order-management",
+  "/pre-order-list",
+  "/sales-report",
 ]
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const isPublicRoute = PUBLIC_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  )
+  if (pathname.startsWith("/api")) {
+    return NextResponse.next()
+  }
 
-  const isBuyerRoute = BUYER_ROUTES.some(
+  const isAdminRoute = ADMIN_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
 
@@ -40,28 +29,35 @@ export function proxy(request: NextRequest) {
   let userRole = ""
   if (token) {
     try {
-      const payloadBase64 = token.split(".")[1]
-      if (payloadBase64) {
-        const payloadJson = atob(
-          payloadBase64.replace(/-/g, "+").replace(/_/g, "/")
-        )
+      const parts = token.split(".")
+      if (parts.length === 3) {
+        const payloadBase64 = parts[1]
+        let base64 = payloadBase64.replace(/-/g, "+").replace(/_/g, "/")
+        while (base64.length % 4 !== 0) {
+          base64 += "="
+        }
+        const payloadJson = atob(base64)
         const payload = JSON.parse(payloadJson)
         userRole = payload.role || ""
       }
     } catch {}
   }
 
-  if (isAuthenticated && userRole === "admin" && isBuyerRoute) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
-  }
-
   if (isAuthenticated && pathname === "/auth/login") {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
-  if (!isAuthenticated && !isPublicRoute) {
+
+  if (isAdminRoute && !isAuthenticated) {
     const loginUrl = new URL("/auth/login", request.url)
-    loginUrl.searchParams.set("from", pathname)
+    loginUrl.searchParams.set(
+      "from",
+      request.nextUrl.pathname + request.nextUrl.search
+    )
     return NextResponse.redirect(loginUrl)
+  }
+
+  if (isAuthenticated && userRole === "admin" && !isAdminRoute) {
+    return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
   return NextResponse.next()
