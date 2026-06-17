@@ -3,7 +3,13 @@
 import { useState } from "react"
 
 import { format } from "date-fns"
-import { CloudDownload, Loader2, Search, SlidersHorizontal } from "lucide-react"
+import {
+  CloudDownload,
+  ListFilter,
+  Loader2,
+  RotateCcw,
+  Search,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,7 +18,11 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group"
 import { Skeleton } from "@/components/ui/skeleton"
 
 import { InvoiceSettlementModal } from "@/components/features/preorders/invoice-settlement-modal"
@@ -103,54 +113,76 @@ export function PreorderListClient() {
       </div>
 
       {/* Search + Sort */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            placeholder="Search Product"
-            className="rounded border border-slate-200 pl-9 text-sm shadow-none focus-visible:ring-0"
+      <div className="flex items-center gap-2">
+        <InputGroup className="h-11 flex-1 rounded-[8px] border-primary shadow-sm has-[input:focus-visible]:border-primary/20 has-[input:focus-visible]:ring-primary/20">
+          <InputGroupAddon>
+            <div className="flex size-6 items-center justify-center gap-2 rounded-full bg-primary/20">
+              <Search
+                className="size-3 text-primary"
+                aria-hidden="true"
+                strokeWidth={1.5}
+              />
+            </div>
+          </InputGroupAddon>
+          <InputGroupInput
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search Product"
+            className="text-sm"
           />
-        </div>
+        </InputGroup>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-11! gap-2 rounded-[6px] border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
+              >
+                <ListFilter className="size-5" strokeWidth={1.5} />
+                Sort By
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-44 rounded-xl bg-white shadow-lg"
+            >
+              <DropdownMenuCheckboxItem
+                checked={sortBy === "A-Z"}
+                onCheckedChange={() => toggleSort("A-Z")}
+              >
+                A-Z
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={sortBy === "Qty: low-high"}
+                onCheckedChange={() => toggleSort("Qty: low-high")}
+              >
+                Qty: low-high
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={sortBy === "Qty: high-low"}
+                onCheckedChange={() => toggleSort("Qty: high-low")}
+              >
+                Qty: high-low
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {(searchQuery || sortBy) && (
             <Button
               variant="outline"
-              className="shrink-0 gap-2 rounded border-slate-200 text-slate-600"
+              size="icon"
+              onClick={() => {
+                setSearchQuery("")
+                setSortBy(null)
+                setPage(1)
+              }}
+              className="size-11! gap-2 rounded-[6px] border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
             >
-              <SlidersHorizontal className="h-4 w-4" />
-              Sort By
+              <RotateCcw className="size-5" strokeWidth={1.5} />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-44 rounded bg-white p-2 shadow-lg"
-          >
-            <DropdownMenuCheckboxItem
-              checked={sortBy === "A-Z"}
-              onCheckedChange={() => toggleSort("A-Z")}
-              className="cursor-pointer rounded py-2"
-            >
-              A-Z
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={sortBy === "Qty: low-high"}
-              onCheckedChange={() => toggleSort("Qty: low-high")}
-              className="cursor-pointer rounded py-2"
-            >
-              Qty: low-high
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={sortBy === "Qty: high-low"}
-              onCheckedChange={() => toggleSort("Qty: high-low")}
-              className="cursor-pointer rounded py-2"
-            >
-              Qty: high-low
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          )}
+        </div>
       </div>
 
       {/* Groups */}
