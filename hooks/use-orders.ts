@@ -61,6 +61,13 @@ export function useCancelOrder() {
   })
 }
 
+export function useExportOrders() {
+  return useMutation({
+    mutationFn: (params: { status?: string; search?: string } = {}) =>
+      ordersService.exportOrders(params),
+  })
+}
+
 export function useCreateOrder() {
   const queryClient = useQueryClient()
 

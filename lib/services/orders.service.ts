@@ -99,8 +99,11 @@ async function updateItemTracking(
   return response.data ? mapOrderResponseToOrder(response.data) : null
 }
 
-async function exportOrders(): Promise<Blob> {
+async function exportOrders(
+  params: { status?: string; search?: string } = {}
+): Promise<Blob> {
   return apiClient.get<Blob>("/orders/export", {
+    params,
     responseType: "blob",
   })
 }

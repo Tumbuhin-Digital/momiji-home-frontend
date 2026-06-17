@@ -1,25 +1,21 @@
 "use client"
 
-import { useState } from "react"
-
 import { CloudDownload, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
 import { SalesReportTableSkeleton } from "@/components/features/sales-report/sales-report-table-skeleton"
 
-import { useOrders } from "@/hooks/use-orders"
-import { ordersService } from "@/lib/services"
+import { useExportOrders, useOrders } from "@/hooks/use-orders"
 import { formatCurrency } from "@/lib/utils"
 
 export function SalesReportClient() {
   const { data: orders, isLoading, error } = useOrders()
-  const [isExporting, setIsExporting] = useState(false)
+  const exportMutation = useExportOrders()
 
   const handleExport = async () => {
     try {
-      setIsExporting(true)
-      const blob = await ordersService.exportOrders()
+      const blob = await exportMutation.mutateAsync({})
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
@@ -30,8 +26,6 @@ export function SalesReportClient() {
       a.remove()
     } catch (e) {
       console.error("Failed to export orders", e)
-    } finally {
-      setIsExporting(false)
     }
   }
 
@@ -67,9 +61,9 @@ export function SalesReportClient() {
           size="xl"
           className="h-13! w-full sm:w-fit"
           onClick={handleExport}
-          disabled={isExporting}
+          disabled={exportMutation.isPending}
         >
-          {isExporting ? (
+          {exportMutation.isPending ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
             <CloudDownload className="size-4" />
