@@ -167,11 +167,11 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     <>
       <Card className="group flex h-auto min-h-23.75 w-full cursor-pointer flex-row items-stretch overflow-hidden rounded-lg border-none bg-card transition-all duration-300">
         {/* Image */}
-        <div className="relative h-23.75 w-27 shrink-0 overflow-hidden rounded-lg bg-linear-to-b from-white via-white to-black/5">
+        <div className="relative h-23.75 w-27 shrink-0 overflow-hidden rounded-l-lg bg-linear-to-b from-white via-white to-black/5">
           {(!isShipReady || isBackendPreOrder || isConvertedToPreorder) && (
             <Badge
               size="sm"
-              className="absolute top-1 left-1 z-10 rounded-full text-xs uppercase"
+              className="absolute top-1 left-1 z-10 rounded-sm text-xs uppercase"
             >
               Pre-Order
             </Badge>
