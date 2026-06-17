@@ -59,7 +59,7 @@ export function QuantitySelector({
   return (
     <div
       className={cn(
-        "flex h-9 w-29.75 shrink-0 cursor-pointer items-center justify-between overflow-hidden rounded-lg border border-black/20 bg-white p-0.5 sm:w-35.5",
+        "flex h-9 w-29.75 shrink-0 cursor-pointer items-center justify-between overflow-hidden rounded-sm border border-black/20 bg-white p-0.5 sm:w-35.5",
         className
       )}
     >
