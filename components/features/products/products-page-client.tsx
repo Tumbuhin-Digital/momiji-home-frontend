@@ -278,7 +278,7 @@ export default function ProductsPageClient() {
           </div>
 
           <div className="overflow-hidden rounded-t-[8px] border border-primary/50 bg-white">
-            <div className="h-[calc(100vh-300px)] overflow-x-auto overflow-y-auto">
+            <div className="h-[calc(100vh-280px)] overflow-x-auto overflow-y-auto">
               <table className="w-full text-left text-sm text-slate-600">
                 <thead className="sticky top-0 z-10 bg-primary text-white">
                   <tr>
@@ -569,7 +569,7 @@ export default function ProductsPageClient() {
           </div>
 
           {totalPages > 1 && (
-            <div className="mt-4">
+            <div>
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
