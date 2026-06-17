@@ -3,9 +3,15 @@
 import Link from "next/link"
 
 import { AlignLeft, ArrowRight, BarChart3, Lock } from "lucide-react"
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import {
+  ChartContainer,
+  ChartTooltip,
+  type ChartConfig,
+} from "@/components/ui/chart"
 import { toastManager } from "@/components/ui/toast"
 
 import { Iconsax3dRotate } from "@/public/icons/iconsax-3d-rotate"
@@ -13,6 +19,13 @@ import { Iconsax3dRotate } from "@/public/icons/iconsax-3d-rotate"
 import { useDashboardSummary } from "@/hooks/use-dashboard"
 import { useForceSync } from "@/hooks/use-sync"
 import { formatCurrency, formatSystemStatus } from "@/lib/utils"
+
+const chartConfig = {
+  revenue: {
+    label: "Revenue",
+    color: "#8CAEBA",
+  },
+} satisfies ChartConfig
 
 export default function DashboardClient() {
   const { data, isLoading } = useDashboardSummary()
@@ -260,39 +273,52 @@ export default function DashboardClient() {
                 </h4>
                 <div className="ml-4 h-px flex-1 bg-slate-200" />
               </div>
-              <div className="mt-8 flex h-40 items-end justify-between px-2">
-                {(() => {
-                  if (isLoading || !data) return null
-                  const maxRevenue = Math.max(
-                    ...data.salesReport.monthlyRevenue.map((m) => m.revenue),
-                    1 // avoid divide by zero
-                  )
-                  return data.salesReport.monthlyRevenue.map((col) => {
-                    const h = `${Math.max((col.revenue / maxRevenue) * 100, 2)}%`
-                    const hasValue = col.revenue > 0
-
-                    return (
-                      <div
-                        key={col.month}
-                        className="relative flex w-6 flex-col items-center gap-2"
-                      >
-                        {hasValue && (
-                          <div className="absolute -top-10 z-10 rounded-md bg-white px-3 py-1.5 text-[10px] font-semibold whitespace-nowrap text-[#8CAEBA] shadow-sm ring-1 ring-slate-200">
-                            {formatCurrency(col.revenue)}{" "}
-                            {data.salesReport.currency}
-                          </div>
-                        )}
-                        <div
-                          className="w-full rounded-sm bg-[#8CAEBA] transition-all hover:bg-[#6A8A96]"
-                          style={{ height: h }}
-                        />
-                        <span className="text-[10px] font-medium text-slate-800">
-                          {col.month}
-                        </span>
-                      </div>
-                    )
-                  })
-                })()}
+              <div className="mt-8">
+                {isLoading || !data ? (
+                  <div className="flex h-40 items-center justify-center text-sm text-slate-500">
+                    Loading chart...
+                  </div>
+                ) : (
+                  <ChartContainer config={chartConfig} className="h-40 w-full">
+                    <BarChart
+                      accessibilityLayer
+                      data={data.salesReport.monthlyRevenue}
+                    >
+                      <CartesianGrid vertical={false} horizontal={false} />
+                      <XAxis
+                        dataKey="month"
+                        tickLine={false}
+                        tickMargin={10}
+                        axisLine={false}
+                        tick={{
+                          fill: "#1e293b",
+                          fontSize: 10,
+                          fontWeight: 500,
+                        }}
+                      />
+                      <ChartTooltip
+                        cursor={false}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="rounded-md bg-white px-3 py-1.5 text-[10px] font-semibold whitespace-nowrap text-[#8CAEBA] shadow-sm ring-1 ring-slate-200">
+                                {data.salesReport.currency}{" "}
+                                {formatCurrency(payload[0].value as number)}
+                              </div>
+                            )
+                          }
+                          return null
+                        }}
+                      />
+                      <Bar
+                        dataKey="revenue"
+                        fill="var(--color-revenue)"
+                        radius={[4, 4, 0, 0]}
+                        barSize={24}
+                      />
+                    </BarChart>
+                  </ChartContainer>
+                )}
               </div>
             </div>
           </CardContent>
