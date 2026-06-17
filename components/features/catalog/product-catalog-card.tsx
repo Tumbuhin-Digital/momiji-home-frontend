@@ -187,7 +187,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         </div>
 
         {/* Content */}
-        <div className="justify-cente flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-col justify-center gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 flex-col gap-2">
             {(!isShipReady || isBackendPreOrder || isConvertedToPreorder) && (
               <Badge className="h-5.5! w-fit rounded p-1 text-xs font-normal! uppercase">
