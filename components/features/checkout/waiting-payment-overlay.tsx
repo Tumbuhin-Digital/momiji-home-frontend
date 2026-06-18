@@ -17,12 +17,13 @@ interface WaitingPaymentOverlayProps {
 
 export function WaitingPaymentOverlay({
   isOpen,
+  onOpenChange,
   checkoutUrl,
   expiresAt,
   onExpire,
 }: WaitingPaymentOverlayProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
         className="rounded-[24px] border-none p-6 sm:max-w-115"
         showCloseButton={false}

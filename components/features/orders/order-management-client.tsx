@@ -4,11 +4,21 @@ import { Button } from "@/components/ui/button"
 
 import { OrderManagementTable } from "@/components/features/orders/order-management-table"
 
-import { useOrders } from "@/hooks/use-orders"
+import { useInfiniteOrders } from "@/hooks/use-orders"
 import { formatLastSynced } from "@/lib/utils"
 
 export function OrderManagementClient() {
-  const { data: orders, isLoading, isError, refetch } = useOrders()
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteOrders()
+
+  const orders = data?.pages.flatMap((page) => page.orders) || []
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -36,7 +46,13 @@ export function OrderManagementClient() {
           </Button>
         </div>
       ) : (
-        <OrderManagementTable orders={orders || []} isLoading={isLoading} />
+        <OrderManagementTable
+          orders={orders}
+          isLoading={isLoading}
+          hasNextPage={hasNextPage}
+          fetchNextPage={fetchNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+        />
       )}
     </div>
   )

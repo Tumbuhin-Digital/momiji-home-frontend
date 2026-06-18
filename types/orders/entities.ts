@@ -1,7 +1,15 @@
 import type { CurrencyCode } from "@/types/core"
 
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded"
+export type AggregateStatus =
+  | "pending"
+  | "processing"
+  | "on_progress"
+  | "paid"
+  | "cancelled"
 export type FulfillmentStatus =
+  | "pending"
+  | "in_progress"
   | "unfulfilled"
   | "processing"
   | "shipped"
@@ -15,6 +23,15 @@ export type PreOrderState =
   | "CANCELLED"
 export type OrderType = "ready" | "pre-order" | "mixed"
 
+export interface LiveTrackingInfo {
+  carrierCode: string
+  estimatedDeliveryDate?: string
+  shipDate?: string
+  statusCode: string
+  statusDescription: string
+  trackingNumber: string
+}
+
 export interface OrderLineItem {
   currency: CurrencyCode
   fulfillmentStep?: number
@@ -25,6 +42,9 @@ export interface OrderLineItem {
   shopifyProductId: string
   sku: string
   title: string
+  imageSrc?: string
+  trackingCompany?: string
+  trackingLastEvent?: string
   trackingNumber?: string
   trackingUrl?: string
   type?: string
@@ -32,6 +52,7 @@ export interface OrderLineItem {
 }
 
 export interface Order {
+  aggregateStatus: AggregateStatus
   currency: CurrencyCode
   customer: {
     email: string
@@ -72,7 +93,11 @@ export interface Order {
   } | null
   shopifyDraftOrderId?: string
   shopifyOrderId: string
+  totalBalanceDue?: number
+  totalChargedNow?: number
+  totalDepositPaid?: number
   totalPrice: number
+  totalShipReady?: number
   type: OrderType
 }
 
@@ -91,6 +116,7 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
 
   return {
     id: dto.id,
+    aggregateStatus: dto.aggregate_status as AggregateStatus,
     shopifyOrderId: dto.shopify_checkout_url
       ? dto.shopify_checkout_url
       : dto.id,
@@ -127,6 +153,9 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
       fulfillmentStep: item.fulfillment_step,
       itemsReceived: item.items_received,
       itemStatus: item.item_status,
+      imageSrc: item.image_src,
+      trackingCompany: item.tracking_company,
+      trackingLastEvent: item.tracking_last_event,
       trackingNumber: item.tracking_number,
       trackingUrl: item.tracking_url,
       type:
@@ -136,7 +165,11 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
             ? "pre-order"
             : item.type,
     })),
+    totalBalanceDue: parseFloat(dto.total_balance_due) || 0,
+    totalChargedNow: parseFloat(dto.total_charged_now) || 0,
+    totalDepositPaid: parseFloat(dto.total_deposit_paid) || 0,
     totalPrice: parseFloat(dto.total_price) || 0,
+    totalShipReady: parseFloat(dto.total_ship_ready) || 0,
     currency: (dto.currency as CurrencyCode) ?? "USD",
     paymentStatus: mapFinancialStatus(dto.financial_status),
     fulfillmentStatus: mapFulfillmentStatus(dto.fulfillment_status),

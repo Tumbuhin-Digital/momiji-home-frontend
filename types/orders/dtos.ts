@@ -8,6 +8,8 @@ export interface OrderQueryParams {
   search?: string
   startDate?: string
   type?: OrderType | "all"
+  page?: number
+  limit?: number
 }
 
 export interface OrderItemDetailDto {
@@ -23,6 +25,9 @@ export interface OrderItemDetailDto {
   title: string
   tracking_number?: string
   tracking_url?: string
+  image_src?: string
+  tracking_company?: string
+  tracking_last_event?: string
   type: string
   unit_price: string
   variant_id: string

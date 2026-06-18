@@ -3,7 +3,7 @@ import { apiClient } from "@/lib/api"
 import { mapOrderResponseToOrder } from "@/types/orders/entities"
 
 import type { BaseResponse } from "@/types/core"
-import type { Order, OrderQueryParams } from "@/types/orders"
+import type { LiveTrackingInfo, Order, OrderQueryParams } from "@/types/orders"
 import type {
   CreateOrderInput,
   OrderResponseDto,
@@ -12,6 +12,12 @@ import type {
   UpdateTrackingDto,
 } from "@/types/orders/dtos"
 
+export interface PaginatedOrders {
+  orders: Order[]
+  nextCursor?: number
+  totalPages: number
+}
+
 async function getOrders(params: OrderQueryParams = {}): Promise<Order[]> {
   const response = await apiClient.get<BaseResponse<any>>("/orders", { params })
   const responseData = response.data || {}
@@ -19,6 +25,26 @@ async function getOrders(params: OrderQueryParams = {}): Promise<Order[]> {
     ? responseData
     : (responseData.orders ?? responseData.data ?? [])
   return items.map(mapOrderResponseToOrder)
+}
+
+async function getOrdersPaginated(
+  params: OrderQueryParams = {}
+): Promise<PaginatedOrders> {
+  const response = await apiClient.get<BaseResponse<any>>("/orders", { params })
+  const responseData = response.data || {}
+  const items = Array.isArray(responseData)
+    ? responseData
+    : (responseData.orders ?? responseData.data ?? [])
+
+  const orders = items.map(mapOrderResponseToOrder)
+  const currentPage = responseData.page || params.page || 1
+  const totalPages = responseData.totalPages || responseData.total_pages || 1
+
+  return {
+    orders,
+    nextCursor: currentPage < totalPages ? currentPage + 1 : undefined,
+    totalPages,
+  }
 }
 
 async function getOrderById(orderId: string): Promise<Order | null> {
@@ -108,6 +134,16 @@ async function exportOrders(
   })
 }
 
+async function getItemTracking(
+  orderId: string,
+  itemId: string
+): Promise<LiveTrackingInfo | null> {
+  const response = await apiClient.get<BaseResponse<LiveTrackingInfo>>(
+    `/orders/${orderId}/items/${itemId}/tracking`
+  )
+  return response.data ?? null
+}
+
 export const ordersService = {
   acceptOrder,
   cancelOrder,
@@ -115,6 +151,8 @@ export const ordersService = {
   exportOrders,
   getOrderById,
   getOrders,
+  getOrdersPaginated,
+  getItemTracking,
   updateItemReceived,
   updateItemStep,
   updateItemTracking,

@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect, useRef } from "react"
+
 import { CloudDownload, Loader2, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -13,12 +15,44 @@ import {
 
 import { SalesReportTableSkeleton } from "@/components/features/sales-report/sales-report-table-skeleton"
 
-import { useExportOrders, useOrders } from "@/hooks/use-orders"
+import { useExportOrders, useInfiniteOrders } from "@/hooks/use-orders"
 import { formatCurrency } from "@/lib/utils"
 
 export function SalesReportClient() {
-  const { data: orders, isLoading, error } = useOrders()
+  const {
+    data,
+    isLoading,
+    error,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteOrders()
+
+  const orders = data?.pages.flatMap((page) => page.orders) || []
   const exportMutation = useExportOrders()
+  const observerRef = useRef<HTMLTableRowElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          hasNextPage &&
+          !isFetchingNextPage &&
+          fetchNextPage
+        ) {
+          fetchNextPage()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    const currentRef = observerRef.current
+    if (currentRef) observer.observe(currentRef)
+    return () => {
+      if (currentRef) observer.unobserve(currentRef)
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage])
 
   const handleExport = async () => {
     try {
@@ -170,6 +204,23 @@ export function SalesReportClient() {
                     </tr>
                   )
                 })
+              )}
+              {hasNextPage && (
+                <tr ref={observerRef}>
+                  <td
+                    colSpan={4}
+                    className="py-8 text-center text-sm text-neutral-500"
+                  >
+                    {isFetchingNextPage ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="size-4 animate-spin text-primary" />
+                        <span>Loading more reports...</span>
+                      </div>
+                    ) : (
+                      "Scroll down to load more"
+                    )}
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>

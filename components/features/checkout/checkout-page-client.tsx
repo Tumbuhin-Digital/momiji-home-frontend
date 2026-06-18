@@ -1105,6 +1105,15 @@ export default function CheckoutPageClient() {
           onOpenChange={setIsWaitingForPayment}
           checkoutUrl={currentCheckoutUrl}
           expiresAt={paymentExpiresAt}
+          onExpire={() => {
+            setIsWaitingForPayment(false)
+            toastManager.add({
+              title: "Payment Timer Expired",
+              description:
+                "The time to secure your items has expired. Please try checking out again.",
+              type: "warning",
+            })
+          }}
         />
       </div>
     </>

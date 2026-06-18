@@ -28,6 +28,7 @@ import {
   useUpdateItemReceived,
   useUpdateItemStep,
   useUpdateItemTracking,
+  useItemTracking,
 } from "@/hooks/use-orders"
 import { formatCurrency } from "@/lib/utils"
 
@@ -91,6 +92,16 @@ export function OrderFulfillmentPanel({
     (item) => item.type === type || (!item.type && order.type === type)
   )
 
+  const trackedItem = items.find((item) => item.trackingNumber)
+  const { data: liveTracking } = useItemTracking(
+    order.id,
+    trackedItem?.productId || "",
+    {
+      enabled:
+        !!trackedItem?.productId && order.fulfillmentStatus === "in_progress",
+    }
+  )
+
   if (items.length === 0) return null
 
   const isPreOrder = type === "pre-order"
@@ -140,9 +151,7 @@ export function OrderFulfillmentPanel({
         ? 2
         : 3
 
-  const hasPendingItems =
-    items.some((item) => (item.fulfillmentStep || 1) === 1) &&
-    order.fulfillmentStatus !== "cancelled"
+  const hasPendingItems = order.fulfillmentStatus === "pending"
 
   const handleTrackingConfirm = async (
     trackingNumber: string,
@@ -247,8 +256,6 @@ export function OrderFulfillmentPanel({
       </div>
     )
   }
-
-  const trackedItem = items.find((item) => item.trackingNumber)
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-[#D9E2E8] bg-[#F4F7F9]/30">
@@ -430,42 +437,56 @@ export function OrderFulfillmentPanel({
         </Stepper>
 
         {/* Airway Bill Section */}
-        {trackedItem && (
+        {order.fulfillmentStatus === "in_progress" && trackedItem && (
           <div className="mt-8 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <h4 className="mb-4 text-sm font-bold text-slate-800">
               Airway Bill
             </h4>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EBF0F3]">
-                  <span className="text-xs font-bold text-slate-500">Log</span>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EBF0F3]">
+                    <span className="text-xs font-bold text-slate-500">
+                      Log
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">
+                      {order.fulfillment?.carrier || "Standard Shipping"}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Tracking number: {trackedItem.trackingNumber}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-800">
-                    {order.fulfillment?.carrier || "Standard Shipping"}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Tracking number: {trackedItem.trackingNumber}
+                <div className="text-right">
+                  <p className="text-xs text-slate-500">Last Updated</p>
+                  <p className="text-sm font-medium text-slate-700">
+                    {trackedItem.trackingUrl ? (
+                      <a
+                        href={trackedItem.trackingUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        Track Package
+                      </a>
+                    ) : (
+                      "Package departed from facility"
+                    )}
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-500">Last Updated</p>
-                <p className="text-sm font-medium text-slate-700">
-                  {trackedItem.trackingUrl ? (
-                    <a
-                      href={trackedItem.trackingUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      Track Package
-                    </a>
-                  ) : (
-                    "Package departed from facility"
-                  )}
-                </p>
-              </div>
+              {liveTracking && (
+                <div className="rounded-lg bg-[#EBF0F3] p-3">
+                  <p className="text-xs font-medium text-slate-700">
+                    Live Status:{" "}
+                    <span className="font-bold text-[#0052CC]">
+                      {liveTracking.statusDescription}
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

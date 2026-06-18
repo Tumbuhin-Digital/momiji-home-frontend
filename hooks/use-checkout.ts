@@ -14,6 +14,14 @@ export function useCheckoutConfirm(checkoutReference: string | undefined) {
     queryFn: () =>
       checkoutService.getCheckoutConfirm(checkoutReference as string),
     enabled: !!checkoutReference,
+    refetchInterval: (query) => {
+      if (query.state.data) return false
+      return 3000
+    },
+    retry: (failureCount) => {
+      return failureCount < 30
+    },
+    retryDelay: 3000,
   })
 }
 

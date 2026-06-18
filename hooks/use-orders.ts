@@ -1,12 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
 
 import { queryKeys } from "@/lib/query/query-keys"
 import { ordersService } from "@/lib/services"
 
 import type { UseQueryOptions } from "@tanstack/react-query"
-import type { Order, OrderQueryParams } from "@/types/orders"
+import type { LiveTrackingInfo, Order, OrderQueryParams } from "@/types/orders"
 import type {
   CreateOrderInput,
   UpdateReceivedDto,
@@ -98,6 +104,39 @@ export function useOrders(
   return useQuery({
     queryKey: queryKeys.orders.list(params),
     queryFn: () => ordersService.getOrders(params),
+    ...options,
+  })
+}
+
+export function useInfiniteOrders(
+  params: OrderQueryParams = {},
+  options?: any
+) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.orders.list(params),
+    queryFn: ({ pageParam }) =>
+      ordersService.getOrdersPaginated({
+        ...params,
+        page: pageParam as number,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    ...options,
+  })
+}
+
+export function useItemTracking(
+  orderId: string,
+  itemId: string,
+  options?: Omit<
+    UseQueryOptions<LiveTrackingInfo | null>,
+    "queryKey" | "queryFn"
+  >
+) {
+  return useQuery({
+    queryKey: queryKeys.orders.tracking(orderId, itemId),
+    queryFn: () => ordersService.getItemTracking(orderId, itemId),
+    enabled: orderId.length > 0 && itemId.length > 0,
     ...options,
   })
 }

@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { format } from "date-fns"
-import { Pencil } from "lucide-react"
+import { Loader2, Pencil } from "lucide-react"
 
 import { formatCurrency } from "@/lib/utils"
 
@@ -18,15 +18,44 @@ import { OrderManagementTableSkeleton } from "@/components/features/orders/order
 import type { Order } from "@/types/orders"
 
 interface OrderManagementTableProps {
-  orders: Order[]
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
   isLoading: boolean
+  orders: Order[]
+  fetchNextPage?: () => void
 }
 
 export function OrderManagementTable({
-  orders,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
   isLoading,
+  orders,
 }: OrderManagementTableProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const observerRef = useRef<HTMLTableRowElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          hasNextPage &&
+          !isFetchingNextPage &&
+          fetchNextPage
+        ) {
+          fetchNextPage()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    const currentRef = observerRef.current
+    if (currentRef) observer.observe(currentRef)
+    return () => {
+      if (currentRef) observer.unobserve(currentRef)
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage])
 
   // Auto-open modal if orderId is in query params (e.g. after refresh)
   useEffect(() => {
@@ -164,6 +193,23 @@ export function OrderManagementTable({
                     </tr>
                   )
                 })}
+              {hasNextPage && (
+                <tr ref={observerRef}>
+                  <td
+                    colSpan={6}
+                    className="py-8 text-center text-sm text-neutral-500"
+                  >
+                    {isFetchingNextPage ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="size-4 animate-spin text-primary" />
+                        <span>Loading more orders...</span>
+                      </div>
+                    ) : (
+                      "Scroll down to load more"
+                    )}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
