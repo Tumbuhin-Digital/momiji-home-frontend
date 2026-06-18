@@ -13,6 +13,8 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
 
   if (s === "new order") {
     variantClass = "bg-[#1976FF1A] text-[#1976FF] hover:bg-[#1976FF1A]"
+  } else if (s === "invoiced") {
+    variantClass = "bg-[#1976FF1A] text-[#1976FF] hover:bg-[#1976FF1A]"
   } else if (s.includes("pre") || s === "in progress" || s === "on progress") {
     variantClass = "bg-[#FF850D1A] text-[#FF850D] hover:bg-[#FF850D1A]"
   } else if (

@@ -15,6 +15,7 @@ export interface PreorderSettlement {
 export interface PreorderGroupSettlement {
   balanceDue: string
   batchLabel: string
+  createdAt?: string
   customerEmail: string
   dueDate: string
   orderId: string

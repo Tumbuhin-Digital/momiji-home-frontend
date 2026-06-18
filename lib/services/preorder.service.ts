@@ -35,6 +35,7 @@ function mapGroupSettlementDtoToDomain(
   return {
     balanceDue: dto.balance_due,
     batchLabel: dto.batch_label,
+    createdAt: dto.created_at,
     customerEmail: dto.customer_email,
     dueDate: dto.due_date,
     orderId: dto.order_id,

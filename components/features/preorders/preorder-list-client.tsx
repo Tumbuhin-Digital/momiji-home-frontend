@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 
-import { format } from "date-fns"
 import {
   CloudDownload,
   ListFilter,
@@ -16,6 +15,8 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -39,34 +40,47 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 
-import { InvoiceSettlementModal } from "@/components/features/preorders/invoice-settlement-modal"
-import { PaidSettlementModal } from "@/components/features/preorders/paid-settlement-modal"
+import { StatusBadge } from "@/components/global/status-badge"
+
 import { PreorderListSkeleton } from "@/components/features/preorders/preorder-list-skeleton"
+import { SettlementActionModal } from "@/components/features/preorders/settlement-action-modal"
 
 import { useExportPreorders, usePreorders } from "@/hooks/use-preorders"
-import { formatCurrency, formatSystemStatus } from "@/lib/utils"
+import { formatSystemStatus } from "@/lib/utils"
 
-import type { PreorderGroupSettlement } from "@/types/preorders"
+import type { SettlementStatus } from "@/types/preorders"
 
 type SortOption = "A-Z" | "Qty: low-high" | "Qty: high-low"
+type StatusFilter = SettlementStatus | "all"
+
+const SETTLEMENT_STATUS_LABEL: Record<SettlementStatus, string> = {
+  pending: "Pending",
+  invoiced: "Invoiced",
+  paid: "Paid",
+}
 
 export function PreorderListClient() {
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState<SortOption | null>(null)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
 
-  const [confirmModal, setConfirmModal] = useState<{
+  const [actionModal, setActionModal] = useState<{
     isOpen: boolean
-    settlement: PreorderGroupSettlement | null
-    type: "invoice" | "paid" | null
+    settlementId: string
+    orderNumber: string
   }>({
     isOpen: false,
-    settlement: null,
-    type: null,
+    settlementId: "",
+    orderNumber: "",
   })
 
   const limit = 20
-  const { data: queryData, isLoading } = usePreorders({ page, limit })
+  const { data: queryData, isLoading } = usePreorders({
+    page,
+    limit,
+    status: statusFilter === "all" ? undefined : statusFilter,
+  })
 
   const groups = queryData?.data
   const total = queryData?.total || 0
@@ -84,6 +98,15 @@ export function PreorderListClient() {
       return 0
     })
 
+  const formatOrderDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    })
+  }
+
   const handleExport = async () => {
     try {
       const blob = await exportMutation.mutateAsync({})
@@ -100,9 +123,16 @@ export function PreorderListClient() {
     }
   }
 
+  const handleRowClick = (settlementId: string, orderNumber: string) => {
+    setActionModal({ isOpen: true, settlementId, orderNumber })
+  }
+
   const toggleSort = (option: SortOption) => {
     setSortBy((prev) => (prev === option ? null : option))
   }
+
+  const hasActiveFilter = !!(searchQuery || sortBy || statusFilter !== "all")
+  const isFilterActive = sortBy !== null || statusFilter !== "all"
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -110,7 +140,7 @@ export function PreorderListClient() {
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[32px] font-medium text-neutral-800">
-            Sales Report
+            Pre-Order List
           </h1>
           <p className="text-lg text-neutral-400">
             {formatSystemStatus(new Date())}
@@ -132,7 +162,7 @@ export function PreorderListClient() {
         </Button>
       </div>
 
-      {/* Search + Sort */}
+      {/* Search + Filter */}
       <div className="flex items-center gap-2">
         <InputGroup className="h-11 flex-1 rounded-[8px] border-primary shadow-sm has-[input:focus-visible]:border-primary/20 has-[input:focus-visible]:ring-primary/20">
           <InputGroupAddon>
@@ -157,16 +187,25 @@ export function PreorderListClient() {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="h-11! gap-2 rounded-[6px] border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
+                className={`h-11! gap-2 rounded-[6px] border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600 ${isFilterActive ? "border-primary text-primary" : ""}`}
               >
                 <ListFilter className="size-5" strokeWidth={1.5} />
-                Sort By
+                Filter
+                {isFilterActive && (
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+                    {(sortBy ? 1 : 0) + (statusFilter !== "all" ? 1 : 0)}
+                  </span>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-44 rounded-xl bg-white shadow-lg"
+              className="w-52 rounded-xl bg-white shadow-lg"
             >
+              {/* Sort section */}
+              <DropdownMenuLabel className="text-xs font-semibold text-neutral-400 uppercase">
+                Sort By
+              </DropdownMenuLabel>
               <DropdownMenuCheckboxItem
                 checked={sortBy === "A-Z"}
                 onCheckedChange={() => toggleSort("A-Z")}
@@ -185,21 +224,45 @@ export function PreorderListClient() {
               >
                 Qty: high-low
               </DropdownMenuCheckboxItem>
+
+              <DropdownMenuSeparator />
+
+              {/* Status filter section */}
+              <DropdownMenuLabel className="text-xs font-semibold text-neutral-400 uppercase">
+                Status
+              </DropdownMenuLabel>
+              {(["all", "pending", "invoiced", "paid"] as StatusFilter[]).map(
+                (s) => (
+                  <DropdownMenuCheckboxItem
+                    key={s}
+                    checked={statusFilter === s}
+                    onCheckedChange={() => {
+                      setStatusFilter(s)
+                      setPage(1)
+                    }}
+                  >
+                    {s === "all"
+                      ? "All"
+                      : SETTLEMENT_STATUS_LABEL[s as SettlementStatus]}
+                  </DropdownMenuCheckboxItem>
+                )
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {(searchQuery || sortBy) && (
+          {hasActiveFilter && (
             <Button
               variant="outline"
               size="icon"
               onClick={() => {
                 setSearchQuery("")
                 setSortBy(null)
+                setStatusFilter("all")
                 setPage(1)
               }}
-              className="size-11! gap-2 rounded-[6px] border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
+              className="size-11! rounded-[6px] border-neutral-300 bg-white text-neutral-600"
             >
-              <RotateCcw className="size-5" strokeWidth={1.5} />
+              <RotateCcw className="size-4" strokeWidth={1.5} />
             </Button>
           )}
         </div>
@@ -227,66 +290,74 @@ export function PreorderListClient() {
           filteredGroups.map((group) => (
             <div
               key={group.productName}
-              className="overflow-hidden rounded border border-[#EBEBEB] bg-white shadow-sm"
+              className="overflow-hidden rounded-[12px] border border-[#E5E5E5] bg-[#F7F7F7] shadow-none"
             >
               {/* Group header */}
-              <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <div className="flex items-start justify-between px-6 py-5">
                 <div>
-                  <h3 className="font-semibold text-slate-800">
+                  <h3 className="text-lg font-bold text-[#1A1A1A]">
                     {group.productName}
                   </h3>
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-sm text-[#888888]">
                     {group.settlements.length} Order
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">
+                  <p className="text-xs font-medium text-[#888888]">
                     Total Quantity
                   </p>
-                  <p className="text-2xl font-bold text-slate-800">
+                  <p className="text-2xl font-bold text-[#1A1A1A]">
                     {group.totalQuantity}
                   </p>
                 </div>
               </div>
 
-              {/* Settlement rows */}
-              <div className="divide-y divide-slate-100">
+              {/* Settlement table */}
+              <div className="mx-4 mb-4 overflow-hidden rounded-[8px] border border-[#E5E5E5] bg-white">
                 {/* Column labels */}
-                <div className="grid grid-cols-3 gap-4 bg-slate-50 px-6 py-2 text-xs font-medium tracking-wide text-slate-500 uppercase">
-                  <span>Order ID</span>
-                  <span>Date</span>
-                  <span>Quantity</span>
+                <div className="grid grid-cols-4 gap-4 border-b border-[#F0F0F0] px-5 py-2.5">
+                  <span className="text-[11px] font-semibold tracking-wide text-[#888888] uppercase">
+                    Order ID
+                  </span>
+                  <span className="text-[11px] font-semibold tracking-wide text-[#888888] uppercase">
+                    Pre-order Date
+                  </span>
+                  <span className="text-[11px] font-semibold tracking-wide text-[#888888] uppercase">
+                    Quantity
+                  </span>
+                  <span className="text-[11px] font-semibold tracking-wide text-[#888888] uppercase">
+                    Status
+                  </span>
                 </div>
 
-                {group.settlements.map((s) => (
+                {/* Settlement rows */}
+                {group.settlements.map((s, idx) => (
                   <div
                     key={s.settlementId}
-                    className="grid grid-cols-3 items-center gap-4 px-6 py-3 transition-colors hover:bg-slate-50/60"
+                    className={`grid cursor-pointer grid-cols-4 items-center gap-4 px-5 py-3 transition-colors hover:bg-[#FAFAFA] ${
+                      idx !== group.settlements.length - 1
+                        ? "border-b border-[#F0F0F0]"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      handleRowClick(s.settlementId, `#${s.orderNumber}`)
+                    }
                   >
-                    <span
-                      className="cursor-pointer font-medium text-slate-800 hover:text-primary hover:underline"
-                      onClick={() =>
-                        setConfirmModal({
-                          isOpen: true,
-                          settlement: s,
-                          type:
-                            s.settlementStatus === "pending"
-                              ? "invoice"
-                              : s.settlementStatus === "invoiced"
-                                ? "paid"
-                                : null,
-                        })
-                      }
-                    >
-                      {s.orderNumber}
+                    <span className="text-sm font-medium text-primary hover:underline">
+                      #{s.orderNumber}
                     </span>
-                    <span className="text-sm text-slate-600">
-                      {s.dueDate
-                        ? format(new Date(s.dueDate), "M/d/yyyy")
-                        : "-"}
+                    <span className="text-sm text-[#555555]">
+                      {formatOrderDate(s.createdAt ? s.createdAt : s.dueDate)}
                     </span>
-                    <span className="text-sm text-slate-600">
-                      {formatCurrency(parseFloat(s.balanceDue))}
+                    <span className="text-sm text-[#555555]">{s.quantity}</span>
+                    <span>
+                      <StatusBadge
+                        status={
+                          SETTLEMENT_STATUS_LABEL[s.settlementStatus] ||
+                          s.settlementStatus
+                        }
+                        className="h-7! w-fit rounded-full px-3 py-1.5 text-xs"
+                      />
                     </span>
                   </div>
                 ))}
@@ -348,28 +419,15 @@ export function PreorderListClient() {
         </div>
       )}
 
-      {/* Modals */}
-      {confirmModal.settlement && confirmModal.type === "invoice" && (
-        <InvoiceSettlementModal
-          isOpen={confirmModal.isOpen}
-          onClose={() =>
-            setConfirmModal({ isOpen: false, settlement: null, type: null })
-          }
-          settlementId={confirmModal.settlement.settlementId}
-          orderId={confirmModal.settlement.orderId}
-        />
-      )}
-
-      {confirmModal.settlement && confirmModal.type === "paid" && (
-        <PaidSettlementModal
-          isOpen={confirmModal.isOpen}
-          onClose={() =>
-            setConfirmModal({ isOpen: false, settlement: null, type: null })
-          }
-          settlementId={confirmModal.settlement.settlementId}
-          orderId={confirmModal.settlement.orderId}
-        />
-      )}
+      {/* Unified Settlement Action Modal */}
+      <SettlementActionModal
+        isOpen={actionModal.isOpen}
+        settlementId={actionModal.settlementId}
+        orderNumber={actionModal.orderNumber}
+        onClose={() =>
+          setActionModal({ isOpen: false, settlementId: "", orderNumber: "" })
+        }
+      />
     </div>
   )
 }

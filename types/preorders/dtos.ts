@@ -5,16 +5,17 @@ export interface PreorderSettlementDto {
   created_at: string
   due_date: string
   id: string
-  invoiced_at: string
+  invoiced_at: string | null
   order_id: string
   order_line_item_id: string
-  paid_at: string
+  paid_at: string | null
   status: string
 }
 
 export interface PreorderGroupSettlementDto {
   balance_due: string
   batch_label: string
+  created_at?: string
   customer_email: string
   due_date: string
   order_id: string

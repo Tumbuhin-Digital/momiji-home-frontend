@@ -10,8 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 
-import { InvoiceSettlementModal } from "@/components/features/preorders/invoice-settlement-modal"
-import { PaidSettlementModal } from "@/components/features/preorders/paid-settlement-modal"
+import { SettlementActionModal } from "@/components/features/preorders/settlement-action-modal"
 
 import { usePreorderDetail } from "@/hooks/use-preorders"
 import { formatCurrency } from "@/lib/utils"
@@ -21,13 +20,7 @@ export function PreorderDetailClient({
 }: {
   settlementId: string
 }) {
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean
-    type: "invoice" | "paid" | null
-  }>({
-    isOpen: false,
-    type: null,
-  })
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const {
     data: settlement,
@@ -96,25 +89,18 @@ export function PreorderDetailClient({
           </h1>
           {settlement && (
             <div className="flex gap-2">
-              {settlement.status === "pending" && (
-                <Button
-                  className="gap-2"
-                  onClick={() =>
-                    setConfirmModal({ isOpen: true, type: "invoice" })
-                  }
-                >
-                  <Mail className="h-4 w-4" /> Mark as Invoiced
-                </Button>
-              )}
-              {settlement.status === "invoiced" && (
-                <Button
-                  className="gap-2 border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
-                  variant="secondary"
-                  onClick={() =>
-                    setConfirmModal({ isOpen: true, type: "paid" })
-                  }
-                >
-                  <CheckCircle className="h-4 w-4" /> Mark as Paid
+              {(settlement.status === "pending" ||
+                settlement.status === "invoiced") && (
+                <Button className="gap-2" onClick={() => setIsModalOpen(true)}>
+                  {settlement.status === "pending" ? (
+                    <>
+                      <Mail className="h-4 w-4" /> Mark as Invoiced
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4" /> Mark as Paid
+                    </>
+                  )}
                 </Button>
               )}
               {settlement.status === "paid" && (
@@ -224,20 +210,12 @@ export function PreorderDetailClient({
       )}
 
       {settlement && (
-        <>
-          <InvoiceSettlementModal
-            isOpen={confirmModal.isOpen && confirmModal.type === "invoice"}
-            onClose={() => setConfirmModal({ isOpen: false, type: null })}
-            settlementId={settlement.id}
-            orderId={settlement.orderId}
-          />
-          <PaidSettlementModal
-            isOpen={confirmModal.isOpen && confirmModal.type === "paid"}
-            onClose={() => setConfirmModal({ isOpen: false, type: null })}
-            settlementId={settlement.id}
-            orderId={settlement.orderId}
-          />
-        </>
+        <SettlementActionModal
+          isOpen={isModalOpen}
+          settlementId={settlement.id}
+          orderNumber={settlement.orderId}
+          onClose={() => setIsModalOpen(false)}
+        />
       )}
     </div>
   )
