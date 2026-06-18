@@ -1,18 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { AlertCircle, CheckCircle, Loader2, Mail } from "lucide-react"
+import { AlertCircle, CheckCircle, Mail, ReceiptText } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogPanel,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Spinner } from "@/components/ui/spinner"
 
 import { StatusBadge } from "@/components/global/status-badge"
 
@@ -73,16 +76,26 @@ export function SettlementActionModal({
       open={isOpen}
       onOpenChange={(open) => !open && !isMutating && onClose()}
     >
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Settlement — {orderNumber}</DialogTitle>
-          <DialogDescription>
-            Detail and action for this pre-order settlement.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md" showCloseButton={false}>
+        {/* Icon + Header */}
+        <DialogPanel className="flex flex-col items-center gap-6 p-4!">
+          <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
+            <ReceiptText className="size-8 text-primary" />
+          </div>
+          <div className="w-full">
+            <DialogHeader className="p-0 text-center">
+              <DialogTitle className="tracking-wide sm:text-[22px]">
+                Settlement — {orderNumber}
+              </DialogTitle>
+              <DialogDescription className="text-[15px] leading-relaxed">
+                Detail and action for this pre-order settlement.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+        </DialogPanel>
 
         {/* Body */}
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 px-6">
           {isLoading ? (
             <div className="space-y-3">
               <Skeleton className="h-4 w-3/4 rounded" />
@@ -149,53 +162,73 @@ export function SettlementActionModal({
         </div>
 
         {/* Footer */}
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isMutating}
-            className="rounded-full"
+        <DialogFooter
+          variant="bare"
+          className="w-full flex-col-reverse gap-3 px-6 pb-6 sm:flex-col-reverse sm:space-x-0 sm:px-6"
+        >
+          <DialogClose
+            render={
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full font-medium text-slate-500"
+                onClick={onClose}
+                disabled={isMutating}
+              />
+            }
           >
             Cancel
-          </Button>
+          </DialogClose>
 
-          {/* Render action button based on fetched status */}
           {!isLoading && !isError && settlement?.status === "pending" && (
             <Button
+              type="button"
+              size="lg"
+              className="w-full font-medium"
               onClick={handleInvoice}
               disabled={isMutating}
-              className="gap-2 rounded-full"
             >
               {invoiceMutation.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
+                <>
+                  <Spinner className="mr-2" />
+                  Sending...
+                </>
               ) : (
-                <Mail className="size-4" />
+                <>
+                  <Mail className="mr-2 size-4" />
+                  Send Invoice
+                </>
               )}
-              Send Invoice
             </Button>
           )}
 
           {!isLoading && !isError && settlement?.status === "invoiced" && (
             <Button
+              type="button"
+              size="lg"
+              className="w-full border border-primary/20 bg-primary/10 font-medium text-primary hover:bg-primary/20"
               onClick={handlePaid}
               disabled={isMutating}
-              variant="secondary"
-              className="gap-2 rounded-full border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
             >
               {paidMutation.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
+                <>
+                  <Spinner className="mr-2" />
+                  Processing...
+                </>
               ) : (
-                <CheckCircle className="size-4" />
+                <>
+                  <CheckCircle className="mr-2 size-4" />
+                  Mark as Paid
+                </>
               )}
-              Mark as Paid
             </Button>
           )}
 
           {!isLoading && !isError && settlement?.status === "paid" && (
-            <span className="flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-4 py-2 text-sm font-medium text-green-700">
+            <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-green-200 bg-green-50 py-3 text-sm font-medium text-green-700">
               <CheckCircle className="size-4" />
               Completed
-            </span>
+            </div>
           )}
         </DialogFooter>
       </DialogContent>
