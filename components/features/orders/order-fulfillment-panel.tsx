@@ -145,13 +145,17 @@ export function OrderFulfillmentPanel({
 
   const visualStep = isPreOrder
     ? currentStep
-    : currentStep === 1 || currentStep === 2
+    : currentStep === 1
       ? 1
       : currentStep === 3
         ? 2
-        : 3
+        : currentStep === 4
+          ? 3
+          : currentStep
 
-  const hasPendingItems = order.fulfillmentStatus === "pending"
+  const isNewOrder = ["pending", "processing", "paid"].includes(
+    order.aggregateStatus
+  )
 
   const handleTrackingConfirm = async (
     trackingNumber: string,
@@ -257,6 +261,32 @@ export function OrderFulfillmentPanel({
     )
   }
 
+  const renderAirwayBill = (item: OrderLineItem) => {
+    if (!item.trackingNumber) return null
+
+    return (
+      <div className="mt-3 flex flex-col gap-2 rounded-xl border border-[#D9E2E8] bg-white p-4">
+        <h4 className="text-sm font-bold text-slate-700">Airway Bill</h4>
+        <div className="flex flex-col gap-1 text-sm text-slate-600">
+          <p>
+            <span className="font-medium">Carrier:</span>{" "}
+            {item.trackingCompany || "Unknown"}
+          </p>
+          <p>
+            <span className="font-medium">Tracking Number:</span>{" "}
+            {item.trackingNumber}
+          </p>
+          {item.trackingLastEvent && (
+            <p>
+              <span className="font-medium">Last Event:</span>{" "}
+              {item.trackingLastEvent}
+            </p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="relative overflow-hidden rounded-xl border border-[#D9E2E8] bg-[#F4F7F9]/30">
       {/* Success overlay animation */}
@@ -325,7 +355,7 @@ export function OrderFulfillmentPanel({
           {type === "ship-ready" ? "Ship Ready" : "Pre-Order"}
         </h3>
         <div className="flex gap-2">
-          {hasPendingItems ? (
+          {isNewOrder ? (
             <>
               <Button
                 variant="outline"
@@ -348,38 +378,32 @@ export function OrderFulfillmentPanel({
             </>
           ) : order.fulfillmentStatus !== "cancelled" ? (
             <>
-              {!isPreOrder && currentStep === 2 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                  onClick={() => setSelectedTrackingItem({} as any)} // Hack to open modal for all
-                >
-                  Add Tracking
-                </Button>
-              )}
-              {isPreOrder && currentStep === 2 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                  onClick={() => setSelectedTrackingItem({} as any)}
-                >
-                  Ready to Ship
-                </Button>
-              )}
-              {!isPreOrder && currentStep === 3 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                  onClick={() => handleUpdateStepAll(4)}
-                  disabled={updateStep.isPending}
-                >
-                  Mark Delivered
-                </Button>
-              )}
-              {isPreOrder && currentStep === 3 && (
+              {isPreOrder &&
+                order.aggregateStatus === "on_progress" &&
+                currentStep === 1 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                    onClick={() => handleUpdateStepAll(2)}
+                    disabled={updateStep.isPending}
+                  >
+                    Mark Stock Ready
+                  </Button>
+                )}
+              {isPreOrder &&
+                order.aggregateStatus === "on_progress" &&
+                currentStep === 2 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                    onClick={() => setSelectedTrackingItem({} as any)}
+                  >
+                    Add Tracking
+                  </Button>
+                )}
+              {currentStep === 3 && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -402,15 +426,23 @@ export function OrderFulfillmentPanel({
         {items.length > 1 ? (
           <Carousel opts={{ align: "start" }} className="mb-8 w-full">
             <CarouselContent>
-              {items.map((item, idx) => (
-                <CarouselItem key={idx}>{renderItemContent(item)}</CarouselItem>
+              {items.map((item) => (
+                <CarouselItem key={item.productId}>
+                  <div className="flex flex-col gap-1">
+                    {renderItemContent(item)}
+                    {renderAirwayBill(item)}
+                  </div>
+                </CarouselItem>
               ))}
             </CarouselContent>
             <CarouselPrevious className="-left-4 size-8 bg-white/90 shadow-md backdrop-blur-sm hover:bg-white" />
             <CarouselNext className="-right-4 size-8 bg-white/90 shadow-md backdrop-blur-sm hover:bg-white" />
           </Carousel>
         ) : (
-          <div className="mb-8 w-full">{renderItemContent(items[0])}</div>
+          <div className="mb-8 w-full">
+            {renderItemContent(items[0])}
+            {renderAirwayBill(items[0])}
+          </div>
         )}
 
         {/* Stepper */}
