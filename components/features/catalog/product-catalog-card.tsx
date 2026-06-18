@@ -8,7 +8,6 @@ import { toastManager } from "@/components/ui/toast"
 import { Boxes } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
 
 import { InventoryDepletedModal } from "@/components/features/catalog/inventory-depleted-modal"
 import { QuantitySelector } from "@/components/global/quantity-selector"
@@ -165,8 +164,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
 
   return (
     <>
-      <Card className="group flex h-auto min-h-23.75 w-full cursor-pointer flex-row items-stretch gap-3 overflow-hidden rounded border-none bg-card p-3 transition-all duration-300">
-        {/* Image */}
+      <div className="group flex h-auto min-h-23.75 w-full cursor-pointer flex-row items-stretch gap-3 overflow-hidden rounded border-none bg-card p-3 transition-all duration-300">
         <div className="relative h-23.75 w-27 shrink-0 overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5">
           {product.imageUrl ? (
             <Image
@@ -185,10 +183,8 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
             </div>
           )}
         </div>
-
-        {/* Content */}
         <div className="flex flex-1 flex-col justify-center gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-1 flex-col gap-2">
+          <div className="flex flex-1 flex-col gap-1 sm:gap-2">
             {(!isShipReady || isBackendPreOrder || isConvertedToPreorder) && (
               <Badge className="h-5.5! w-fit rounded p-1 text-xs font-normal! uppercase">
                 Pre-Order
@@ -220,7 +216,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       <InventoryDepletedModal
         isOpen={showDepletedModal}
