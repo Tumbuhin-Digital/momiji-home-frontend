@@ -703,7 +703,10 @@ export default function CheckoutPageClient() {
                                   <SelectValue placeholder="State" />
                                 </div>
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent
+                                className="max-h-90!"
+                                alignItemWithTrigger={false}
+                              >
                                 {US_STATES_LIST.map((stateOption) => (
                                   <SelectItem
                                     key={stateOption.value}
