@@ -14,7 +14,7 @@ export default function ShopPreorderPage() {
       category="pre-order"
       title="Pre-Order Designs"
       bottomNavLink="/shop-ship-ready"
-      bottomNavText="Ship-Ready Designs"
+      bottomNavText="Shop Ship-Ready"
     />
   )
 }
