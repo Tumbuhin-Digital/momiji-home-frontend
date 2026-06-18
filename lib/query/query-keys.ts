@@ -27,6 +27,11 @@ const queryKeys = {
     cart: () => ["cart"] as const,
     summary: () => ["cart", "summary"] as const,
   },
+  catalog: {
+    all: ["catalog"] as const,
+    list: (params: ProductQueryParams = {}) =>
+      ["catalog", "list", normalizeProductParams(params)] as const,
+  },
   checkout: {
     all: ["checkout"] as const,
     summary: (input: CheckoutSummaryInput) =>

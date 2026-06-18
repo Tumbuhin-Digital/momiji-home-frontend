@@ -17,7 +17,11 @@ export function mapProductListItemToDomain(dto: ProductDto): Product[] {
 
   return dto.variants.map((variant) => {
     const category: ProductCategory =
-      variant.fulfillment_type === "ship_ready" ? "ship-ready" : "pre-order"
+      variant.fulfillment_type === "ship_ready"
+        ? "ship-ready"
+        : variant.fulfillment_type === "pre_order"
+          ? "pre-order"
+          : "inactive"
 
     const wsPriceNum = parseFloat(variant.ws_price || "0")
     const retailPriceNum = parseFloat(variant.retail_price || "0")
@@ -39,6 +43,11 @@ export function mapProductListItemToDomain(dto: ProductDto): Product[] {
       description: dto.description || "",
       imageUrl:
         variant.image_src || (dto.images?.length ? dto.images[0].src : ""),
+      images: dto.images?.length
+        ? [...dto.images]
+            .sort((a, b) => a.position - b.position)
+            .map(({ src, alt, position }) => ({ src, alt, position }))
+        : [{ src: variant.image_src || "", alt: title, position: 1 }],
       category,
       status: dto.status || "ACTIVE",
       inventory: {
@@ -73,6 +82,11 @@ export function mapProductDetailToDomain(dto: ProductDto): Product {
     imageUrl: dto.images?.length
       ? dto.images[0].src
       : dto.variants?.[0]?.image_src || "/images/assets/bg-product-1.png",
+    images: dto.images?.length
+      ? [...dto.images]
+          .sort((a, b) => a.position - b.position)
+          .map(({ src, alt, position }) => ({ src, alt, position }))
+      : [],
     category: "ship-ready",
     status: dto.status || "ACTIVE",
     inventory: {

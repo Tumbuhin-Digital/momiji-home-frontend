@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import Image from "next/image"
@@ -44,10 +45,20 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { Skeleton } from "@/components/ui/skeleton"
+import dynamic from "next/dynamic"
 
 import { DimensionsCsvModal } from "@/components/features/products/dimensions-csv-modal"
 import { EditPriceModal } from "@/components/features/products/edit-price-modal"
 import { ProductTableSkeleton } from "@/components/features/products/product-table-skeleton"
+
+const DynamicImageCarousel = dynamic(
+  () => import("@/components/global/image-carousel"),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-full w-full rounded-md" />,
+  }
+)
 
 import { useProducts, useUpdateProductStatus } from "@/hooks"
 import { formatCurrency, formatLastSynced } from "@/lib/utils"
@@ -105,6 +116,7 @@ export default function ProductsPageClient() {
         shopifyProductId: string
         title: string
         imageUrl: string
+        images: any[]
         variants: Product[]
       }
     > = {}
@@ -120,6 +132,7 @@ export default function ProductsPageClient() {
           shopifyProductId: key,
           title: parentTitle,
           imageUrl: item.imageUrl,
+          images: item.images || [],
           variants: [],
         }
       }
@@ -343,12 +356,17 @@ export default function ProductsPageClient() {
                             <td className="px-6 py-4">
                               <div className="flex items-center justify-start gap-4">
                                 <div className="relative size-12 overflow-hidden rounded-md border border-slate-200 bg-linear-to-b from-white via-white to-black/5">
-                                  {group.imageUrl ? (
+                                  {group.images && group.images.length > 1 ? (
+                                    <DynamicImageCarousel
+                                      images={group.images}
+                                      altText={group.title}
+                                    />
+                                  ) : group.imageUrl ? (
                                     <Image
                                       src={group.imageUrl}
                                       alt={group.title}
                                       fill
-                                      className="relative block aspect-square h-auto max-w-full align-middle transition-opacity duration-200"
+                                      className="relative block aspect-square h-auto max-w-full object-cover align-middle transition-opacity duration-200"
                                       unoptimized
                                     />
                                   ) : (
@@ -411,7 +429,9 @@ export default function ProductsPageClient() {
                                         }`}
                                       />
                                       <span className="capitalize">
-                                        {groupCategory.replace("-", " ")}
+                                        {groupCategory === "pre-order"
+                                          ? "Pre-Order"
+                                          : groupCategory.replace("-", " ")}
                                       </span>
                                     </div>
                                     <ChevronDown className="size-4 text-slate-400" />
@@ -451,7 +471,16 @@ export default function ProductsPageClient() {
                                       Pre-Order
                                     </div>
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem disabled>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      updateProductStatusMutation.mutate({
+                                        productId: group.variants[0].originalId,
+                                        input: {
+                                          fulfillment_type: "inactive",
+                                        },
+                                      })
+                                    }
+                                  >
                                     <div className="flex items-center gap-2">
                                       <div className="size-2.5 rounded-full bg-[#FF383C]" />
                                       Inactive
@@ -514,7 +543,9 @@ export default function ProductsPageClient() {
                                         }`}
                                       />
                                       <span className="capitalize">
-                                        {variant.category.replace("-", " ")}
+                                        {variant.category === "pre-order"
+                                          ? "Pre-Order"
+                                          : variant.category.replace("-", " ")}
                                       </span>
                                     </div>
                                   </td>

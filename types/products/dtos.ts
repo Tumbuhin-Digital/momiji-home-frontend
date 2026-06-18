@@ -44,6 +44,8 @@ export interface ProductQueryParams {
   sort?: string
 }
 
+export type CatalogQueryParams = ProductQueryParams
+
 export interface UpdateInventoryInput {
   quantity: number
   warehouseLocation?: string

@@ -28,7 +28,7 @@ const ProductCatalogCard = dynamic(
   }
 )
 
-import { useInfiniteProducts } from "@/hooks"
+import { useInfiniteCatalogProducts } from "@/hooks"
 
 import type { ProductCatalogPageClientProps } from "@/types/products"
 
@@ -51,7 +51,7 @@ export function ProductCatalogPageClient({
         : undefined
 
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useInfiniteProducts(
+    useInfiniteCatalogProducts(
       {
         fulfillment_type: fulfillmentType,
         limit: itemsPerPage,

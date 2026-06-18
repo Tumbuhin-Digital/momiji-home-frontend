@@ -8,9 +8,19 @@ import { toastManager } from "@/components/ui/toast"
 import { Boxes } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import dynamic from "next/dynamic"
 
 import { InventoryDepletedModal } from "@/components/features/catalog/inventory-depleted-modal"
 import { QuantitySelector } from "@/components/global/quantity-selector"
+
+const DynamicImageCarousel = dynamic(
+  () => import("@/components/global/image-carousel"),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-full w-full" />,
+  }
+)
 
 import {
   useCart,
@@ -166,12 +176,18 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     <>
       <div className="group flex h-auto min-h-23.75 w-full cursor-pointer flex-row items-stretch gap-3 overflow-hidden rounded border-none bg-card p-3 transition-all duration-300">
         <div className="relative h-23.75 w-27 shrink-0 overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5">
-          {product.imageUrl ? (
+          {product.images && product.images.length > 1 ? (
+            <DynamicImageCarousel
+              images={product.images}
+              altText={product.title}
+              sizes="108px"
+            />
+          ) : product.imageUrl ? (
             <Image
               src={product.imageUrl}
               alt={product.title}
               fill
-              className="relative block aspect-square h-auto max-w-full align-middle transition-opacity duration-200"
+              className="relative block aspect-square h-auto max-w-full object-cover align-middle transition-opacity duration-200"
               sizes="108px"
             />
           ) : (

@@ -96,6 +96,28 @@ export function useInfiniteProducts(
   })
 }
 
+export function useInfiniteCatalogProducts(
+  params: ProductQueryParams = {},
+  options?: any
+) {
+  return useInfiniteQuery({
+    queryKey: [...queryKeys.catalog.list(params), "infinite"],
+    queryFn: ({ pageParam = 1 }) =>
+      productsService.getCatalogProducts({
+        ...params,
+        page: pageParam as number,
+      }),
+    getNextPageParam: (lastPage) => {
+      if (lastPage.page < lastPage.totalPages) {
+        return lastPage.page + 1
+      }
+      return undefined
+    },
+    initialPageParam: 1,
+    ...options,
+  })
+}
+
 export function useUpdatePricing() {
   const queryClient = useQueryClient()
 

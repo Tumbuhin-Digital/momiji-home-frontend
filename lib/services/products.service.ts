@@ -34,6 +34,26 @@ async function getProducts(
   return { data: [], limit: 0, page: 1, total: 0, totalPages: 1 }
 }
 
+async function getCatalogProducts(
+  params: ProductQueryParams = {}
+): Promise<PaginatedResult<Product>> {
+  const response = await apiClient.get<
+    BaseResponse<PaginatedResult<ProductDto>>
+  >("/products/catalog", { params })
+  if (response.data) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rawItems = (response.data as any).products ?? response.data.data ?? []
+    return {
+      data: rawItems.flatMap(mapProductListItemToDomain),
+      limit: response.data.limit,
+      page: response.data.page,
+      total: response.data.total,
+      totalPages: response.data.totalPages,
+    }
+  }
+  return { data: [], limit: 0, page: 1, total: 0, totalPages: 1 }
+}
+
 async function getProductById(productId: string): Promise<Product | null> {
   try {
     const response = await apiClient.get<BaseResponse<ProductDto>>(
@@ -98,6 +118,7 @@ async function importDimensions(file: File): Promise<void> {
 
 export const productsService = {
   downloadDimensionsTemplate,
+  getCatalogProducts,
   getProductById,
   getProductVariants,
   getProducts,
