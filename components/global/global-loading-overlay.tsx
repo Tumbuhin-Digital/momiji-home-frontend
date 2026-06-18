@@ -2,19 +2,18 @@
 
 import { useEffect, useState } from "react"
 
-import { useIsFetching, useIsMutating } from "@tanstack/react-query"
+import { useIsMutating } from "@tanstack/react-query"
 
 import { Progress } from "@/components/ui/progress"
 
-import { queryKeys } from "@/lib/query/query-keys"
 import { useCartStore } from "@/lib/stores/cart.store"
 
 export function GlobalLoadingOverlay() {
   const isGlobalPending = useCartStore((state) => state.isGlobalPending)
-  const isMutatingCart = useIsMutating({ mutationKey: queryKeys.cart.all() })
-  const isFetchingCart = useIsFetching({ queryKey: queryKeys.cart.all() })
+  const isSyncing = useIsMutating({ mutationKey: ["cart", "syncVariant"] })
+  const isFlushing = useIsMutating({ mutationKey: ["cart", "flush"] })
 
-  const isActive = isGlobalPending || isMutatingCart > 0 || isFetchingCart > 0
+  const isActive = isGlobalPending || isSyncing > 0 || isFlushing > 0
 
   const [progress, setProgress] = useState(0)
   const [visible, setVisible] = useState(false)

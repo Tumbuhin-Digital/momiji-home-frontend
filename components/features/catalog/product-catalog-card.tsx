@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import Image from "next/image"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { toastManager } from "@/components/ui/toast"
 
 import { Boxes } from "lucide-react"
@@ -24,31 +23,24 @@ const DynamicImageCarousel = dynamic(
 
 import {
   useCart,
-  useCreateCartSession,
-  useUpdateVariantQuantity,
+  useLocalCartVariantUpdate,
+  useSyncCartVariant,
 } from "@/hooks"
+import { ensureCartSession } from "@/lib/cart/ensure-cart-session"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
 
 import type { ProductCatalogCardProps } from "@/types/products"
 
 export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
-  const {
-    market,
-    sessionId,
-    expiresAt,
-    setSessionId,
-    isGlobalPending,
-    setIsGlobalPending,
-  } = useCartStore()
+  const { market } = useCartStore()
 
   const [localQuantity, setLocalQuantity] = useState(0)
   const [showDepletedModal, setShowDepletedModal] = useState(false)
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null)
 
   const { data: cartData } = useCart()
-  const updateVariantQuantity = useUpdateVariantQuantity()
-  const createSession = useCreateCartSession()
+  const updateLocalCart = useLocalCartVariantUpdate()
+  const syncCartVariant = useSyncCartVariant()
 
   const isShipReady = product.category === "ship-ready"
 
@@ -74,102 +66,75 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     (product.inventory.quantity === 0 ||
       localQuantity > product.inventory.quantity)
 
+  const variantMeta = {
+    title: product.title,
+    image_src: product.imageUrl || product.images?.[0]?.src || "",
+    unit_price: price.toFixed(2),
+    inventory_quantity: product.inventory.quantity,
+    isForcedPreOrder: !isShipReady,
+  }
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalQuantity(quantity)
   }, [quantity])
 
-  const isPending = updateVariantQuantity.isPending || createSession.isPending
+  const isPending = syncCartVariant.isPending
 
-  const ensureSession = async (): Promise<boolean> => {
-    const isExpired = expiresAt && new Date(expiresAt).getTime() < Date.now()
-    if (sessionId && !isExpired) return true
-
-    try {
-      const session = await createSession.mutateAsync()
-      const sId = (session as any).sessionId || session.session_id
-      const eAt = (session as any).expiresAt || session.expires_at
-      if (sId) {
-        setSessionId(sId, eAt)
-        return true
-      }
-      return false
-    } catch {
-      return false
-    }
-  }
-
-  const triggerUpdate = (newTotal: number, immediate = false) => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current)
+  const applyLocalUpdate = (newTotal: number) => {
     setLocalQuantity(newTotal)
-
-    const doUpdate = async () => {
-      if (newTotal === quantity) {
-        return
-      }
-
-      setIsGlobalPending(true)
-
-      try {
-        await updateVariantQuantity.mutateAsync({
-          variantId: product.sku,
-          totalQuantity: newTotal,
-        })
-      } catch (error) {
-        setLocalQuantity(quantity)
-        toastManager.add({
-          title: "Error",
-          description: "Gagal memperbarui keranjang. Silakan coba lagi.",
-          type: "error",
-        })
-        console.error("Cart update failed:", error)
-      } finally {
-        setIsGlobalPending(false)
-      }
-    }
-
-    if (immediate) {
-      return doUpdate()
-    } else {
-      debounceTimer.current = setTimeout(doUpdate, 1500)
-    }
+    updateLocalCart({
+      variantId: product.sku,
+      totalQuantity: newTotal,
+      meta: variantMeta,
+    })
+    void ensureCartSession()
   }
 
-  const handleIncrease = async () => {
-    const hasSession = await ensureSession()
-    if (!hasSession) return
-
+  const handleIncrease = () => {
     if (isShipReady && !isBackendPreOrder && !isConvertedToPreorder) {
       if (localQuantity + 1 > product.inventory.quantity) {
-        if (debounceTimer.current) clearTimeout(debounceTimer.current)
         setLocalQuantity(localQuantity + 1)
         setShowDepletedModal(true)
         return
       }
     }
-    triggerUpdate(localQuantity + 1)
+    applyLocalUpdate(localQuantity + 1)
   }
 
-  const handleDecrease = async () => {
-    const hasSession = await ensureSession()
-    if (!hasSession) return
-
-    triggerUpdate(localQuantity - 1)
+  const handleDecrease = () => {
+    applyLocalUpdate(localQuantity - 1)
   }
 
-  const handleCustomChange = async (newTotal: number) => {
-    const hasSession = await ensureSession()
-    if (!hasSession) return
-
+  const handleCustomChange = (newTotal: number) => {
     if (isShipReady && !isBackendPreOrder && !isConvertedToPreorder) {
       if (newTotal > product.inventory.quantity) {
-        if (debounceTimer.current) clearTimeout(debounceTimer.current)
         setLocalQuantity(newTotal)
         setShowDepletedModal(true)
         return
       }
     }
-    triggerUpdate(newTotal)
+    applyLocalUpdate(newTotal)
+  }
+
+  const handlePreorderConfirm = async () => {
+    try {
+      await ensureCartSession()
+      await syncCartVariant.mutateAsync({
+        variantId: product.sku,
+        totalQuantity: localQuantity,
+        meta: variantMeta,
+      })
+      setShowDepletedModal(false)
+    } catch (error) {
+      setLocalQuantity(quantity)
+      toastManager.add({
+        title: "Error",
+        description: "Gagal memperbarui keranjang. Silakan coba lagi.",
+        type: "error",
+      })
+      console.error("Cart sync failed:", error)
+    }
   }
 
   return (
@@ -239,13 +204,10 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         product={product}
         onClose={() => {
           setShowDepletedModal(false)
-          setLocalQuantity(Math.max(1, quantity))
+          setLocalQuantity(quantity)
         }}
-        onConfirm={async () => {
-          await triggerUpdate(localQuantity, true)
-          setShowDepletedModal(false)
-        }}
-        isPending={isGlobalPending}
+        onConfirm={handlePreorderConfirm}
+        isPending={syncCartVariant.isPending}
       />
     </>
   )

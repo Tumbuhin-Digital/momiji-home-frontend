@@ -4,6 +4,7 @@ import type { BaseResponse } from "@/types/core"
 import type {
   ShippingRate,
   ShippingRateDto,
+  ShippingRatesRequest,
   ValidateAddressRequest,
 } from "@/types/shipping"
 
@@ -18,12 +19,17 @@ function mapShippingRateDtoToDomain(dto: ShippingRateDto): ShippingRate {
 }
 
 async function getShippingRates(
-  zip: string,
-  country?: string
+  input: ShippingRatesRequest
 ): Promise<ShippingRate[]> {
   const response = await apiClient.post<BaseResponse<ShippingRateDto[]>>(
     "/shipping/rates",
-    { zip, country }
+    {
+      zip: input.zip,
+      country: input.country,
+      city: input.city,
+      state: input.state,
+      address1: input.address1,
+    }
   )
 
   if (!response.data) {

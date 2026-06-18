@@ -5,6 +5,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
+import { useQueryClient } from "@tanstack/react-query"
+
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Boxes, ChevronLeft, Loader2, InfoIcon } from "lucide-react"
 import { Controller, useForm } from "react-hook-form"
@@ -47,13 +49,15 @@ import { IconBag } from "@/public/icons/icon-bag"
 
 import { US_STATES_MAP } from "@/constants/states"
 
-import { useCart } from "@/hooks"
+import { useCart, useFlushPendingCart } from "@/hooks"
 import {
   useCheckoutSummaryMutation,
   useCreateCheckout,
 } from "@/hooks/use-checkout"
 import { useShippingRates, useValidateAddress } from "@/hooks/use-shipping"
 import { checkoutService } from "@/lib/services/checkout.service"
+import { queryKeys } from "@/lib/query/query-keys"
+import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
 
 const checkoutSchema = z.object({
@@ -112,6 +116,7 @@ export default function CheckoutPageClient() {
   const [paymentExpiresAt, setPaymentExpiresAt] = useState<number | null>(null)
   const [isParsingAddress, setIsParsingAddress] = useState(false)
   const [parsingProgress, setParsingProgress] = useState(0)
+  const [hasFlushedCart, setHasFlushedCart] = useState(false)
 
   const [summaryState, setSummaryState] = useState({
     shippingCost: "0",
@@ -124,6 +129,9 @@ export default function CheckoutPageClient() {
   })
 
   const { data: cartData, isLoading: isCartLoading } = useCart()
+  const flushPendingCart = useFlushPendingCart()
+  const getPendingSync = useCartStore((state) => state.getPendingSync)
+  const queryClient = useQueryClient()
 
   const checkoutSummaryMutation = useCheckoutSummaryMutation()
   const createCheckoutMutation = useCreateCheckout()
@@ -140,14 +148,57 @@ export default function CheckoutPageClient() {
       : formValues.country || "US"
 
   const { data: shippingRates, isFetching: isLoadingShipping } =
-    useShippingRates(formValues.zipCode || "", mappedCountryForRates, {
-      enabled:
-        preOrderItems.length > 0 &&
-        !!formValues.zipCode &&
-        formValues.zipCode.length >= 5,
-    })
+    useShippingRates(
+      {
+        zip: formValues.zipCode || "",
+        country: mappedCountryForRates,
+        city: formValues.city || "",
+        state: formValues.state || "",
+        address1: formValues.address || "",
+      },
+      {
+        enabled:
+          hasFlushedCart &&
+          !flushPendingCart.isPending &&
+          preOrderItems.length > 0 &&
+          !!formValues.zipCode &&
+          formValues.zipCode.length >= 5 &&
+          !!formValues.city &&
+          !!formValues.state,
+      }
+    )
 
-  const isInitialLoading = isCartLoading
+  const isInitialLoading =
+    isCartLoading || !hasFlushedCart || flushPendingCart.isPending
+
+  useEffect(() => {
+    const pending = getPendingSync()
+    if (Object.keys(pending).length === 0) {
+      setHasFlushedCart(true)
+      return
+    }
+
+    flushPendingCart
+      .mutateAsync()
+      .catch((error) => {
+        console.error("Failed to sync cart on checkout:", error)
+        toastManager.add({
+          title: "Error",
+          description: "Gagal menyinkronkan keranjang. Silakan coba lagi.",
+          type: "error",
+        })
+      })
+      .finally(() => setHasFlushedCart(true))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!hasFlushedCart || preOrderItems.length === 0) return
+
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.shipping.methods(),
+    })
+  }, [hasFlushedCart, preOrderItems.length, queryClient])
 
   useEffect(() => {
     if (cartData?.summary) {

@@ -3,16 +3,15 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { queryKeys } from "@/lib/query/query-keys"
 import { shippingService } from "@/lib/services/shipping.service"
 
-import type { ValidateAddressRequest } from "@/types/shipping"
+import type { ShippingRatesRequest, ValidateAddressRequest } from "@/types/shipping"
 
 export function useShippingRates(
-  zip: string,
-  country?: string,
+  input: ShippingRatesRequest,
   options?: { enabled?: boolean }
 ) {
   return useQuery({
-    queryKey: [...queryKeys.shipping.methods(), { zip, country }],
-    queryFn: () => shippingService.getShippingRates(zip, country),
+    queryKey: [...queryKeys.shipping.methods(), input],
+    queryFn: () => shippingService.getShippingRates(input),
     ...options,
   })
 }

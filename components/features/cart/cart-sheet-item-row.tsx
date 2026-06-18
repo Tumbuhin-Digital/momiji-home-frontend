@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 
 import { Boxes } from "lucide-react"
 
@@ -43,7 +43,6 @@ export function CartSheetItemRow({
 
   const [localQuantity, setLocalQuantity] = useState(quantity)
   const [resetKey, setResetKey] = useState(0)
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null)
 
   const price = parseFloat(unit_price || "0")
   const deposit = parseFloat(deposit_amount || "0")
@@ -61,18 +60,13 @@ export function CartSheetItemRow({
       return
     }
 
-    if (debounceTimer.current) clearTimeout(debounceTimer.current)
     setLocalQuantity(newQty)
-
-    debounceTimer.current = setTimeout(() => {
-      onUpdateQuantity(newQty)
-    }, 1500)
+    onUpdateQuantity(newQty)
   }
 
   const handleIncrease = () => {
     if (disableIncrease) return
     if (maxStock !== undefined && localQuantity >= maxStock) {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current)
       const next = localQuantity + 1
       setLocalQuantity(next)
       onExceedStock?.(next, () => {
@@ -144,7 +138,6 @@ export function CartSheetItemRow({
                 return
               }
               if (maxStock !== undefined && q > maxStock) {
-                if (debounceTimer.current) clearTimeout(debounceTimer.current)
                 setLocalQuantity(q)
                 onExceedStock?.(q, () => {
                   setLocalQuantity(maxStock)
