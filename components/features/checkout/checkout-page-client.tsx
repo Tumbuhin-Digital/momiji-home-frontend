@@ -179,7 +179,11 @@ export default function CheckoutPageClient() {
 
         const summary = await checkoutSummaryMutation.mutateAsync(payload)
 
-        const shippingCost = parseFloat(summary.dueNow.shipping || "0")
+        const selectedRate = shippingRates?.find(
+          (r) => r.serviceCode === formValues.shippingMethod
+        )
+        const shippingCost = selectedRate ? parseFloat(selectedRate.cost) : 0
+
         const shipReadyTotal = parseFloat(summary.dueNow.shipReadyTotal || "0")
         const preorderDeposit = parseFloat(
           summary.dueNow.preorderDeposit || "0"
@@ -209,6 +213,7 @@ export default function CheckoutPageClient() {
     formValues.country,
     formValues.zipCode,
     preOrderItems.length,
+    shippingRates,
   ])
 
   const handleAddressPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {

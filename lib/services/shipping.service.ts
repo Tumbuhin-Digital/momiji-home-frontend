@@ -21,11 +21,9 @@ async function getShippingRates(
   zip: string,
   country?: string
 ): Promise<ShippingRate[]> {
-  const response = await apiClient.get<BaseResponse<ShippingRateDto[]>>(
+  const response = await apiClient.post<BaseResponse<ShippingRateDto[]>>(
     "/shipping/rates",
-    {
-      params: { zip, country },
-    }
+    { zip, country }
   )
 
   if (!response.data) {
