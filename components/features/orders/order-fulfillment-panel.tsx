@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import dynamic from "next/dynamic"
 import { useState } from "react"
@@ -52,8 +53,8 @@ const UpdateTrackingModal = dynamic(
 
 const shipReadySteps = [
   { step: 1, title: "Order Placed" },
-  { step: 2, title: "Shipped" },
-  { step: 3, title: "Delivered" },
+  { step: 3, title: "Shipped" },
+  { step: 4, title: "Delivered" },
 ]
 
 const preOrderSteps = [
@@ -153,9 +154,7 @@ export function OrderFulfillmentPanel({
           ? 3
           : currentStep
 
-  const isNewOrder = ["pending", "processing", "paid"].includes(
-    order.aggregateStatus
-  )
+  const isNewOrder = order.aggregateStatus === "processing"
 
   const handleTrackingConfirm = async (
     trackingNumber: string,
@@ -173,17 +172,6 @@ export function OrderFulfillmentPanel({
           tracking_url: trackingUrl,
         },
       })
-
-      if (
-        (!isPreOrder && (item.fulfillmentStep || 1) === 2) ||
-        (isPreOrder && (item.fulfillmentStep || 1) === 2) // Ready to ship -> Shipped
-      ) {
-        await updateStep.mutateAsync({
-          orderId: order.id,
-          itemId: item.productId,
-          body: { fulfillment_step: 3 },
-        })
-      }
     }
 
     setSelectedTrackingItem(null)
@@ -209,9 +197,17 @@ export function OrderFulfillmentPanel({
         <div className="flex min-w-0 flex-1 gap-4">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
             {/* Product Image placeholder */}
-            <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-              Img
-            </div>
+            {item.imageSrc ? (
+              <img
+                src={item.imageSrc}
+                alt={item.title}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+                Img
+              </div>
+            )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-center">
             <div className="flex items-center gap-2">
