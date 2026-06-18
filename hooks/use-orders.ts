@@ -32,10 +32,10 @@ export function useAcceptOrder() {
       fulfillmentType?: string
     }) => ordersService.acceptOrder(orderId, fulfillmentType),
     onSuccess: (order) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
       if (order) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
         queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
-        queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
         queryClient.invalidateQueries({ queryKey: queryKeys.sync.all })
         queryClient.setQueryData(queryKeys.orders.detail(order.id), order)
       }
@@ -57,10 +57,10 @@ export function useCancelOrder() {
       fulfillmentType?: string
     }) => ordersService.cancelOrder(orderId, reason, fulfillmentType),
     onSuccess: (order) => {
+      // Always invalidate list regardless of whether response has order data
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
       if (order) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
-        queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
-        queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
         queryClient.setQueryData(queryKeys.orders.detail(order.id), order)
       }
     },

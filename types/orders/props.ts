@@ -4,7 +4,7 @@ export interface CancelOrderModalProps {
   order: Order
   isOpen: boolean
   onClose: () => void
-  onConfirm: (orderId: string) => Promise<void>
+  onConfirm: (orderId: string, reason: string) => Promise<void>
   isConfirming: boolean
 }
 

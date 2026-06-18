@@ -21,6 +21,7 @@ interface OrderManagementTableProps {
   hasNextPage?: boolean
   isFetchingNextPage?: boolean
   isLoading: boolean
+  isRefetching?: boolean
   orders: Order[]
   fetchNextPage?: () => void
 }
@@ -30,6 +31,7 @@ export function OrderManagementTable({
   hasNextPage,
   isFetchingNextPage,
   isLoading,
+  isRefetching,
   orders,
 }: OrderManagementTableProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
@@ -81,6 +83,12 @@ export function OrderManagementTable({
   return (
     <>
       <div className="overflow-hidden rounded-t-[8px] bg-[#F9F9F9]">
+        {/* Refetch loading bar */}
+        {isRefetching && (
+          <div className="h-0.5 w-full overflow-hidden bg-primary/10">
+            <div className="h-full animate-progress-indeterminate bg-primary" />
+          </div>
+        )}
         <div className="h-[calc(100vh-150px)] overflow-x-auto overflow-y-auto">
           <table className="w-full text-left text-sm">
             <thead className="sticky top-0 z-10 bg-[#F2EDE4]">
@@ -124,8 +132,9 @@ export function OrderManagementTable({
                     paid: "Paid",
                     cancelled: "Cancelled",
                   }
-                  
-                  const displayStatus = statusMap[order.aggregateStatus] || "Pending"
+
+                  const displayStatus =
+                    statusMap[order.aggregateStatus] || "Pending"
 
                   const isCompleted = displayStatus === "Completed"
                   const isPending = displayStatus === "Pending"

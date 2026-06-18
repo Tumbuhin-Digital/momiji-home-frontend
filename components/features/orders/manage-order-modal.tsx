@@ -153,11 +153,19 @@ export function ManageOrderModal({
           }`}
         >
           {shipReadyItems.length > 0 && (
-            <OrderFulfillmentPanel order={currentOrder} type="ship-ready" />
+            <OrderFulfillmentPanel
+              order={currentOrder}
+              type="ship-ready"
+              onOrderActioned={onClose}
+            />
           )}
 
           {preOrderItems.length > 0 && (
-            <OrderFulfillmentPanel order={currentOrder} type="pre-order" />
+            <OrderFulfillmentPanel
+              order={currentOrder}
+              type="pre-order"
+              onOrderActioned={onClose}
+            />
           )}
         </div>
       </DialogContent>

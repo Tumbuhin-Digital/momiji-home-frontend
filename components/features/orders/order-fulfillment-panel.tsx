@@ -23,6 +23,9 @@ import {
   StepperTrigger,
 } from "@/components/ui/stepper"
 
+import { AcceptOrderModal } from "@/components/features/orders/accept-order-modal"
+import { CancelOrderModal } from "@/components/features/orders/cancel-order-modal"
+
 import {
   useAcceptOrder,
   useCancelOrder,
@@ -67,11 +70,13 @@ const preOrderSteps = [
 interface OrderFulfillmentPanelProps {
   order: Order
   type: "ship-ready" | "pre-order"
+  onOrderActioned?: () => void
 }
 
 export function OrderFulfillmentPanel({
   order,
   type,
+  onOrderActioned,
 }: OrderFulfillmentPanelProps) {
   const [selectedReceivedItem, setSelectedReceivedItem] =
     useState<OrderLineItem | null>(null)
@@ -82,6 +87,8 @@ export function OrderFulfillmentPanel({
 
   const [acceptSuccess, setAcceptSuccess] = useState(false)
   const [cancelSuccess, setCancelSuccess] = useState(false)
+  const [showAcceptModal, setShowAcceptModal] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
 
   const acceptOrder = useAcceptOrder()
   const cancelOrder = useCancelOrder()
@@ -108,35 +115,32 @@ export function OrderFulfillmentPanel({
   const isPreOrder = type === "pre-order"
   const apiFulfillmentType = type.replace("-", "_")
 
-  const handleAccept = () => {
-    acceptOrder.mutate(
-      {
-        orderId: order.id,
-        fulfillmentType: apiFulfillmentType,
-      },
-      {
-        onSuccess: () => {
-          setAcceptSuccess(true)
-          setTimeout(() => setAcceptSuccess(false), 2000)
-        },
-      }
-    )
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleAccept = async (_orderId: string) => {
+    await acceptOrder.mutateAsync({
+      orderId: order.id,
+      fulfillmentType: apiFulfillmentType,
+    })
+    setShowAcceptModal(false)
+    setAcceptSuccess(true)
+    setTimeout(() => {
+      setAcceptSuccess(false)
+      onOrderActioned?.()
+    }, 2000)
   }
 
-  const handleCancel = () => {
-    cancelOrder.mutate(
-      {
-        orderId: order.id,
-        reason: "Cancelled by admin",
-        fulfillmentType: apiFulfillmentType,
-      },
-      {
-        onSuccess: () => {
-          setCancelSuccess(true)
-          setTimeout(() => setCancelSuccess(false), 2000)
-        },
-      }
-    )
+  const handleCancel = async (_orderId: string, reason: string) => {
+    await cancelOrder.mutateAsync({
+      orderId: order.id,
+      reason,
+      fulfillmentType: apiFulfillmentType,
+    })
+    setShowCancelModal(false)
+    setCancelSuccess(true)
+    setTimeout(() => {
+      setCancelSuccess(false)
+      onOrderActioned?.()
+    }, 2000)
   }
 
   const currentStep = items.reduce(
@@ -357,7 +361,7 @@ export function OrderFulfillmentPanel({
                 variant="outline"
                 size="sm"
                 className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                onClick={handleAccept}
+                onClick={() => setShowAcceptModal(true)}
                 disabled={acceptOrder.isPending}
               >
                 Accept Order
@@ -366,7 +370,7 @@ export function OrderFulfillmentPanel({
                 variant="outline"
                 size="sm"
                 className="border-[#FFB3B3] bg-[#FFD6D6] text-[#D8000C] hover:bg-[#FFC2C2]"
-                onClick={handleCancel}
+                onClick={() => setShowCancelModal(true)}
                 disabled={cancelOrder.isPending}
               >
                 Cancel
@@ -558,6 +562,24 @@ export function OrderFulfillmentPanel({
         onClose={() => setSelectedTrackingItem(null)}
         onConfirm={handleTrackingConfirm}
         isConfirming={updateTracking.isPending || updateStep.isPending}
+      />
+
+      {/* Accept confirmation modal */}
+      <AcceptOrderModal
+        order={order}
+        isOpen={showAcceptModal}
+        onClose={() => setShowAcceptModal(false)}
+        onConfirm={handleAccept}
+        isConfirming={acceptOrder.isPending}
+      />
+
+      {/* Cancel confirmation modal */}
+      <CancelOrderModal
+        order={order}
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleCancel}
+        isConfirming={cancelOrder.isPending}
       />
     </div>
   )

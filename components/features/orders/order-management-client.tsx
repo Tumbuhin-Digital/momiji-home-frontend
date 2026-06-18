@@ -11,6 +11,7 @@ export function OrderManagementClient() {
   const {
     data,
     isLoading,
+    isFetching,
     isError,
     refetch,
     hasNextPage,
@@ -49,6 +50,7 @@ export function OrderManagementClient() {
         <OrderManagementTable
           orders={orders}
           isLoading={isLoading}
+          isRefetching={isFetching && !isLoading}
           hasNextPage={hasNextPage}
           fetchNextPage={fetchNextPage}
           isFetchingNextPage={isFetchingNextPage}
