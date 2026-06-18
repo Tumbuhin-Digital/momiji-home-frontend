@@ -26,7 +26,7 @@ export function AppNavbar() {
   }
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-40 flex h-16 items-center justify-between border-b border-primary/10 bg-navbar p-4 shadow-xs backdrop-blur-md transition-all duration-300 sm:h-24 sm:px-10 sm:py-4 lg:h-31.5">
+    <header className="fixed top-0 right-0 left-0 z-40 flex h-16 items-center justify-between border-b border-primary/10 bg-navbar p-4 shadow-xs backdrop-blur-md transition-all duration-300 sm:h-24 sm:px-10 sm:py-4">
       <div className="flex flex-1" />
       <div className="flex shrink-0 justify-center">
         <Link href="/">
@@ -35,7 +35,7 @@ export function AppNavbar() {
             alt="Momiji Logo"
             width={210}
             height={24}
-            className="h-6 w-auto object-contain transition-transform duration-500 sm:h-8 lg:h-10"
+            className="h-6 w-auto object-contain transition-transform duration-500 sm:h-8"
             priority
           />
         </Link>
@@ -43,12 +43,12 @@ export function AppNavbar() {
       <div className="flex flex-1 items-center justify-end gap-8">
         <Button
           type="button"
-          variant="ghost"
           size="icon-sm"
+          variant="ghost"
+          className="relative size-6! cursor-pointer bg-transparent transition-all hover:bg-transparent sm:size-8!"
           onClick={() => setIsOpen(true)}
-          className="relative cursor-pointer bg-transparent transition-all hover:bg-transparent"
         >
-          <IconBag className="size-8 text-black" />
+          <IconBag className="size-6 text-black sm:size-8" />
           {count > 0 && (
             <Badge
               variant="destructive"

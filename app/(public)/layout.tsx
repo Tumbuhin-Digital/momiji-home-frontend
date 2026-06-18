@@ -10,7 +10,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
       <AppNavbar />
-      <main className="flex-1 pt-16 sm:pt-24 lg:pt-32">{children}</main>
+      <main className="flex-1 pt-16 sm:pt-24">{children}</main>
       <ScrollToTop />
       <CartSheet />
     </div>
