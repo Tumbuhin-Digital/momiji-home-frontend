@@ -19,9 +19,12 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     s.includes("confirm") ||
     s === "completed" ||
     s === "shipped" ||
-    s === "delivered"
+    s === "delivered" ||
+    s === "paid"
   ) {
     variantClass = "bg-[#49944B1A] text-[#49944B] hover:bg-[#49944B1A]"
+  } else if (s === "cancelled") {
+    variantClass = "bg-[#DC26261A] text-[#DC2626] hover:bg-[#DC26261A]"
   } else if (s === "processing" || s === "pending") {
     variantClass = "bg-[#9090901A] text-[#5D6F76] hover:bg-[#9090901A]"
   }

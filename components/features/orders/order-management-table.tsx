@@ -117,13 +117,15 @@ export function OrderManagementTable({
                   const progressPercentage =
                     totalItems > 0 ? (receivedItems / totalItems) * 100 : 0
 
-                  const displayStatus =
-                    order.fulfillmentStatus === "unfulfilled" &&
-                    order.paymentStatus === "pending"
-                      ? "Pending"
-                      : order.fulfillmentStatus === "delivered"
-                        ? "Completed"
-                        : "In Progress"
+                  const statusMap: Record<string, string> = {
+                    pending: "Pending",
+                    processing: "New Order",
+                    on_progress: "In Progress",
+                    paid: "Paid",
+                    cancelled: "Cancelled",
+                  }
+                  
+                  const displayStatus = statusMap[order.aggregateStatus] || "Pending"
 
                   const isCompleted = displayStatus === "Completed"
                   const isPending = displayStatus === "Pending"

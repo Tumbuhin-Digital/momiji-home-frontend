@@ -216,6 +216,16 @@ export default function DashboardClient() {
                   </div>
                 ) : (
                   data.recentOrders.slice(0, 4).map((order, i) => {
+                    const statusMap: Record<string, string> = {
+                      pending: "Pending",
+                      processing: "New Order",
+                      on_progress: "In Progress",
+                      paid: "Paid",
+                      cancelled: "Cancelled",
+                    }
+                    const displayStatus =
+                      statusMap[order.status] || order.statusLabel || "Pending"
+
                     return (
                       <div
                         key={i}
@@ -235,7 +245,7 @@ export default function DashboardClient() {
                           </span>
                         </div>
                         <StatusBadge
-                          status={order.statusLabel}
+                          status={displayStatus}
                           className="h-8! w-fit rounded-full px-4 py-3 text-center"
                         />
                       </div>
