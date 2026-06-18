@@ -21,6 +21,13 @@ class ApiError extends Error {
   }
 }
 
+function isOnCheckoutPage(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.location.pathname.startsWith("/checkout")
+  )
+}
+
 async function onRequest(config: InternalAxiosRequestConfig) {
   config.headers.set("Accept", "application/json")
 
@@ -36,11 +43,10 @@ async function onRequest(config: InternalAxiosRequestConfig) {
       const expiresAt = state.expiresAt
 
       if (sessionId) {
-        const isCheckoutPath = config.url?.includes("/checkout")
         if (
           expiresAt &&
           new Date(expiresAt).getTime() < Date.now() &&
-          !isCheckoutPath
+          !isOnCheckoutPage()
         ) {
           state.setSessionId(null, null)
         } else {
@@ -141,23 +147,18 @@ async function onResponseError(error: AxiosError<ApiErrorPayload>) {
     }
   }
 
-  if (
-    shouldSkipRefresh &&
-    (status === 404 || status === 500 || status === 401)
-  ) {
+  if (shouldSkipRefresh && status === 401 && !isOnCheckoutPage()) {
     try {
       const { useCartStore } = await import("@/lib/stores/cart.store")
-      const isCheckoutPath = originalRequest.url?.includes("/checkout")
+      const isGetRequest = originalRequest.method?.toLowerCase() === "get"
+      const isCartPath = originalRequest.url?.includes("/cart")
+      const hadSession = Boolean(useCartStore.getState().sessionId)
 
-      // Prevent clearing session ID during checkout flow
-      if (!isCheckoutPath) {
+      if (hadSession) {
         useCartStore.getState().setSessionId(null, null)
       }
 
-      const isGetRequest = originalRequest.method?.toLowerCase() === "get"
-      const isCartPath = originalRequest.url?.includes("/cart")
-
-      if (!originalRequest._retried && isGetRequest && isCartPath) {
+      if (!originalRequest._retried && isGetRequest && isCartPath && !hadSession) {
         originalRequest._retried = true
 
         const sessionRes = await axios.post(

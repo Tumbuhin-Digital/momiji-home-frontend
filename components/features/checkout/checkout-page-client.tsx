@@ -147,7 +147,7 @@ export default function CheckoutPageClient() {
       ? "US"
       : formValues.country || "US"
 
-  const { data: shippingRates, isFetching: isLoadingShipping } =
+  const { data: shippingRates, isFetching: isLoadingShipping, isError: isShippingRatesError } =
     useShippingRates(
       {
         zip: formValues.zipCode || "",
@@ -811,6 +811,11 @@ export default function CheckoutPageClient() {
                   {isLoadingShipping ? (
                     <div className="flex h-24 items-center justify-center rounded-lg bg-muted/50">
                       <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : isShippingRatesError ? (
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">
+                      Failed to load shipping rates. Please check your address
+                      and try again.
                     </div>
                   ) : (
                     <div className="overflow-hidden rounded-lg border bg-white">
