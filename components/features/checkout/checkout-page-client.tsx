@@ -163,8 +163,10 @@ export default function CheckoutPageClient() {
   }, [cartData])
 
   useEffect(() => {
+    if (preOrderItems.length === 0) return
+
     if (
-      (preOrderItems.length > 0 && !formValues.shippingMethod) ||
+      !formValues.shippingMethod ||
       !formValues.country ||
       !formValues.zipCode
     )

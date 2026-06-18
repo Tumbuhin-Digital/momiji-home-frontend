@@ -170,7 +170,13 @@ function Toasts({
                       data-slot="toast-title"
                     />
                     <Toast.Description
-                      className="text-muted-foreground"
+                      className={cn(
+                        "text-muted-foreground",
+                        toast.type === "success" && "text-green-700",
+                        toast.type === "error" && "text-red-700",
+                        toast.type === "info" && "text-primary",
+                        toast.type === "warning" && "text-yellow-700"
+                      )}
                       data-slot="toast-description"
                     />
                   </div>
@@ -267,7 +273,13 @@ function AnchoredToasts({
                           data-slot="toast-title"
                         />
                         <Toast.Description
-                          className="text-muted-foreground"
+                          className={cn(
+                            "text-muted-foreground",
+                            toast.type === "success" && "text-green-700",
+                            toast.type === "error" && "text-red-700",
+                            toast.type === "info" && "text-primary",
+                            toast.type === "warning" && "text-yellow-700"
+                          )}
                           data-slot="toast-description"
                         />
                       </div>
