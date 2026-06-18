@@ -11,6 +11,8 @@ import { Controller, useForm } from "react-hook-form"
 import { toastManager } from "@/components/ui/toast"
 import { z } from "zod"
 
+import type { CheckoutSummaryInput } from "@/types/checkout/entities"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -170,8 +172,10 @@ export default function CheckoutPageClient() {
 
     const doRecalculate = async () => {
       try {
-        const payload: { address_id: number; shipping_method?: string } = {
+        const payload: CheckoutSummaryInput = {
           address_id: 0,
+          zip_code: formValues.zipCode,
+          country: mappedCountryForRates,
         }
         if (formValues.shippingMethod) {
           payload.shipping_method = formValues.shippingMethod

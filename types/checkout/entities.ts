@@ -35,6 +35,8 @@ export interface CheckoutSummary {
 export interface CheckoutSummaryInput {
   address_id: number
   shipping_method?: string
+  zip_code?: string
+  country?: string
 }
 
 export interface CheckoutCreateInput {
