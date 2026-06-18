@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import Image from "next/image"
@@ -18,6 +17,14 @@ import {
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs"
 
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -63,7 +70,7 @@ const DynamicImageCarousel = dynamic(
 import { useProducts, useUpdateProductStatus } from "@/hooks"
 import { formatCurrency, formatLastSynced } from "@/lib/utils"
 
-import type { Product } from "@/types/products"
+import type { Product, ProductImage } from "@/types/products"
 
 function effectivePrice(product: Product) {
   const usdMarket = product.pricing.markets["USD"]
@@ -88,6 +95,10 @@ export default function ProductsPageClient() {
   const [expandedProducts, setExpandedProducts] = useState<
     Record<string, boolean>
   >({})
+  const [confirmShipReadyOpen, setConfirmShipReadyOpen] = useState(false)
+  const [pendingShipReadyTarget, setPendingShipReadyTarget] = useState<
+    string | null
+  >(null)
 
   const updateProductStatusMutation = useUpdateProductStatus()
 
@@ -116,7 +127,7 @@ export default function ProductsPageClient() {
         shopifyProductId: string
         title: string
         imageUrl: string
-        images: any[]
+        images: ProductImage[]
         variants: Product[]
       }
     > = {}
@@ -416,7 +427,10 @@ export default function ProductsPageClient() {
                                 <DropdownMenuTrigger asChild>
                                   <Button
                                     variant="outline"
-                                    className="h-10! w-40 justify-between border-black/20 bg-white px-3 text-left text-slate-700 hover:bg-white hover:text-slate-700"
+                                    disabled={
+                                      updateProductStatusMutation.isPending
+                                    }
+                                    className="h-10! w-40 justify-between border-black/20 bg-white px-3 text-left text-slate-700 hover:bg-white hover:text-slate-700 disabled:opacity-50"
                                   >
                                     <div className="flex items-center gap-2">
                                       <div
@@ -431,7 +445,9 @@ export default function ProductsPageClient() {
                                       <span className="capitalize">
                                         {groupCategory === "pre-order"
                                           ? "Pre-Order"
-                                          : groupCategory.replace("-", " ")}
+                                          : groupCategory === "inactive"
+                                            ? "Inactive"
+                                            : groupCategory.replace("-", " ")}
                                       </span>
                                     </div>
                                     <ChevronDown className="size-4 text-slate-400" />
@@ -442,14 +458,27 @@ export default function ProductsPageClient() {
                                   className="w-40 rounded-xl bg-white shadow-lg"
                                 >
                                   <DropdownMenuItem
-                                    onClick={() =>
-                                      updateProductStatusMutation.mutate({
-                                        productId: group.variants[0].originalId,
-                                        input: {
-                                          fulfillment_type: "ship_ready",
-                                        },
-                                      })
-                                    }
+                                    onClick={() => {
+                                      const totalStock = group.variants.reduce(
+                                        (acc, variant) =>
+                                          acc + variant.inventory.quantity,
+                                        0
+                                      )
+                                      if (totalStock === 0) {
+                                        setPendingShipReadyTarget(
+                                          group.variants[0].originalId
+                                        )
+                                        setConfirmShipReadyOpen(true)
+                                      } else {
+                                        updateProductStatusMutation.mutate({
+                                          productId:
+                                            group.variants[0].originalId,
+                                          input: {
+                                            fulfillment_type: "ship_ready",
+                                          },
+                                        })
+                                      }
+                                    }}
                                   >
                                     <div className="flex items-center gap-2">
                                       <div className="size-2.5 rounded-full bg-[#29CE2D]" />
@@ -671,6 +700,49 @@ export default function ProductsPageClient() {
         isOpen={csvModalOpen}
         onClose={() => setCsvModalOpen(false)}
       />
+
+      <AlertDialog
+        open={confirmShipReadyOpen}
+        onOpenChange={setConfirmShipReadyOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This product currently has 0 stock. Setting it to Ship Ready will
+              allow it to be shown in the ship ready catalog, but customers may
+              not be able to purchase it until stock is updated.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPendingShipReadyTarget(null)
+                setConfirmShipReadyOpen(false)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (pendingShipReadyTarget) {
+                  updateProductStatusMutation.mutate({
+                    productId: pendingShipReadyTarget,
+                    input: {
+                      fulfillment_type: "ship_ready",
+                    },
+                  })
+                }
+                setConfirmShipReadyOpen(false)
+                setPendingShipReadyTarget(null)
+              }}
+            >
+              Continue
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Suspense>
   )
 }
