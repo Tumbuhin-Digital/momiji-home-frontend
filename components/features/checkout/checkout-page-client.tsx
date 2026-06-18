@@ -47,7 +47,12 @@ import { CheckoutSkeleton } from "@/components/features/checkout/checkout-skelet
 import { WaitingPaymentOverlay } from "@/components/features/checkout/waiting-payment-overlay"
 import { IconBag } from "@/public/icons/icon-bag"
 
-import { US_STATES_MAP } from "@/constants/states"
+import {
+  getNormalizedState,
+  isUSCountry,
+  toUSStateAbbr,
+  US_STATES_LIST,
+} from "@/constants/states"
 
 import { useCart, useFlushPendingCart } from "@/hooks"
 import {
@@ -147,29 +152,47 @@ export default function CheckoutPageClient() {
       ? "US"
       : formValues.country || "US"
 
-  const { data: shippingRates, isFetching: isLoadingShipping, isError: isShippingRatesError } =
-    useShippingRates(
-      {
-        zip: formValues.zipCode || "",
-        country: mappedCountryForRates,
-        city: formValues.city || "",
-        state: formValues.state || "",
-        address1: formValues.address || "",
-      },
-      {
-        enabled:
-          hasFlushedCart &&
-          !flushPendingCart.isPending &&
-          preOrderItems.length > 0 &&
-          !!formValues.zipCode &&
-          formValues.zipCode.length >= 5 &&
-          !!formValues.city &&
-          !!formValues.state,
-      }
-    )
+  const isUS = isUSCountry(formValues.country || "")
+  const normalizedState = getNormalizedState(
+    formValues.country || "",
+    formValues.state || ""
+  )
+
+  const {
+    data: shippingRates,
+    isFetching: isLoadingShipping,
+    isError: isShippingRatesError,
+  } = useShippingRates(
+    {
+      zip: formValues.zipCode || "",
+      country: mappedCountryForRates,
+      city: formValues.city || "",
+      state: normalizedState,
+      address1: formValues.address || "",
+    },
+    {
+      enabled:
+        hasFlushedCart &&
+        !flushPendingCart.isPending &&
+        preOrderItems.length > 0 &&
+        !!formValues.zipCode &&
+        formValues.zipCode.length >= 5 &&
+        !!formValues.city &&
+        !!normalizedState,
+    }
+  )
 
   const isInitialLoading =
     isCartLoading || !hasFlushedCart || flushPendingCart.isPending
+
+  useEffect(() => {
+    if (!isUS || !formValues.state) return
+
+    const normalized = toUSStateAbbr(formValues.state)
+    if (normalized !== formValues.state) {
+      setValue("state", normalized, { shouldValidate: true })
+    }
+  }, [formValues.country, formValues.state, isUS, setValue])
 
   useEffect(() => {
     const pending = getPendingSync()
@@ -308,12 +331,8 @@ export default function CheckoutPageClient() {
           let state = stateZipParts[0]
           const zip = stateZipParts.slice(1).join(" ")
 
-          if (
-            state &&
-            US_STATES_MAP[state.toUpperCase() as keyof typeof US_STATES_MAP]
-          ) {
-            state =
-              US_STATES_MAP[state.toUpperCase() as keyof typeof US_STATES_MAP]
+          if (state) {
+            state = toUSStateAbbr(state)
           }
 
           setValue("address", address, { shouldValidate: true })
@@ -343,11 +362,13 @@ export default function CheckoutPageClient() {
       return
     }
 
+    const normalizedState = getNormalizedState(values.country, values.state)
+
     try {
       await validateAddressMutation.mutateAsync({
         city: values.city,
         country: values.country,
-        state: values.state,
+        state: normalizedState,
         zip: values.zipCode,
       })
     } catch (err: any) {
@@ -377,7 +398,7 @@ export default function CheckoutPageClient() {
           last_name: values.lastName,
           phone: values.phone,
           shipping_method: values.shippingMethod || "",
-          state: values.state,
+          state: normalizedState,
           zip: values.zipCode,
         })
       setCurrentCheckoutUrl(checkoutUrl)
@@ -665,21 +686,53 @@ export default function CheckoutPageClient() {
 
                     {/* State */}
                     <div>
-                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
-                        <input
-                          {...register("state")}
-                          id="state"
-                          type="text"
-                          placeholder=" "
-                          className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                      {isUS ? (
+                        <Controller
+                          name="state"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              value={field.value}
+                              onValueChange={(v) => field.onChange(v || "")}
+                            >
+                              <SelectTrigger className="h-17.5! w-full rounded-lg border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal">
+                                <div className="flex flex-col items-start gap-0.5">
+                                  <span className="text-[11px] text-[#737373]">
+                                    State
+                                  </span>
+                                  <SelectValue placeholder="State" />
+                                </div>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {US_STATES_LIST.map((stateOption) => (
+                                  <SelectItem
+                                    key={stateOption.value}
+                                    value={stateOption.value}
+                                  >
+                                    {stateOption.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                         />
-                        <label
-                          htmlFor="state"
-                          className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
-                        >
-                          State
-                        </label>
-                      </div>
+                      ) : (
+                        <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                          <input
+                            {...register("state")}
+                            id="state"
+                            type="text"
+                            placeholder=" "
+                            className="w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                          />
+                          <label
+                            htmlFor="state"
+                            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+                          >
+                            State
+                          </label>
+                        </div>
+                      )}
                       {errors.state && (
                         <p className="mt-1 text-sm text-red-500">
                           {errors.state.message}

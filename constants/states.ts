@@ -1,3 +1,8 @@
+export interface USStateOption {
+  value: string
+  label: string
+}
+
 export const US_STATES_MAP: Record<string, string> = {
   AL: "Alabama",
   AK: "Alaska",
@@ -51,4 +56,37 @@ export const US_STATES_MAP: Record<string, string> = {
   WY: "Wyoming",
   DC: "District of Columbia",
   PR: "Puerto Rico",
+}
+
+export const US_STATES_LIST: USStateOption[] = Object.entries(US_STATES_MAP)
+  .map(([abbr, name]) => ({ value: abbr, label: name }))
+  .sort((a, b) => a.label.localeCompare(b.label))
+
+export function toUSStateAbbr(state: string): string {
+  const trimmed = state.trim()
+  if (!trimmed) return trimmed
+
+  const upper = trimmed.toUpperCase()
+  if (US_STATES_MAP[upper]) return upper
+
+  const byName = Object.entries(US_STATES_MAP).find(
+    ([, name]) => name.toLowerCase() === trimmed.toLowerCase()
+  )
+  if (byName) return byName[0]
+
+  return trimmed
+}
+
+export function isUSCountry(country: string): boolean {
+  const normalized = country.trim().toLowerCase()
+  return (
+    normalized === "us" ||
+    normalized === "united states" ||
+    normalized === "amerika serikat"
+  )
+}
+
+export function getNormalizedState(country: string, state: string): string {
+  if (!isUSCountry(country)) return state.trim()
+  return toUSStateAbbr(state)
 }

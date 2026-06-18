@@ -18,6 +18,21 @@ function mapShippingRateDtoToDomain(dto: ShippingRateDto): ShippingRate {
   }
 }
 
+function dedupeShippingRates(rates: ShippingRate[]): ShippingRate[] {
+  const cheapestByServiceCode = new Map<string, ShippingRate>()
+
+  for (const rate of rates) {
+    const existing = cheapestByServiceCode.get(rate.serviceCode)
+    if (!existing || parseFloat(rate.cost) < parseFloat(existing.cost)) {
+      cheapestByServiceCode.set(rate.serviceCode, rate)
+    }
+  }
+
+  return [...cheapestByServiceCode.values()].sort(
+    (a, b) => parseFloat(a.cost) - parseFloat(b.cost)
+  )
+}
+
 async function getShippingRates(
   input: ShippingRatesRequest
 ): Promise<ShippingRate[]> {
@@ -36,7 +51,7 @@ async function getShippingRates(
     throw new Error("Failed to load shipping rates")
   }
 
-  return response.data.map(mapShippingRateDtoToDomain)
+  return dedupeShippingRates(response.data.map(mapShippingRateDtoToDomain))
 }
 
 async function validateAddress(data: ValidateAddressRequest): Promise<void> {
