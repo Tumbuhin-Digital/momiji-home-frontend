@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { format } from "date-fns"
 import { Pencil } from "lucide-react"
@@ -27,6 +27,18 @@ export function OrderManagementTable({
   isLoading,
 }: OrderManagementTableProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+
+  // Auto-open modal if orderId is in query params (e.g. after refresh)
+  useEffect(() => {
+    if (isLoading || orders.length === 0) return
+    const params = new URLSearchParams(window.location.search)
+    const orderId = params.get("orderId")
+    if (orderId) {
+      const found = orders.find((o) => o.id === orderId)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (found) setSelectedOrder(found)
+    }
+  }, [isLoading, orders])
 
   const getStatusBadge = (status: string) => {
     return (

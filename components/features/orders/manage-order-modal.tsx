@@ -39,13 +39,19 @@ export function ManageOrderModal({
 
   useEffect(() => {
     if (isOpen && order?.id) {
-      window.history.pushState(null, "", `/order-management/${order.id}`)
+      const url = new URL(window.location.href)
+      url.searchParams.set("orderId", order.id)
+      window.history.replaceState(null, "", url.toString())
     } else {
-      window.history.replaceState(null, "", `/order-management`)
+      const url = new URL(window.location.href)
+      url.searchParams.delete("orderId")
+      window.history.replaceState(null, "", url.toString())
     }
 
     return () => {
-      window.history.replaceState(null, "", `/order-management`)
+      const url = new URL(window.location.href)
+      url.searchParams.delete("orderId")
+      window.history.replaceState(null, "", url.toString())
     }
   }, [isOpen, order?.id])
 

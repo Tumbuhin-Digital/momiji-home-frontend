@@ -19,6 +19,7 @@ export interface OrderLineItem {
   currency: CurrencyCode
   fulfillmentStep?: number
   itemsReceived?: number
+  itemStatus?: string
   productId: string
   quantity: number
   shopifyProductId: string
@@ -125,6 +126,7 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
       currency: (dto.currency as CurrencyCode) ?? "USD",
       fulfillmentStep: item.fulfillment_step,
       itemsReceived: item.items_received,
+      itemStatus: item.item_status,
       trackingNumber: item.tracking_number,
       trackingUrl: item.tracking_url,
       type:

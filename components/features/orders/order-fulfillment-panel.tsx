@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import dynamic from "next/dynamic"
 import { useState } from "react"
 
-import { Check, Truck } from "lucide-react"
+import { AnimatePresence, motion } from "motion/react"
+import { CheckCircle2, XCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -11,7 +13,6 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Input } from "@/components/ui/input"
 import {
   Stepper,
   StepperIndicator,
@@ -50,8 +51,8 @@ const UpdateTrackingModal = dynamic(
 
 const shipReadySteps = [
   { step: 1, title: "Order Placed" },
-  { step: 3, title: "Shipped" },
-  { step: 4, title: "Delivered" },
+  { step: 2, title: "Shipped" },
+  { step: 3, title: "Delivered" },
 ]
 
 const preOrderSteps = [
@@ -70,20 +71,15 @@ export function OrderFulfillmentPanel({
   order,
   type,
 }: OrderFulfillmentPanelProps) {
-  const [trackingNumber, setTrackingNumber] = useState(
-    order.fulfillment?.trackingNumber || ""
-  )
-  const [carrier, setCarrier] = useState(order.fulfillment?.carrier || "FedEx")
-  const [isEditingTracking, setIsEditingTracking] = useState(
-    !order.fulfillment?.trackingNumber
-  )
-
   const [selectedReceivedItem, setSelectedReceivedItem] =
     useState<OrderLineItem | null>(null)
   const [selectedStepItem, setSelectedStepItem] =
     useState<OrderLineItem | null>(null)
   const [selectedTrackingItem, setSelectedTrackingItem] =
     useState<OrderLineItem | null>(null)
+
+  const [acceptSuccess, setAcceptSuccess] = useState(false)
+  const [cancelSuccess, setCancelSuccess] = useState(false)
 
   const acceptOrder = useAcceptOrder()
   const cancelOrder = useCancelOrder()
@@ -98,43 +94,37 @@ export function OrderFulfillmentPanel({
   if (items.length === 0) return null
 
   const isPreOrder = type === "pre-order"
-
   const apiFulfillmentType = type.replace("-", "_")
 
   const handleAccept = () => {
-    acceptOrder.mutate({
-      orderId: order.id,
-      fulfillmentType: apiFulfillmentType,
-    })
+    acceptOrder.mutate(
+      {
+        orderId: order.id,
+        fulfillmentType: apiFulfillmentType,
+      },
+      {
+        onSuccess: () => {
+          setAcceptSuccess(true)
+          setTimeout(() => setAcceptSuccess(false), 2000)
+        },
+      }
+    )
   }
 
   const handleCancel = () => {
-    cancelOrder.mutate({
-      orderId: order.id,
-      reason: "Cancelled by admin",
-      fulfillmentType: apiFulfillmentType,
-    })
-  }
-
-  const handleReadyToShip = () => {
-    if (items.length > 0) {
-      updateStep.mutate({
+    cancelOrder.mutate(
+      {
         orderId: order.id,
-        itemId: items[0].productId,
-        body: { fulfillment_step: 2 },
-      })
-    }
-  }
-
-  const handleSaveTracking = () => {
-    setIsEditingTracking(false)
-    if (items.length > 0) {
-      updateStep.mutate({
-        orderId: order.id,
-        itemId: items[0].productId,
-        body: { fulfillment_step: 3 },
-      })
-    }
+        reason: "Cancelled by admin",
+        fulfillmentType: apiFulfillmentType,
+      },
+      {
+        onSuccess: () => {
+          setCancelSuccess(true)
+          setTimeout(() => setCancelSuccess(false), 2000)
+        },
+      }
+    )
   }
 
   const currentStep = items.reduce(
@@ -142,44 +132,193 @@ export function OrderFulfillmentPanel({
     1
   )
 
-  const renderItemContent = (item: OrderLineItem) => (
-    <div className="flex gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
-        {/* Product Image placeholder */}
-        <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-          Img
+  const visualStep = isPreOrder
+    ? currentStep
+    : currentStep === 1 || currentStep === 2
+      ? 1
+      : currentStep === 3
+        ? 2
+        : 3
+
+  const hasPendingItems =
+    items.some((item) => (item.fulfillmentStep || 1) === 1) &&
+    order.fulfillmentStatus !== "cancelled"
+
+  const handleTrackingConfirm = async (
+    trackingNumber: string,
+    trackingUrl: string
+  ) => {
+    // Apply tracking to all items in the panel that need it
+    const itemsToUpdate = selectedTrackingItem ? [selectedTrackingItem] : items
+
+    for (const item of itemsToUpdate) {
+      await updateTracking.mutateAsync({
+        orderId: order.id,
+        itemId: item.productId,
+        body: {
+          tracking_number: trackingNumber,
+          tracking_url: trackingUrl,
+        },
+      })
+
+      if (
+        (!isPreOrder && (item.fulfillmentStep || 1) === 2) ||
+        (isPreOrder && (item.fulfillmentStep || 1) === 2) // Ready to ship -> Shipped
+      ) {
+        await updateStep.mutateAsync({
+          orderId: order.id,
+          itemId: item.productId,
+          body: { fulfillment_step: 3 },
+        })
+      }
+    }
+
+    setSelectedTrackingItem(null)
+  }
+
+  const handleUpdateStepAll = async (targetStep: number) => {
+    for (const item of items) {
+      if ((item.fulfillmentStep || 1) < targetStep) {
+        await updateStep.mutateAsync({
+          orderId: order.id,
+          itemId: item.productId,
+          body: { fulfillment_step: targetStep },
+        })
+      }
+    }
+  }
+
+  const renderItemContent = (item: OrderLineItem) => {
+    const step = item.fulfillmentStep || 1
+
+    return (
+      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row">
+        <div className="flex min-w-0 flex-1 gap-4">
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
+            {/* Product Image placeholder */}
+            <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+              Img
+            </div>
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col justify-center">
+            <div className="flex items-center gap-2">
+              <p
+                className="truncate font-medium text-slate-800"
+                title={item.title}
+              >
+                {item.title}
+              </p>
+              {order.fulfillmentStatus === "cancelled" && (
+                <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">
+                  CANCELLED
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-sm text-slate-500">
+              {item.quantity} pcs - {formatCurrency(item.unitPrice)} USD
+            </p>
+            {item.trackingNumber && (
+              <p className="mt-1 text-xs font-semibold text-slate-600">
+                Tracking: {item.trackingNumber}
+              </p>
+            )}
+            {item.itemsReceived !== undefined && step === 4 && isPreOrder && (
+              <p className="mt-0.5 text-xs text-slate-500">
+                Received: {item.itemsReceived}
+              </p>
+            )}
+          </div>
         </div>
+
+        {step > 1 && order.fulfillmentStatus !== "cancelled" && (
+          <div className="flex items-center gap-2 sm:flex-col sm:justify-center sm:border-l sm:border-slate-100 sm:pl-4">
+            {step === 4 && isPreOrder && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs whitespace-nowrap"
+                onClick={() => setSelectedReceivedItem(item)}
+              >
+                Update Received
+              </Button>
+            )}
+          </div>
+        )}
       </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-center">
-        <p className="truncate font-medium text-slate-800" title={item.title}>
-          {item.title}
-        </p>
-        <p className="mt-1 text-sm text-slate-500">
-          {item.quantity} pcs - {formatCurrency(item.unitPrice)} USD
-        </p>
-      </div>
-    </div>
-  )
+    )
+  }
+
+  const trackedItem = items.find((item) => item.trackingNumber)
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[#D9E2E8] bg-[#F4F7F9]/30">
+    <div className="relative overflow-hidden rounded-xl border border-[#D9E2E8] bg-[#F4F7F9]/30">
+      {/* Success overlay animation */}
+      <AnimatePresence>
+        {(acceptSuccess || cancelSuccess) && (
+          <motion.div
+            key="success-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-xl bg-white/95 backdrop-blur-sm"
+          >
+            {acceptSuccess ? (
+              <>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 260,
+                    damping: 20,
+                    delay: 0.1,
+                  }}
+                >
+                  <CheckCircle2 className="h-14 w-14 text-emerald-500" />
+                </motion.div>
+                <motion.p
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-base font-bold text-emerald-700"
+                >
+                  Order Accepted!
+                </motion.p>
+              </>
+            ) : (
+              <>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 260,
+                    damping: 20,
+                    delay: 0.1,
+                  }}
+                >
+                  <XCircle className="h-14 w-14 text-red-500" />
+                </motion.div>
+                <motion.p
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-base font-bold text-red-700"
+                >
+                  Order Cancelled
+                </motion.p>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="flex items-center justify-between border-b border-[#D9E2E8] bg-[#EBF0F3] px-6 py-3">
         <h3 className="text-lg font-bold text-slate-700">
           {type === "ship-ready" ? "Ship Ready" : "Pre-Order"}
         </h3>
         <div className="flex gap-2">
-          {type === "pre-order" && currentStep === 2 && (
-            <Button
-              variant="default"
-              size="sm"
-              className="border border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-              onClick={handleReadyToShip}
-              disabled={updateStep.isPending}
-            >
-              Ready to Ship
-            </Button>
-          )}
-          {currentStep === 1 && (
+          {hasPendingItems ? (
             <>
               <Button
                 variant="outline"
@@ -200,7 +339,52 @@ export function OrderFulfillmentPanel({
                 Cancel
               </Button>
             </>
-          )}
+          ) : order.fulfillmentStatus !== "cancelled" ? (
+            <>
+              {!isPreOrder && currentStep === 2 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                  onClick={() => setSelectedTrackingItem({} as any)} // Hack to open modal for all
+                >
+                  Add Tracking
+                </Button>
+              )}
+              {isPreOrder && currentStep === 2 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                  onClick={() => setSelectedTrackingItem({} as any)}
+                >
+                  Ready to Ship
+                </Button>
+              )}
+              {!isPreOrder && currentStep === 3 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                  onClick={() => handleUpdateStepAll(4)}
+                  disabled={updateStep.isPending}
+                >
+                  Mark Delivered
+                </Button>
+              )}
+              {isPreOrder && currentStep === 3 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                  onClick={() => handleUpdateStepAll(4)}
+                  disabled={updateStep.isPending}
+                >
+                  Mark Delivered
+                </Button>
+              )}
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -223,7 +407,7 @@ export function OrderFulfillmentPanel({
         )}
 
         {/* Stepper */}
-        <Stepper value={currentStep} className="mb-6">
+        <Stepper value={visualStep} className="mb-6">
           {(isPreOrder ? preOrderSteps : shipReadySteps).map(
             ({ step, title }, idx, arr) => (
               <StepperItem
@@ -246,57 +430,42 @@ export function OrderFulfillmentPanel({
         </Stepper>
 
         {/* Airway Bill Section */}
-        {currentStep >= 2 && (
-          <div className="mt-6 flex flex-col items-start justify-between gap-4 rounded-lg border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
-            <div className="flex items-start gap-3">
-              <div className="rounded bg-slate-50 p-2 text-[#7EA4B3]">
-                <Truck className="h-5 w-5" />
-              </div>
-              <div>
-                <h5 className="text-sm font-bold">Airway Bill</h5>
-                {isEditingTracking ? (
-                  <div className="mt-2 flex items-center gap-2">
-                    <Input
-                      placeholder="Carrier (e.g. FedEx)"
-                      value={carrier}
-                      onChange={(e) => setCarrier(e.target.value)}
-                      className="h-8 w-24 text-xs"
-                    />
-                    <Input
-                      placeholder="Tracking number"
-                      value={trackingNumber}
-                      onChange={(e) => setTrackingNumber(e.target.value)}
-                      className="h-8 w-40 text-xs"
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-sm font-medium text-slate-800">
-                      {carrier}
-                    </p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      Tracking number: {trackingNumber || "-"}
-                    </p>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div>
-              {isEditingTracking ? (
-                <Button size="sm" onClick={handleSaveTracking} className="h-8">
-                  <Check className="mr-1 h-4 w-4" /> Save & Ship
-                </Button>
-              ) : (
-                <div className="text-right">
-                  <p className="text-[10px] tracking-wide text-slate-400 uppercase">
-                    Last Updated
+        {trackedItem && (
+          <div className="mt-8 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h4 className="mb-4 text-sm font-bold text-slate-800">
+              Airway Bill
+            </h4>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EBF0F3]">
+                  <span className="text-xs font-bold text-slate-500">Log</span>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-800">
+                    {order.fulfillment?.carrier || "Standard Shipping"}
                   </p>
-                  <p className="mt-1 text-xs text-slate-700">
-                    Package departed from facility
+                  <p className="text-xs text-slate-500">
+                    Tracking number: {trackedItem.trackingNumber}
                   </p>
                 </div>
-              )}
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-500">Last Updated</p>
+                <p className="text-sm font-medium text-slate-700">
+                  {trackedItem.trackingUrl ? (
+                    <a
+                      href={trackedItem.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      Track Package
+                    </a>
+                  ) : (
+                    "Package departed from facility"
+                  )}
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -338,19 +507,8 @@ export function OrderFulfillmentPanel({
         item={selectedTrackingItem}
         isOpen={!!selectedTrackingItem}
         onClose={() => setSelectedTrackingItem(null)}
-        onConfirm={async (trackingNumber: string, trackingUrl: string) => {
-          if (!selectedTrackingItem) return
-          await updateTracking.mutateAsync({
-            orderId: order.id,
-            itemId: selectedTrackingItem.productId,
-            body: {
-              tracking_number: trackingNumber,
-              tracking_url: trackingUrl,
-            },
-          })
-          setSelectedTrackingItem(null)
-        }}
-        isConfirming={updateTracking.isPending}
+        onConfirm={handleTrackingConfirm}
+        isConfirming={updateTracking.isPending || updateStep.isPending}
       />
     </div>
   )
