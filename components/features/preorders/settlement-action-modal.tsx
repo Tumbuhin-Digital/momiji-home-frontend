@@ -97,11 +97,19 @@ export function SettlementActionModal({
         {/* Body */}
         <div className="space-y-4 px-6">
           {isLoading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-4 w-3/4 rounded" />
-              <Skeleton className="h-4 w-1/2 rounded" />
-              <Skeleton className="h-4 w-2/3 rounded" />
-              <Skeleton className="h-8 w-full rounded" />
+            <div className="divide-y divide-neutral-100 rounded-lg border border-neutral-200 bg-neutral-50">
+              <div className="flex items-center justify-between px-4 py-2.5 text-sm">
+                <span className="text-neutral-500">Status</span>
+                <Skeleton className="h-6 w-20 animate-pulse rounded-full" />
+              </div>
+              <div className="flex items-center justify-between px-4 py-2.5 text-sm">
+                <span className="text-neutral-500">Balance Due</span>
+                <Skeleton className="h-5 w-24 animate-pulse rounded" />
+              </div>
+              <div className="flex items-center justify-between px-4 py-2.5 text-sm">
+                <span className="text-neutral-500">Order ID</span>
+                <Skeleton className="h-5 w-48 animate-pulse rounded" />
+              </div>
             </div>
           ) : isError || !settlement ? (
             <div className="flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-4">
@@ -177,8 +185,12 @@ export function SettlementActionModal({
               />
             }
           >
-            Cancel
+            {settlement?.status === "paid" ? "Close" : "Cancel"}
           </DialogClose>
+
+          {isLoading && (
+            <Skeleton className="h-10 w-full animate-pulse rounded-[6px] sm:h-9" />
+          )}
 
           {!isLoading && !isError && settlement?.status === "pending" && (
             <Button
