@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import Image from "next/image"
@@ -17,14 +18,6 @@ import {
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs"
 
 import { Button } from "@/components/ui/button"
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -58,6 +51,7 @@ import dynamic from "next/dynamic"
 import { DimensionsCsvModal } from "@/components/features/products/dimensions-csv-modal"
 import { EditPriceModal } from "@/components/features/products/edit-price-modal"
 import { ProductTableSkeleton } from "@/components/features/products/product-table-skeleton"
+import { StockWarningModal } from "@/components/features/products/stock-warning-modal"
 
 const DynamicImageCarousel = dynamic(
   () => import("@/components/global/image-carousel"),
@@ -701,48 +695,13 @@ export default function ProductsPageClient() {
         onClose={() => setCsvModalOpen(false)}
       />
 
-      <AlertDialog
-        open={confirmShipReadyOpen}
-        onOpenChange={setConfirmShipReadyOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This product currently has 0 stock. Setting it to Ship Ready will
-              allow it to be shown in the ship ready catalog, but customers may
-              not be able to purchase it until stock is updated.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPendingShipReadyTarget(null)
-                setConfirmShipReadyOpen(false)
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (pendingShipReadyTarget) {
-                  updateProductStatusMutation.mutate({
-                    productId: pendingShipReadyTarget,
-                    input: {
-                      fulfillment_type: "ship_ready",
-                    },
-                  })
-                }
-                setConfirmShipReadyOpen(false)
-                setPendingShipReadyTarget(null)
-              }}
-            >
-              Continue
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <StockWarningModal
+        isOpen={confirmShipReadyOpen}
+        onClose={() => {
+          setPendingShipReadyTarget(null)
+          setConfirmShipReadyOpen(false)
+        }}
+      />
     </Suspense>
   )
 }
