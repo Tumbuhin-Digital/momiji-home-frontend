@@ -20,6 +20,7 @@ export function OrderManagementClient() {
   } = useInfiniteOrders()
 
   const orders = data?.pages.flatMap((page) => page.orders) || []
+  const totalOrders = data?.pages[0]?.total || 0
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -29,7 +30,7 @@ export function OrderManagementClient() {
             Order Management
           </h1>
           <p className="text-lg text-neutral-400">
-            {formatLastSynced(new Date())}
+            {formatLastSynced(new Date())} · {totalOrders} orders in total
           </p>
         </div>
       </div>

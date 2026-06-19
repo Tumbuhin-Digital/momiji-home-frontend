@@ -16,7 +16,7 @@ import {
 import { SalesReportTableSkeleton } from "@/components/features/sales-report/sales-report-table-skeleton"
 
 import { useExportOrders, useInfiniteOrders } from "@/hooks/use-orders"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, formatLastSynced } from "@/lib/utils"
 
 export function SalesReportClient() {
   const {
@@ -29,6 +29,7 @@ export function SalesReportClient() {
   } = useInfiniteOrders()
 
   const orders = data?.pages.flatMap((page) => page.orders) || []
+  const totalOrders = data?.pages[0]?.total || 0
   const exportMutation = useExportOrders()
   const observerRef = useRef<HTMLTableRowElement>(null)
 
@@ -60,7 +61,13 @@ export function SalesReportClient() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = "sales_report.xlsx"
+
+      const date = new Date()
+      const mm = String(date.getMonth() + 1).padStart(2, "0")
+      const dd = String(date.getDate()).padStart(2, "0")
+      const yyyy = date.getFullYear()
+
+      a.download = `sales_report_${mm}_${dd}_${yyyy}.xlsx`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -95,7 +102,9 @@ export function SalesReportClient() {
           <h1 className="text-[32px] font-medium text-neutral-800">
             Sales Report
           </h1>
-          <p className="text-lg text-neutral-400">History Sales</p>
+          <p className="text-lg text-neutral-400">
+            {formatLastSynced(new Date())} · {totalOrders} sales in total
+          </p>
         </div>
         <Button
           type="button"

@@ -16,6 +16,7 @@ export interface PaginatedOrders {
   orders: Order[]
   nextCursor?: number
   totalPages: number
+  total: number
 }
 
 async function getOrders(params: OrderQueryParams = {}): Promise<Order[]> {
@@ -39,11 +40,13 @@ async function getOrdersPaginated(
   const orders = items.map(mapOrderResponseToOrder)
   const currentPage = responseData.page || params.page || 1
   const totalPages = responseData.totalPages || responseData.total_pages || 1
+  const total = responseData.total ?? responseData.total_orders ?? orders.length
 
   return {
     orders,
     nextCursor: currentPage < totalPages ? currentPage + 1 : undefined,
     totalPages,
+    total,
   }
 }
 

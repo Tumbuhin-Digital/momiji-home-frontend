@@ -46,7 +46,9 @@ import { PreorderListSkeleton } from "@/components/features/preorders/preorder-l
 import { SettlementActionModal } from "@/components/features/preorders/settlement-action-modal"
 
 import { useExportPreorders, usePreorders } from "@/hooks/use-preorders"
-import { formatSystemStatus } from "@/lib/utils"
+import { formatLastSynced } from "@/lib/utils"
+
+import { parseAsInteger, useQueryState } from "nuqs"
 
 import type { SettlementStatus } from "@/types/preorders"
 
@@ -59,8 +61,10 @@ const SETTLEMENT_STATUS_LABEL: Record<SettlementStatus, string> = {
   paid: "Paid",
 }
 
+const pageParser = parseAsInteger.withDefault(1)
+
 export function PreorderListClient() {
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useQueryState("page", pageParser)
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState<SortOption | null>(null)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
@@ -75,7 +79,7 @@ export function PreorderListClient() {
     orderNumber: "",
   })
 
-  const limit = 20
+  const limit = 10
   const { data: queryData, isLoading } = usePreorders({
     page,
     limit,
@@ -113,7 +117,13 @@ export function PreorderListClient() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = "preorder_list.xlsx"
+
+      const date = new Date()
+      const mm = String(date.getMonth() + 1).padStart(2, "0")
+      const dd = String(date.getDate()).padStart(2, "0")
+      const yyyy = date.getFullYear()
+
+      a.download = `preorder_list_${mm}_${dd}_${yyyy}.xlsx`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -143,7 +153,7 @@ export function PreorderListClient() {
             Pre-Order List
           </h1>
           <p className="text-lg text-neutral-400">
-            {formatSystemStatus(new Date())}
+            {formatLastSynced(new Date())} · {total} pre-orders in total
           </p>
         </div>
         <Button
@@ -368,7 +378,7 @@ export function PreorderListClient() {
       </div>
 
       {/* Pagination */}
-      {!isLoading && filteredGroups && filteredGroups.length > 0 && (
+      {totalPages > 1 && (
         <div className="flex items-center justify-center">
           <Pagination>
             <PaginationContent>
