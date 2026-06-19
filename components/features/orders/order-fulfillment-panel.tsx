@@ -32,7 +32,7 @@ import {
   useUpdateItemReceived,
   useUpdateItemStep,
   useUpdateItemTracking,
-  useItemTracking,
+  // useItemTracking,
 } from "@/hooks/use-orders"
 import { formatCurrency } from "@/lib/utils"
 
@@ -100,19 +100,26 @@ export function OrderFulfillmentPanel({
     (item) => item.type === type || (!item.type && order.type === type)
   )
 
-  const trackedItem = items.find((item) => item.trackingNumber)
-  const { data: liveTracking } = useItemTracking(
-    order.id,
-    trackedItem?.productId || "",
-    {
-      enabled:
-        !!trackedItem?.productId && order.fulfillmentStatus === "in_progress",
-    }
-  )
-
   if (items.length === 0) return null
 
   const isPreOrder = type === "pre-order"
+
+  const hasTrackingInfo = items.some(
+    (item) =>
+      item.trackingNumber ||
+      item.trackingUrl ||
+      item.trackingCompany ||
+      item.trackingLastEvent
+  )
+
+  // const trackedItem = items.find((item) => item.trackingNumber)
+  // const { data: liveTracking } = useItemTracking(
+  //   order.id,
+  //   trackedItem?.productId || "",
+  //   {
+  //     enabled: !!trackedItem?.productId && !!trackedItem?.trackingNumber,
+  //   }
+  // )
   const apiFulfillmentType = type.replace("-", "_")
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -148,24 +155,18 @@ export function OrderFulfillmentPanel({
     1
   )
 
-  const visualStep = isPreOrder
-    ? currentStep
-    : currentStep === 1
-      ? 1
-      : currentStep === 3
-        ? 2
-        : currentStep === 4
-          ? 3
-          : currentStep
+  const visualStep = currentStep
 
-  const isNewOrder = order.aggregateStatus === "processing"
+  const isCancelled = order.fulfillmentStatus === "cancelled"
+  const isNewOrder = currentStep === 1 && !isCancelled
 
   const handleTrackingConfirm = async (
     trackingNumber: string,
     trackingUrl: string
   ) => {
     // Apply tracking to all items in the panel that need it
-    const itemsToUpdate = selectedTrackingItem ? [selectedTrackingItem] : items
+    const isGlobal = !selectedTrackingItem?.productId
+    const itemsToUpdate = isGlobal ? items : [selectedTrackingItem]
 
     for (const item of itemsToUpdate) {
       await updateTracking.mutateAsync({
@@ -235,7 +236,7 @@ export function OrderFulfillmentPanel({
                 Tracking: {item.trackingNumber}
               </p>
             )}
-            {item.itemsReceived !== undefined && step === 4 && isPreOrder && (
+            {item.itemsReceived !== undefined && step === 5 && isPreOrder && (
               <p className="mt-0.5 text-xs text-slate-500">
                 Received: {item.itemsReceived}
               </p>
@@ -262,10 +263,19 @@ export function OrderFulfillmentPanel({
   }
 
   const renderAirwayBill = (item: OrderLineItem) => {
-    if (!item.trackingNumber) return null
+    const itemHasTrackingInfo =
+      item.trackingNumber ||
+      item.trackingUrl ||
+      item.trackingCompany ||
+      item.trackingLastEvent
+
+    if (!itemHasTrackingInfo) return null
 
     return (
-      <div className="mt-3 flex flex-col gap-2 rounded-xl border border-[#D9E2E8] bg-white p-4">
+      <div
+        key={`airway-bill-${item.productId}`}
+        className="mt-3 flex flex-col gap-2 rounded-xl border border-[#D9E2E8] bg-white p-4"
+      >
         <h4 className="text-sm font-bold text-slate-700">Airway Bill</h4>
         <div className="flex flex-col gap-1 text-sm text-slate-600">
           <p>
@@ -350,6 +360,7 @@ export function OrderFulfillmentPanel({
           </motion.div>
         )}
       </AnimatePresence>
+
       <div className="flex items-center justify-between border-b border-[#D9E2E8] bg-[#EBF0F3] px-6 py-3">
         <h3 className="text-lg font-bold text-slate-700">
           {type === "ship-ready" ? "Ship Ready" : "Pre-Order"}
@@ -376,42 +387,29 @@ export function OrderFulfillmentPanel({
                 Cancel
               </Button>
             </>
-          ) : order.fulfillmentStatus !== "cancelled" ? (
+          ) : !isCancelled ? (
             <>
-              {isPreOrder &&
-                order.aggregateStatus === "on_progress" &&
-                currentStep === 1 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                    onClick={() => handleUpdateStepAll(2)}
-                    disabled={updateStep.isPending}
-                  >
-                    Mark Stock Ready
-                  </Button>
-                )}
-              {isPreOrder &&
-                order.aggregateStatus === "on_progress" &&
-                currentStep === 2 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                    onClick={() => setSelectedTrackingItem({} as any)}
-                  >
-                    Add Tracking
-                  </Button>
-                )}
-              {currentStep === 3 && (
+              {isPreOrder && currentStep === 2 && (
                 <Button
                   variant="outline"
                   size="sm"
                   className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                  onClick={() => handleUpdateStepAll(4)}
+                  onClick={() => handleUpdateStepAll(3)}
                   disabled={updateStep.isPending}
                 >
-                  Mark Delivered
+                  Mark Stock Ready
+                </Button>
+              )}
+              {isPreOrder && currentStep === 3 && !hasTrackingInfo && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                  onClick={() =>
+                    setSelectedTrackingItem({ title: "All Items" } as any)
+                  }
+                >
+                  Add Tracking
                 </Button>
               )}
             </>
@@ -430,7 +428,6 @@ export function OrderFulfillmentPanel({
                 <CarouselItem key={item.productId}>
                   <div className="flex flex-col gap-1">
                     {renderItemContent(item)}
-                    {renderAirwayBill(item)}
                   </div>
                 </CarouselItem>
               ))}
@@ -439,10 +436,7 @@ export function OrderFulfillmentPanel({
             <CarouselNext className="-right-4 size-8 bg-white/90 shadow-md backdrop-blur-sm hover:bg-white" />
           </Carousel>
         ) : (
-          <div className="mb-8 w-full">
-            {renderItemContent(items[0])}
-            {renderAirwayBill(items[0])}
-          </div>
+          <div className="mb-8 w-full">{renderItemContent(items[0])}</div>
         )}
 
         {/* Stepper */}
@@ -469,61 +463,10 @@ export function OrderFulfillmentPanel({
         </Stepper>
 
         {/* Airway Bill Section */}
-        {order.fulfillmentStatus === "in_progress" && trackedItem && (
-          <div className="mt-8 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h4 className="mb-4 text-sm font-bold text-slate-800">
-              Airway Bill
-            </h4>
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EBF0F3]">
-                    <span className="text-xs font-bold text-slate-500">
-                      Log
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">
-                      {order.fulfillment?.carrier || "Standard Shipping"}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Tracking number: {trackedItem.trackingNumber}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-slate-500">Last Updated</p>
-                  <p className="text-sm font-medium text-slate-700">
-                    {trackedItem.trackingUrl ? (
-                      <a
-                        href={trackedItem.trackingUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        Track Package
-                      </a>
-                    ) : (
-                      "Package departed from facility"
-                    )}
-                  </p>
-                </div>
-              </div>
-              {liveTracking && (
-                <div className="rounded-lg bg-[#EBF0F3] p-3">
-                  <p className="text-xs font-medium text-slate-700">
-                    Live Status:{" "}
-                    <span className="font-bold text-[#0052CC]">
-                      {liveTracking.statusDescription}
-                    </span>
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {items.map((item) => renderAirwayBill(item))}
       </div>
 
+      {/* Update Step Modal */}
       <UpdateStepModal
         item={selectedStepItem}
         isOpen={!!selectedStepItem}
@@ -540,6 +483,7 @@ export function OrderFulfillmentPanel({
         isConfirming={updateStep.isPending}
       />
 
+      {/* Update Received Modal */}
       <UpdateReceivedModal
         item={selectedReceivedItem}
         isOpen={!!selectedReceivedItem}
@@ -556,6 +500,7 @@ export function OrderFulfillmentPanel({
         isConfirming={updateReceived.isPending}
       />
 
+      {/* Update Tracking Modal */}
       <UpdateTrackingModal
         item={selectedTrackingItem}
         isOpen={!!selectedTrackingItem}
