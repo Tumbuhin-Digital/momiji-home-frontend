@@ -1,19 +1,19 @@
-/* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @next/next/no-img-element */
 import dynamic from "next/dynamic"
 import { useState } from "react"
 
+import Autoplay from "embla-carousel-autoplay"
 import { AnimatePresence, motion } from "motion/react"
-import { CheckCircle2, XCircle } from "lucide-react"
+import { Boxes, CheckCircle2, XCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from "@/components/ui/carousel"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Stepper,
   StepperIndicator,
@@ -71,12 +71,14 @@ interface OrderFulfillmentPanelProps {
   order: Order
   type: "ship-ready" | "pre-order"
   onOrderActioned?: () => void
+  isLoading?: boolean
 }
 
 export function OrderFulfillmentPanel({
   order,
   type,
   onOrderActioned,
+  isLoading = false,
 }: OrderFulfillmentPanelProps) {
   const [selectedReceivedItem, setSelectedReceivedItem] =
     useState<OrderLineItem | null>(null)
@@ -100,9 +102,63 @@ export function OrderFulfillmentPanel({
     (item) => item.type === type || (!item.type && order.type === type)
   )
 
-  if (items.length === 0) return null
-
   const isPreOrder = type === "pre-order"
+
+  if (isLoading) {
+    const steps = isPreOrder ? preOrderSteps : shipReadySteps
+    return (
+      <div className="relative overflow-hidden rounded-xl border border-[#D9E2E8] bg-[#F4F7F9]/30">
+        <div className="flex items-center justify-between border-b border-[#D9E2E8] bg-[#EBF0F3] px-6 py-3">
+          <h3 className="text-lg font-bold text-slate-700">
+            {type === "ship-ready" ? "Ship Ready" : "Pre-Order"}
+          </h3>
+          <div className="flex gap-2">
+            <Skeleton className="h-7 w-24 rounded-[6px]" />
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="mb-4">
+            <Skeleton className="h-4 w-28" />
+          </div>
+
+          <div className="mb-8 flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-none sm:flex-row">
+            <div className="flex min-w-0 flex-1 gap-4">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                <Skeleton className="absolute inset-0 h-full w-full" />
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-1/3" />
+              </div>
+            </div>
+          </div>
+
+          {/* Stepper Skeleton */}
+          <Stepper value={1} className="mb-6">
+            {steps.map(({ step, title }) => (
+              <StepperItem
+                key={step}
+                step={step}
+                className="relative flex-1 flex-col!"
+              >
+                <StepperTrigger className="pointer-events-none flex-col gap-3 rounded opacity-60">
+                  <StepperIndicator>
+                    <Skeleton className="absolute inset-0 rounded-full" />
+                  </StepperIndicator>
+                  <div className="space-y-0.5 px-2">
+                    <StepperTitle>{title}</StepperTitle>
+                  </div>
+                </StepperTrigger>
+              </StepperItem>
+            ))}
+          </Stepper>
+        </div>
+      </div>
+    )
+  }
+
+  if (items.length === 0) return null
 
   const hasTrackingInfo = items.some(
     (item) =>
@@ -198,9 +254,9 @@ export function OrderFulfillmentPanel({
     const step = item.fulfillmentStep || 1
 
     return (
-      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row">
+      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-none sm:flex-row">
         <div className="flex min-w-0 flex-1 gap-4">
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-linear-to-b from-white via-white to-black/5">
             {/* Product Image placeholder */}
             {item.imageSrc ? (
               <img
@@ -209,8 +265,11 @@ export function OrderFulfillmentPanel({
                 className="absolute inset-0 h-full w-full object-cover"
               />
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-                Img
+              <div className="flex h-full w-full flex-col items-center justify-center">
+                <Boxes className="size-6 text-neutral-400" strokeWidth={0.5} />
+                <span className="text-[10px] font-light text-neutral-400">
+                  No Image
+                </span>
               </div>
             )}
           </div>
@@ -244,9 +303,10 @@ export function OrderFulfillmentPanel({
           </div>
         </div>
 
-        {step > 1 && order.fulfillmentStatus !== "cancelled" && (
-          <div className="flex items-center gap-2 sm:flex-col sm:justify-center sm:border-l sm:border-slate-100 sm:pl-4">
-            {step === 4 && isPreOrder && (
+        {step === 4 &&
+          isPreOrder &&
+          order.fulfillmentStatus !== "cancelled" && (
+            <div className="flex items-center gap-2 sm:flex-col sm:justify-center sm:border-l sm:border-slate-100 sm:pl-4">
               <Button
                 variant="outline"
                 size="sm"
@@ -255,9 +315,8 @@ export function OrderFulfillmentPanel({
               >
                 Update Received
               </Button>
-            )}
-          </div>
-        )}
+            </div>
+          )}
       </div>
     )
   }
@@ -280,16 +339,16 @@ export function OrderFulfillmentPanel({
         <div className="flex flex-col gap-1 text-sm text-slate-600">
           <p>
             <span className="font-medium">Carrier:</span>{" "}
-            {item.trackingCompany || "Unknown"}
+            {item.trackingCompany || ""}
           </p>
           <p>
             <span className="font-medium">Tracking Number:</span>{" "}
-            {item.trackingNumber}
+            {item.trackingNumber || ""}
           </p>
           {item.trackingLastEvent && (
             <p>
               <span className="font-medium">Last Event:</span>{" "}
-              {item.trackingLastEvent}
+              {item.trackingLastEvent || ""}
             </p>
           )}
         </div>
@@ -422,7 +481,11 @@ export function OrderFulfillmentPanel({
           <h4 className="text-sm font-bold">Total Item ({items.length})</h4>
         </div>
         {items.length > 1 ? (
-          <Carousel opts={{ align: "start" }} className="mb-8 w-full">
+          <Carousel
+            opts={{ align: "start", loop: true }}
+            plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
+            className="mb-8 w-full"
+          >
             <CarouselContent>
               {items.map((item) => (
                 <CarouselItem key={item.productId}>
@@ -432,8 +495,6 @@ export function OrderFulfillmentPanel({
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="-left-4 size-8 bg-white/90 shadow-md backdrop-blur-sm hover:bg-white" />
-            <CarouselNext className="-right-4 size-8 bg-white/90 shadow-md backdrop-blur-sm hover:bg-white" />
           </Carousel>
         ) : (
           <div className="mb-8 w-full">{renderItemContent(items[0])}</div>

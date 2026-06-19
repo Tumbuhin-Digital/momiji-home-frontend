@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Skeleton } from "@/components/ui/skeleton"
 
 import { OrderFulfillmentPanel } from "@/components/features/orders/order-fulfillment-panel"
 
@@ -31,7 +32,7 @@ export function ManageOrderModal({
   isOpen,
   onClose,
 }: ManageOrderModalProps) {
-  const { data: fetchedOrder } = useOrderById(order.id, {
+  const { data: fetchedOrder, isLoading } = useOrderById(order.id, {
     enabled: isOpen,
   })
 
@@ -107,39 +108,55 @@ export function ManageOrderModal({
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
                 <p className="text-xs text-[#959595]">Name</p>
-                <p className="text-sm text-[#4A4A4A]">
-                  {currentOrder.customer?.name || "-"}
-                </p>
+                {isLoading ? (
+                  <Skeleton className="h-4 w-32" />
+                ) : (
+                  <p className="text-sm text-[#4A4A4A]">
+                    {currentOrder.customer?.name || "-"}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col gap-1">
                 <p className="text-xs text-[#959595]">Order Date</p>
-                <p className="text-sm text-[#4A4A4A]">
-                  {currentOrder.orderDate
-                    ? format(new Date(currentOrder.orderDate), "MMMM d, yyyy")
-                    : "-"}
-                </p>
+                {isLoading ? (
+                  <Skeleton className="h-4 w-24" />
+                ) : (
+                  <p className="text-sm text-[#4A4A4A]">
+                    {currentOrder.orderDate
+                      ? format(new Date(currentOrder.orderDate), "MMMM d, yyyy")
+                      : "-"}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
                 <p className="text-xs text-[#959595]">Email</p>
-                <p className="text-sm text-[#4A4A4A]">
-                  {currentOrder.customer?.email || "-"}
-                </p>
+                {isLoading ? (
+                  <Skeleton className="h-4 w-40" />
+                ) : (
+                  <p className="text-sm text-[#4A4A4A]">
+                    {currentOrder.customer?.email || "-"}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col gap-1">
                 <p className="text-xs text-[#959595]">Address</p>
-                <p className="text-sm text-[#4A4A4A]">
-                  {currentOrder.shippingAddress
-                    ? `${currentOrder.shippingAddress.address1}${
-                        currentOrder.shippingAddress.address2
-                          ? `, ${currentOrder.shippingAddress.address2}`
-                          : ""
-                      }, ${currentOrder.shippingAddress.city}, ${
-                        currentOrder.shippingAddress.country
-                      }, ${currentOrder.shippingAddress.zip}`
-                    : "-"}
-                </p>
+                {isLoading ? (
+                  <Skeleton className="h-4 w-64" />
+                ) : (
+                  <p className="text-sm text-[#4A4A4A]">
+                    {currentOrder.shippingAddress
+                      ? `${currentOrder.shippingAddress.address1}${
+                          currentOrder.shippingAddress.address2
+                            ? `, ${currentOrder.shippingAddress.address2}`
+                            : ""
+                        }, ${currentOrder.shippingAddress.city}, ${
+                          currentOrder.shippingAddress.country
+                        }, ${currentOrder.shippingAddress.zip}`
+                      : "-"}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -153,11 +170,19 @@ export function ManageOrderModal({
           }`}
         >
           {shipReadyItems.length > 0 && (
-            <OrderFulfillmentPanel order={currentOrder} type="ship-ready" />
+            <OrderFulfillmentPanel
+              order={currentOrder}
+              type="ship-ready"
+              isLoading={isLoading}
+            />
           )}
 
           {preOrderItems.length > 0 && (
-            <OrderFulfillmentPanel order={currentOrder} type="pre-order" />
+            <OrderFulfillmentPanel
+              order={currentOrder}
+              type="pre-order"
+              isLoading={isLoading}
+            />
           )}
         </div>
       </DialogContent>
