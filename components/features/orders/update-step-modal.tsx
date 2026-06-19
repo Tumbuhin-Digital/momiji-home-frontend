@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react"
 
+import { ListOrdered } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogPanel,
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
@@ -18,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Spinner } from "@/components/ui/spinner"
 
 import type { OrderLineItem } from "@/types/orders/entities"
 
@@ -48,16 +53,36 @@ export function UpdateStepModal({
   if (!item) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-106.25">
-        <DialogHeader>
-          <DialogTitle>Update Fulfillment Step</DialogTitle>
-          <DialogDescription>
-            Change the fulfillment step for {item.title}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <Select value={step} onValueChange={(v) => setStep(v || "")}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !open && !isConfirming && onClose()}
+    >
+      <DialogContent className="sm:max-w-md" showCloseButton={false}>
+        {/* Icon + Header */}
+        <DialogPanel className="flex flex-col items-center gap-6 p-4!">
+          <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
+            <ListOrdered className="size-8 text-primary" />
+          </div>
+          <div className="w-full">
+            <DialogHeader className="p-0 text-center">
+              <DialogTitle className="tracking-wide sm:text-[22px]">
+                Update Fulfillment Step
+              </DialogTitle>
+              <DialogDescription className="text-[15px] leading-relaxed">
+                Change the fulfillment step for{" "}
+                <span className="font-bold text-slate-800">{item.title}</span>
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+        </DialogPanel>
+
+        {/* Select */}
+        <div className="px-6">
+          <Select
+            value={step}
+            onValueChange={(v) => setStep(v || "")}
+            disabled={isConfirming}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select a step" />
             </SelectTrigger>
@@ -69,15 +94,39 @@ export function UpdateStepModal({
             </SelectContent>
           </Select>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isConfirming}>
+
+        <DialogFooter
+          variant="bare"
+          className="w-full flex-col-reverse gap-3 px-6 pb-6 sm:flex-col-reverse sm:space-x-0 sm:px-6"
+        >
+          <DialogClose
+            render={
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full font-medium text-slate-500"
+                onClick={onClose}
+                disabled={isConfirming}
+              />
+            }
+          >
             Cancel
-          </Button>
+          </DialogClose>
           <Button
+            type="button"
+            size="lg"
+            className="w-full font-medium"
             onClick={() => onConfirm(Number(step))}
             disabled={isConfirming}
           >
-            {isConfirming ? "Saving..." : "Save changes"}
+            {isConfirming ? (
+              <>
+                <Spinner className="mr-2" />
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
