@@ -3,7 +3,10 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { queryKeys } from "@/lib/query/query-keys"
 import { shippingService } from "@/lib/services/shipping.service"
 
-import type { ShippingRatesRequest, ValidateAddressRequest } from "@/types/shipping"
+import type {
+  ShippingRatesRequest,
+  ValidateAddressRequest,
+} from "@/types/shipping"
 
 export function useShippingRates(
   input: ShippingRatesRequest,

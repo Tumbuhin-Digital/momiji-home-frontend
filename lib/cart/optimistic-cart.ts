@@ -56,9 +56,7 @@ function buildCartItem(
   const subtotal = unitPrice * quantity
 
   const item: CartItemDto = {
-    id:
-      existingItem?.id ??
-      `local-${variantId}-${fulfillmentType}`,
+    id: existingItem?.id ?? `local-${variantId}-${fulfillmentType}`,
     variant_id: variantId,
     title: meta.title,
     image_src: meta.image_src,

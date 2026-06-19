@@ -21,11 +21,7 @@ const DynamicImageCarousel = dynamic(
   }
 )
 
-import {
-  useCart,
-  useLocalCartVariantUpdate,
-  useSyncCartVariant,
-} from "@/hooks"
+import { useCart, useLocalCartVariantUpdate, useSyncCartVariant } from "@/hooks"
 import { ensureCartSession } from "@/lib/cart/ensure-cart-session"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"

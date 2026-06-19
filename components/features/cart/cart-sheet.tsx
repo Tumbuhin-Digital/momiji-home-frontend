@@ -379,10 +379,7 @@ export function CartSheet() {
         onClose={() => setItemToRemove(null)}
         onConfirm={() => {
           if (itemToRemove) {
-            updateVariantLocally(
-              itemToRemove.variantId,
-              itemToRemove.newTotal
-            )
+            updateVariantLocally(itemToRemove.variantId, itemToRemove.newTotal)
             setItemToRemove(null)
           }
         }}

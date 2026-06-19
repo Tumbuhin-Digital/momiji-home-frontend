@@ -158,7 +158,12 @@ async function onResponseError(error: AxiosError<ApiErrorPayload>) {
         useCartStore.getState().setSessionId(null, null)
       }
 
-      if (!originalRequest._retried && isGetRequest && isCartPath && !hadSession) {
+      if (
+        !originalRequest._retried &&
+        isGetRequest &&
+        isCartPath &&
+        !hadSession
+      ) {
         originalRequest._retried = true
 
         const sessionRes = await axios.post(
