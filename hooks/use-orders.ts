@@ -155,11 +155,10 @@ export function useUpdateItemReceived() {
       body: UpdateReceivedDto
     }) => ordersService.updateItemReceived(orderId, itemId, body),
     onSuccess: (order, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.orders.detail(variables.orderId),
+      })
       if (order) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.orders.detail(variables.orderId),
-        })
-        // Update local cache if needed
         queryClient.setQueryData(queryKeys.orders.detail(order.id), order)
       }
     },
@@ -180,10 +179,10 @@ export function useUpdateItemStep() {
       body: UpdateStepDto
     }) => ordersService.updateItemStep(orderId, itemId, body),
     onSuccess: (order, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.orders.detail(variables.orderId),
+      })
       if (order) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.orders.detail(variables.orderId),
-        })
         // Update local cache if needed
         queryClient.setQueryData(queryKeys.orders.detail(order.id), order)
       }
