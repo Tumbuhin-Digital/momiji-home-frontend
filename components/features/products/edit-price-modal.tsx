@@ -2,13 +2,23 @@
 
 import { useState } from "react"
 
-import { Loader2 } from "lucide-react"
+import { DollarSign } from "lucide-react"
 import { toastManager } from "@/components/ui/toast"
 
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogPanel } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogPanel,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Spinner } from "@/components/ui/spinner"
 
 import { useUpdateVariantPrice } from "@/hooks/use-products"
 
@@ -23,6 +33,8 @@ export function EditPriceModal({
 }: EditPriceModalProps) {
   const [price, setPrice] = useState(currentPrice.toFixed(2))
   const updatePriceMutation = useUpdateVariantPrice()
+
+  const isPending = updatePriceMutation.isPending
 
   const handleSave = async () => {
     const wsPrice = parseFloat(price)
@@ -56,19 +68,32 @@ export function EditPriceModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogPanel className="flex flex-col gap-6 p-6!">
-          <div className="flex flex-col">
-            <h1 className="text-[32px] font-medium text-neutral-900">
-              Edit Price Product
-            </h1>
-            <p className="text-lg text-slate-400">
-              Product Name: {productName}
-            </p>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !open && !isPending && onClose()}
+    >
+      <DialogContent className="sm:max-w-md" showCloseButton={false}>
+        {/* Icon + Header */}
+        <DialogPanel className="flex flex-col items-center gap-6 p-4!">
+          <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
+            <DollarSign className="size-8 text-primary" />
           </div>
+          <div className="w-full">
+            <DialogHeader className="p-0 text-center">
+              <DialogTitle className="tracking-wide sm:text-[22px]">
+                Edit Price
+              </DialogTitle>
+              <DialogDescription className="text-[15px] leading-relaxed">
+                Updating WS price for{" "}
+                <span className="font-bold text-slate-800">{productName}</span>
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+        </DialogPanel>
 
-          <div className="w-full space-y-2 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm">
+        {/* Price input */}
+        <div className="px-6">
+          <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <Label
               htmlFor="custom-price"
               className="text-[13px] font-medium text-slate-700"
@@ -83,24 +108,48 @@ export function EditPriceModal({
                 id="custom-price"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
+                disabled={isPending}
                 className="h-11 rounded-lg border-slate-200 pl-11 text-sm shadow-sm focus-visible:ring-[#00B4F5]"
               />
             </div>
             <p className="text-[12px] text-slate-500">Currency in USD</p>
           </div>
+        </div>
 
+        <DialogFooter
+          variant="bare"
+          className="w-full flex-col-reverse gap-3 px-6 pb-6 sm:flex-col-reverse sm:space-x-0 sm:px-6"
+        >
+          <DialogClose
+            render={
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full font-medium text-slate-500"
+                onClick={onClose}
+                disabled={isPending}
+              />
+            }
+          >
+            Cancel
+          </DialogClose>
           <Button
             type="button"
-            disabled={updatePriceMutation.isPending}
-            className="h-11! w-full border-none! bg-blue-400/90 text-base font-medium text-white hover:bg-blue-400"
+            size="lg"
+            className="w-full font-medium"
             onClick={handleSave}
+            disabled={isPending}
           >
-            {updatePriceMutation.isPending && (
-              <Loader2 className="mr-2 size-4 animate-spin" />
+            {isPending ? (
+              <>
+                <Spinner className="mr-2" />
+                Saving...
+              </>
+            ) : (
+              "Save Price"
             )}
-            Save product
           </Button>
-        </DialogPanel>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
