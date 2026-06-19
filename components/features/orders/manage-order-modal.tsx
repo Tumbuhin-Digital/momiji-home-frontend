@@ -82,7 +82,7 @@ export function ManageOrderModal({
         <DialogHeader className="flex shrink-0 flex-col items-center justify-between sm:flex-row">
           <div>
             <DialogTitle className="text-[32px] text-[#2C3E50]">
-              {currentOrder.orderNumber}
+              #{currentOrder.orderNumber}
             </DialogTitle>
             <span className="text-lg text-[#7F8C8D]">
               {totalItems} items - {formatCurrency(currentOrder.totalPrice)} USD
@@ -115,7 +115,7 @@ export function ManageOrderModal({
                 <p className="text-xs text-[#959595]">Order Date</p>
                 <p className="text-sm text-[#4A4A4A]">
                   {currentOrder.orderDate
-                    ? format(new Date(currentOrder.orderDate), "d MMMM yyyy")
+                    ? format(new Date(currentOrder.orderDate), "MMMM d, yyyy")
                     : "-"}
                 </p>
               </div>
@@ -153,19 +153,11 @@ export function ManageOrderModal({
           }`}
         >
           {shipReadyItems.length > 0 && (
-            <OrderFulfillmentPanel
-              order={currentOrder}
-              type="ship-ready"
-              onOrderActioned={onClose}
-            />
+            <OrderFulfillmentPanel order={currentOrder} type="ship-ready" />
           )}
 
           {preOrderItems.length > 0 && (
-            <OrderFulfillmentPanel
-              order={currentOrder}
-              type="pre-order"
-              onOrderActioned={onClose}
-            />
+            <OrderFulfillmentPanel order={currentOrder} type="pre-order" />
           )}
         </div>
       </DialogContent>

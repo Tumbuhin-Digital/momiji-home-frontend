@@ -168,7 +168,7 @@ export function OrderManagementTable({
                       <td className="gap-1 px-6 py-4 align-middle">
                         <div className="text-base font-medium text-black">
                           {order.orderDate
-                            ? format(new Date(order.orderDate), "d/MM/yyyy")
+                            ? format(new Date(order.orderDate), "MM/dd/yyyy")
                             : "-"}
                         </div>
                       </td>
