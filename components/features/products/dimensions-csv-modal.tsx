@@ -94,21 +94,10 @@ export function DimensionsCsvModal({
 
     try {
       await importMutation.mutateAsync(selectedFile)
-      toastManager.add({
-        title: "Success",
-        description: "Dimensions imported successfully",
-        type: "success",
-      })
       setSelectedFile(null)
       if (fileInputRef.current) fileInputRef.current.value = ""
       onClose()
-    } catch {
-      toastManager.add({
-        title: "Error",
-        description: "Failed to import dimensions",
-        type: "error",
-      })
-    }
+    } catch {}
   }
 
   return (

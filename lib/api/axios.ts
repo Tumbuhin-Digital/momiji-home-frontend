@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosError } from "axios"
 
 import { API_BASE_URL, API_TIMEOUT_MS } from "./env"
@@ -196,7 +197,55 @@ const apiAxios = axios.create({
 })
 
 apiAxios.interceptors.request.use(onRequest, onRequestError)
-apiAxios.interceptors.response.use((response) => response, onResponseError)
+apiAxios.interceptors.response.use((response) => {
+  if (typeof window !== "undefined") {
+    const method = response.config.method?.toUpperCase()
+    const url = response.config.url || ""
+
+    if (
+      method === "POST" ||
+      method === "PATCH" ||
+      method === "DELETE" ||
+      method === "PUT"
+    ) {
+      // Exclude background, internal, or highly repetitive cart operations to prevent toast spam
+      const isExcluded =
+        url.includes("/auth/refresh") ||
+        url.includes("/cart/session") ||
+        url.includes("/cart/items") ||
+        url.includes("/shipping/calculate") ||
+        url.includes("/shipping/validate-address") ||
+        url.includes("/checkout/summary")
+
+      if (!isExcluded) {
+        import("@/components/ui/toast")
+          .then(({ toastManager }) => {
+            const data = response.data as any
+            const backendMessage = data?.message
+
+            let title = "Success"
+            if (method === "POST") title = "Action Successful"
+            if (method === "PATCH" || method === "PUT")
+              title = "Update Successful"
+            if (method === "DELETE") title = "Delete Successful"
+
+            const description =
+              backendMessage || "Changes have been saved successfully."
+
+            toastManager.add({
+              type: "success",
+              title,
+              description,
+            })
+          })
+          .catch((err) => {
+            console.warn("Failed to load toastManager", err)
+          })
+      }
+    }
+  }
+  return response
+}, onResponseError)
 
 export { apiAxios, ApiError }
 export type { ApiErrorPayload }

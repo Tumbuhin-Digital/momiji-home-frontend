@@ -12,7 +12,6 @@ import {
   ChartTooltip,
   type ChartConfig,
 } from "@/components/ui/chart"
-import { toastManager } from "@/components/ui/toast"
 
 import { StatusBadge } from "@/components/global/status-badge"
 
@@ -42,11 +41,6 @@ export default function DashboardClient() {
   const handleSync = async () => {
     try {
       await forceSyncMutation.mutateAsync()
-      toastManager.add({
-        title: "Success",
-        description: "Products synced successfully",
-        type: "success",
-      })
     } catch {}
   }
 

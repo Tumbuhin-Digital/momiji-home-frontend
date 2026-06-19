@@ -2,18 +2,23 @@
 
 import { useState } from "react"
 
-import { Loader2 } from "lucide-react"
+import { Boxes } from "lucide-react"
 import { toastManager } from "@/components/ui/toast"
 
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
+  DialogPanel,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Spinner } from "@/components/ui/spinner"
 
 import { useUpdateProductBatch } from "@/hooks/use-products"
 
@@ -34,6 +39,15 @@ export function UpdateBatchModal({
   const [shipDate, setShipDate] = useState("")
 
   const updateBatchMutation = useUpdateProductBatch()
+  const isPending = updateBatchMutation.isPending
+
+  const handleClose = () => {
+    if (!isPending) {
+      setBatchLabel("")
+      setShipDate("")
+      onClose()
+    }
+  }
 
   const handleSave = async () => {
     if (!batchLabel.trim()) {
@@ -53,79 +67,108 @@ export function UpdateBatchModal({
           expected_ship_date: shipDate ? shipDate : undefined,
         },
       })
-      toastManager.add({
-        title: "Success",
-        description: "Batch updated successfully",
-        type: "success",
-      })
       setBatchLabel("")
       setShipDate("")
       onClose()
-    } catch {
-      toastManager.add({
-        title: "Error",
-        description: "Failed to update batch",
-        type: "error",
-      })
-    }
+    } catch {}
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="rounded-xl bg-[#FAF8F5] sm:max-w-md">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-2xl font-bold text-slate-800">
-            Update Batch
-          </DialogTitle>
-          <p className="text-sm text-slate-400">Product Name: {productName}</p>
-        </DialogHeader>
-
-        <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="space-y-2">
-            <Label
-              htmlFor="batch-label"
-              className="text-[13px] font-medium text-slate-700"
-            >
-              Pre-Order Batch Label <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="batch-label"
-              value={batchLabel}
-              onChange={(e) => setBatchLabel(e.target.value)}
-              placeholder="e.g. Wave 1, Summer Collection"
-              className="h-11 rounded-lg border-slate-200 text-sm shadow-sm focus-visible:ring-[#00B4F5]"
-            />
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="sm:max-w-md" showCloseButton={false}>
+        {/* Icon + Header */}
+        <DialogPanel className="flex flex-col items-center gap-6 p-4!">
+          <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
+            <Boxes className="size-8 text-primary" />
           </div>
+          <div className="w-full">
+            <DialogHeader className="p-0 text-center">
+              <DialogTitle className="tracking-wide sm:text-[22px]">
+                Update Batch
+              </DialogTitle>
+              <DialogDescription className="text-[15px] leading-relaxed">
+                Updating pre-order batch for{" "}
+                <span className="font-bold text-slate-800">{productName}</span>
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+        </DialogPanel>
 
-          <div className="space-y-2">
-            <Label
-              htmlFor="ship-date"
-              className="text-[13px] font-medium text-slate-700"
-            >
-              Expected Ship Date
-            </Label>
-            <Input
-              id="ship-date"
-              type="date"
-              value={shipDate}
-              onChange={(e) => setShipDate(e.target.value)}
-              className="h-11 rounded-lg border-slate-200 text-sm shadow-sm focus-visible:ring-[#00B4F5]"
-            />
-            <p className="text-[11px] text-slate-400">Format: YYYY-MM-DD</p>
+        {/* Form fields */}
+        <div className="px-6">
+          <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="batch-label"
+                className="text-[13px] font-medium text-slate-700"
+              >
+                Pre-Order Batch Label{" "}
+                <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="batch-label"
+                value={batchLabel}
+                onChange={(e) => setBatchLabel(e.target.value)}
+                placeholder="e.g. Wave 1, Summer Collection"
+                disabled={isPending}
+                className="h-11 rounded-lg border-slate-200 text-sm shadow-sm focus-visible:ring-[#00B4F5]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="ship-date"
+                className="text-[13px] font-medium text-slate-700"
+              >
+                Expected Ship Date
+              </Label>
+              <Input
+                id="ship-date"
+                type="date"
+                value={shipDate}
+                onChange={(e) => setShipDate(e.target.value)}
+                disabled={isPending}
+                className="h-11 rounded-lg border-slate-200 text-sm shadow-sm focus-visible:ring-[#00B4F5]"
+              />
+              <p className="text-[11px] text-slate-400">Format: YYYY-MM-DD</p>
+            </div>
           </div>
         </div>
 
-        <Button
-          type="button"
-          disabled={updateBatchMutation.isPending}
-          className="mt-6 w-full rounded-md bg-[#00A3E8] py-6 text-sm font-semibold text-white transition-colors hover:bg-[#0092D1]"
-          onClick={handleSave}
+        <DialogFooter
+          variant="bare"
+          className="w-full flex-col-reverse gap-3 px-6 pb-6 sm:flex-col-reverse sm:space-x-0 sm:px-6"
         >
-          {updateBatchMutation.isPending ? (
-            <Loader2 className="mr-2 size-4 animate-spin" />
-          ) : null}
-          Save Batch
-        </Button>
+          <DialogClose
+            render={
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full font-medium text-slate-500"
+                onClick={handleClose}
+                disabled={isPending}
+              />
+            }
+          >
+            Cancel
+          </DialogClose>
+          <Button
+            type="button"
+            size="lg"
+            className="w-full font-medium"
+            onClick={handleSave}
+            disabled={isPending}
+          >
+            {isPending ? (
+              <>
+                <Spinner className="mr-2" />
+                Saving...
+              </>
+            ) : (
+              "Save Batch"
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

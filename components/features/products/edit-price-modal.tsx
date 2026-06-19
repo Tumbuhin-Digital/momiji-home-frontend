@@ -52,19 +52,8 @@ export function EditPriceModal({
         variantId,
         input: { ws_price: wsPrice },
       })
-      toastManager.add({
-        title: "Success",
-        description: "Price updated successfully",
-        type: "success",
-      })
       onClose()
-    } catch {
-      toastManager.add({
-        title: "Error",
-        description: "Failed to update price",
-        type: "error",
-      })
-    }
+    } catch {}
   }
 
   return (
