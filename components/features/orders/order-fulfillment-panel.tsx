@@ -577,7 +577,30 @@ export function OrderFulfillmentPanel({
           )}
         </Stepper>
 
-        {items.map((item) => renderAirwayBill(item))}
+        {(() => {
+          const uniqueTrackings = new Map<string, OrderLineItem>()
+          items.forEach((item) => {
+            const hasTracking =
+              item.trackingNumber ||
+              item.trackingUrl ||
+              item.trackingCompany ||
+              item.trackingLastEvent
+            if (!hasTracking) return
+
+            const key = [
+              item.trackingCompany || "",
+              item.trackingNumber || "",
+              item.trackingUrl || "",
+            ].join("|")
+
+            if (!uniqueTrackings.has(key)) {
+              uniqueTrackings.set(key, item)
+            }
+          })
+          return Array.from(uniqueTrackings.values()).map((item) =>
+            renderAirwayBill(item)
+          )
+        })()}
       </div>
 
       <UpdateStepModal
