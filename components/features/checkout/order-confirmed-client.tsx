@@ -53,7 +53,7 @@ export default function OrderConfirmedClient({
   if (isLoading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-white/5 p-4 backdrop-blur-sm sm:p-6">
-        <div className="relative m-auto w-full max-w-md rounded-[24px] p-6 sm:p-10">
+        <div className="relative m-auto w-full max-w-md rounded-3xl p-6 sm:p-10">
           <div className="flex min-h-[30vh] flex-col items-center justify-center py-10 text-center">
             <Loader2 className="size-10 animate-spin text-primary" />
             <p className="mt-4 text-alternate/80">Fetching order details...</p>
@@ -66,7 +66,7 @@ export default function OrderConfirmedClient({
   if (error || !data) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-white/5 p-4 backdrop-blur-sm sm:p-6">
-        <div className="relative m-auto w-full max-w-md rounded-[24px] p-6 sm:p-10">
+        <div className="relative m-auto w-full max-w-md rounded-3xl p-6 sm:p-10">
           <div className="flex min-h-[30vh] flex-col items-center justify-center gap-y-4 py-10 text-center">
             <h1 className="text-3xl font-bold text-destructive">
               Order Not Found
@@ -134,7 +134,7 @@ export default function OrderConfirmedClient({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-white/5 p-4 backdrop-blur-sm sm:p-6">
-      <div className="relative m-auto w-full max-w-2xl rounded-[28px] p-6 sm:p-10">
+      <div className="relative m-auto w-full max-w-2xl rounded-4xl p-6 sm:p-10">
         <div className="flex flex-col items-center gap-8 text-center">
           {/* Confirmation Icon */}
           <div className="relative flex size-24 items-center justify-center rounded-full bg-primary/20">
@@ -162,7 +162,7 @@ export default function OrderConfirmedClient({
           </div>
 
           {/* Order Details Card */}
-          <Card className="w-full rounded-[12px] border border-primary bg-primary/20">
+          <Card className="w-full rounded-xl border border-primary bg-primary/20">
             <CardContent className="space-y-6 p-6 text-left">
               {/* Header: Order ID + Status Badge */}
               <div className="flex items-center justify-between">
@@ -226,7 +226,7 @@ export default function OrderConfirmedClient({
 
               {/* Payment Breakdown */}
               {displayItems.length > 0 && (
-                <div className="space-y-3 rounded-[12px] border border-primary bg-[#F3EEEC] p-6">
+                <div className="space-y-3 rounded-xl border border-primary bg-[#F3EEEC] p-6">
                   {/* Progress bar */}
                   <div className="space-y-1">
                     <div

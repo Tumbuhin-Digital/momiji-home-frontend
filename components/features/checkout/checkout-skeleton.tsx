@@ -16,7 +16,7 @@ export function CheckoutSkeleton() {
             <section className="space-y-4">
               <Skeleton className="h-8 w-24" />
               <div className="space-y-3">
-                <Skeleton className="h-17.5 w-full rounded-lg" />
+                <Skeleton className="h-17.5 w-full rounded" />
                 <Skeleton className="mt-2 h-4 w-48" />
               </div>
             </section>
@@ -25,30 +25,30 @@ export function CheckoutSkeleton() {
             <section className="space-y-4 pt-4">
               <Skeleton className="h-8 w-24" />
               <div className="space-y-4">
-                <Skeleton className="h-14 w-full rounded-lg" />
+                <Skeleton className="h-14 w-full rounded" />
                 <div className="grid grid-cols-2 gap-4">
-                  <Skeleton className="h-14 w-full rounded-lg" />
-                  <Skeleton className="h-14 w-full rounded-lg" />
+                  <Skeleton className="h-14 w-full rounded" />
+                  <Skeleton className="h-14 w-full rounded" />
                 </div>
-                <Skeleton className="h-14 w-full rounded-lg" />
+                <Skeleton className="h-14 w-full rounded" />
                 <div className="grid grid-cols-3 gap-4">
-                  <Skeleton className="h-14 w-full rounded-lg" />
-                  <Skeleton className="h-14 w-full rounded-lg" />
-                  <Skeleton className="h-14 w-full rounded-lg" />
+                  <Skeleton className="h-14 w-full rounded" />
+                  <Skeleton className="h-14 w-full rounded" />
+                  <Skeleton className="h-14 w-full rounded" />
                 </div>
-                <Skeleton className="h-14 w-full rounded-lg" />
+                <Skeleton className="h-14 w-full rounded" />
               </div>
             </section>
 
             {/* Shipping Method */}
             <section className="space-y-4 pt-4">
               <Skeleton className="h-8 w-40" />
-              <Skeleton className="h-17.5 w-full rounded-lg" />
+              <Skeleton className="h-17.5 w-full rounded" />
             </section>
 
             {/* Pay Button */}
             <div className="pt-4">
-              <Skeleton className="h-16 w-full rounded-lg" />
+              <Skeleton className="h-16 w-full rounded" />
             </div>
           </div>
         </div>

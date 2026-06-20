@@ -113,7 +113,7 @@ export function CustomerOrderCard({ order }: CustomerOrderCardProps) {
               {order.lineItems.map((item, idx) => (
                 <div key={idx} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-muted" />
+                    <div className="h-8 w-8 rounded bg-muted" />
                     <p className="text-xs font-bold">
                       {item.quantity}x {item.title}
                     </p>

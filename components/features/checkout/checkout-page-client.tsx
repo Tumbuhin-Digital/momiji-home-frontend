@@ -499,7 +499,7 @@ export default function CheckoutPageClient() {
                 <h2 className="text-2xl font-medium text-alternate">Contact</h2>
                 <div className="space-y-3">
                   {/* Email */}
-                  <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                  <div className="group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
                     <input
                       {...register("email")}
                       id="email"
@@ -534,7 +534,7 @@ export default function CheckoutPageClient() {
                       defaultValue="United States"
                       onValueChange={(v) => setValue("country", v || "")}
                     >
-                      <SelectTrigger className="h-17.5! w-full rounded-lg border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal">
+                      <SelectTrigger className="h-17.5! w-full rounded border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal">
                         <div className="flex flex-col items-start gap-0.5">
                           <span className="text-[11px] text-[#737373]">
                             Country/Region
@@ -558,7 +558,7 @@ export default function CheckoutPageClient() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {/* First Name */}
                     <div>
-                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
                         <input
                           {...register("firstName")}
                           id="firstName"
@@ -582,7 +582,7 @@ export default function CheckoutPageClient() {
 
                     {/* Last Name */}
                     <div>
-                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
                         <input
                           {...register("lastName")}
                           id="lastName"
@@ -607,7 +607,7 @@ export default function CheckoutPageClient() {
 
                   {/* Address */}
                   <div>
-                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                    <div className="group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
                       <input
                         {...register("address")}
                         id="address"
@@ -662,7 +662,7 @@ export default function CheckoutPageClient() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     {/* City */}
                     <div>
-                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
                         <input
                           {...register("city")}
                           id="city"
@@ -695,7 +695,7 @@ export default function CheckoutPageClient() {
                               value={field.value}
                               onValueChange={(v) => field.onChange(v || "")}
                             >
-                              <SelectTrigger className="h-17.5! w-full rounded-lg border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal">
+                              <SelectTrigger className="h-17.5! w-full rounded border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal">
                                 <div className="flex flex-col items-start gap-0.5">
                                   <span className="text-[11px] text-[#737373]">
                                     State
@@ -720,7 +720,7 @@ export default function CheckoutPageClient() {
                           )}
                         />
                       ) : (
-                        <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                        <div className="group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
                           <input
                             {...register("state")}
                             id="state"
@@ -745,7 +745,7 @@ export default function CheckoutPageClient() {
 
                     {/* Zip Code */}
                     <div>
-                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                      <div className="group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
                         <input
                           {...register("zipCode")}
                           id="zipCode"
@@ -776,7 +776,7 @@ export default function CheckoutPageClient() {
                       render={({
                         field: { value, onChange, ref, ...fieldProps },
                       }) => (
-                        <div className="group relative flex h-17.5 w-full flex-col justify-end rounded-lg border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                        <div className="group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
                           <PhoneInput
                             {...fieldProps}
                             id="phone"
@@ -865,60 +865,63 @@ export default function CheckoutPageClient() {
                     </PreviewCard>
                   </div>
                   {isLoadingShipping ? (
-                    <div className="flex h-24 items-center justify-center rounded-lg bg-muted/50">
+                    <div className="flex h-24 items-center justify-center rounded bg-muted/50">
                       <Loader2 className="size-6 animate-spin text-muted-foreground" />
                     </div>
                   ) : isShippingRatesError ? (
-                    <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">
+                    <div className="rounded border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">
                       Failed to load shipping rates. Please check your address
                       and try again.
                     </div>
                   ) : (
-                    <div className="overflow-hidden rounded-lg border bg-white">
+                    <div className="overflow-hidden rounded border bg-white">
                       {!shippingRates || shippingRates.length === 0 ? (
                         <div className="p-6 text-center text-sm text-slate-500">
                           Please enter your ZIP Code to see available shipping
                           rates.
                         </div>
                       ) : (
-                        <RadioGroup
-                          value={formValues.shippingMethod}
-                          onValueChange={(v) => {
-                            setValue("shippingMethod", v)
-                            clearErrors("shippingMethod")
-                          }}
-                          className="flex flex-col gap-0"
-                        >
-                          {shippingRates.map((rate, idx) => (
-                            <div
-                              key={rate.serviceCode}
-                              className={`flex items-center justify-between p-4 ${idx !== shippingRates.length - 1 ? "border-b" : ""}`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <RadioGroupItem
-                                  value={rate.serviceCode}
-                                  id={`shipping-${rate.serviceCode}`}
-                                />
-                                <label
-                                  htmlFor={`shipping-${rate.serviceCode}`}
-                                  className="flex cursor-pointer flex-col gap-1"
-                                >
-                                  <span className="font-medium text-slate-800">
-                                    {rate.label}
-                                  </span>
-                                  <span className="text-sm text-slate-500">
-                                    Estimated Delivery: {rate.deliveryDays} Days
-                                  </span>
-                                </label>
+                        <div className="max-h-75 overflow-y-auto sm:max-h-100">
+                          <RadioGroup
+                            value={formValues.shippingMethod}
+                            onValueChange={(v) => {
+                              setValue("shippingMethod", v)
+                              clearErrors("shippingMethod")
+                            }}
+                            className="flex flex-col gap-0"
+                          >
+                            {shippingRates.map((rate, idx) => (
+                              <div
+                                key={rate.serviceCode}
+                                className={`flex items-center justify-between p-4 ${idx !== shippingRates.length - 1 ? "border-b" : ""}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <RadioGroupItem
+                                    value={rate.serviceCode}
+                                    id={`shipping-${rate.serviceCode}`}
+                                  />
+                                  <label
+                                    htmlFor={`shipping-${rate.serviceCode}`}
+                                    className="flex cursor-pointer flex-col gap-1"
+                                  >
+                                    <span className="font-medium text-slate-800">
+                                      {rate.label}
+                                    </span>
+                                    <span className="text-sm text-slate-500">
+                                      Estimated Delivery: {rate.deliveryDays}{" "}
+                                      Days
+                                    </span>
+                                  </label>
+                                </div>
+                                <span className="font-medium text-slate-800">
+                                  {rate.cost === "0" || rate.cost === "0.00"
+                                    ? "Free"
+                                    : formatCurrency(parseFloat(rate.cost))}
+                                </span>
                               </div>
-                              <span className="font-medium text-slate-800">
-                                {rate.cost === "0" || rate.cost === "0.00"
-                                  ? "Free"
-                                  : formatCurrency(parseFloat(rate.cost))}
-                              </span>
-                            </div>
-                          ))}
-                        </RadioGroup>
+                            ))}
+                          </RadioGroup>
+                        </div>
                       )}
                     </div>
                   )}
@@ -1034,7 +1037,7 @@ export default function CheckoutPageClient() {
               <section className="space-y-6">
                 <div className="space-y-3 border-b border-black/12 pb-6">
                   {/* Due Now */}
-                  <Card className="gap-1 rounded-[12px] border-l-4 border-primary bg-primary/20 shadow-none">
+                  <Card className="gap-1 rounded-xl border-l-4 border-primary bg-primary/20 shadow-none">
                     <CardContent className="space-y-2 p-4">
                       <p className="font-medium text-alternate/80">Due Now</p>
                       <div className="space-y-0.5">
@@ -1081,7 +1084,7 @@ export default function CheckoutPageClient() {
 
                   {/* Due Later */}
                   {preOrderItems.length > 0 && (
-                    <Card className="gap-1 rounded-[12px] border-l-4 border-black/20 bg-muted shadow-none">
+                    <Card className="gap-1 rounded-xl border-l-4 border-black/20 bg-muted shadow-none">
                       <CardContent className="space-y-2 p-4">
                         <p className="font-medium text-alternate/80">
                           Due Later

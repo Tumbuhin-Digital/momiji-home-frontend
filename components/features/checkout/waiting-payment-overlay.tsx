@@ -25,7 +25,7 @@ export function WaitingPaymentOverlay({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
-        className="rounded-[24px] border-none p-6 sm:max-w-115"
+        className="rounded-3xl border-none p-6 sm:max-w-115"
         showCloseButton={false}
       >
         <div className="flex flex-col items-center gap-8 text-center">
@@ -61,7 +61,7 @@ export function WaitingPaymentOverlay({
               onClick={() => {
                 if (checkoutUrl) window.open(checkoutUrl, "_blank")
               }}
-              className="h-13! w-full rounded-[6px] text-lg font-medium"
+              className="h-13! w-full rounded-sm text-lg font-medium"
             >
               Take me to payment
             </Button>
