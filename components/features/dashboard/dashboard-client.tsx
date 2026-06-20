@@ -73,7 +73,7 @@ export default function DashboardClient() {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="rounded-[8px] border-primary bg-secondary shadow-none">
+            <Card className="rounded-md border-primary bg-secondary shadow-none">
               <CardContent className="flex flex-col gap-4 p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -94,7 +94,7 @@ export default function DashboardClient() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-[8px] border-primary bg-secondary shadow-none">
+            <Card className="rounded-md border-primary bg-secondary shadow-none">
               <CardContent className="flex flex-col gap-4 p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -124,7 +124,7 @@ export default function DashboardClient() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-[8px] border-primary bg-secondary shadow-none">
+            <Card className="rounded-md border-primary bg-secondary shadow-none">
               <CardContent className="flex flex-col gap-4 p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -154,7 +154,7 @@ export default function DashboardClient() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-[8px] border-primary bg-secondary shadow-none">
+            <Card className="rounded-md border-primary bg-secondary shadow-none">
               <CardContent className="flex flex-col gap-4 p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -185,7 +185,7 @@ export default function DashboardClient() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <Card className="gap-3 rounded-[8px] border-primary bg-secondary shadow-none">
+            <Card className="gap-3 rounded-md border-primary bg-secondary shadow-none">
               <div className="flex items-center justify-between px-6 py-4">
                 <div className="flex items-center gap-2">
                   <IconlyChart className="size-6 text-black" />
@@ -223,7 +223,7 @@ export default function DashboardClient() {
                     return (
                       <div
                         key={i}
-                        className="flex items-center justify-between gap-1.75 rounded-[8px] border border-primary bg-primary/20 p-3"
+                        className="flex items-center justify-between gap-1.75 rounded-md border border-primary bg-primary/20 p-3"
                       >
                         <div>
                           <p className="text-xs font-medium text-[#202939]">
@@ -249,7 +249,7 @@ export default function DashboardClient() {
               </CardContent>
             </Card>
 
-            <Card className="gap-3 rounded-[8px] border-primary bg-secondary shadow-none">
+            <Card className="gap-3 rounded-md border-primary bg-secondary shadow-none">
               <div className="flex items-center justify-between px-6 py-4">
                 <div className="flex items-center gap-2">
                   <IconlyChart className="size-6 text-black" />
@@ -264,7 +264,7 @@ export default function DashboardClient() {
                 </Link>
               </div>
               <CardContent className="space-y-3 pt-0">
-                <div className="flex items-center justify-between gap-1.75 rounded-[8px] border border-primary bg-primary/20 p-4">
+                <div className="flex items-center justify-between gap-1.75 rounded-md border border-primary bg-primary/20 p-4">
                   <div className="flex w-full items-center justify-between">
                     <div>
                       <p className="font-medium text-[#202939]">

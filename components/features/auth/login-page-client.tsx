@@ -23,7 +23,7 @@ export default function LoginPageClient() {
         </div>
 
         {/* Login Card */}
-        <div className="space-y-5 rounded-[12px] bg-secondary p-8 sm:space-y-8">
+        <div className="space-y-5 rounded-xl bg-secondary p-8 sm:space-y-8">
           <div>
             <p className="text-sm font-medium text-neutral-800">login to</p>
             <h1 className="text-lg font-semibold text-neutral-800">

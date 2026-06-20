@@ -138,7 +138,7 @@ export function LoginForm() {
                   if (errors.email) clearErrors("email")
                 },
               })}
-              className="h-13 w-full rounded-[8px] border-neutral-300 bg-white pr-5 pl-11 text-sm font-medium text-neutral-700 shadow-none placeholder:text-neutral-400 focus-visible:ring-primary/20"
+              className="h-13 w-full rounded-md border-neutral-300 bg-white pr-5 pl-11 text-sm font-medium text-neutral-700 shadow-none placeholder:text-neutral-400 focus-visible:ring-primary/20"
             />
           </div>
           {errors.email && (
@@ -166,7 +166,7 @@ export function LoginForm() {
                   if (errors.password) clearErrors("password")
                 },
               })}
-              className="h-13 w-full rounded-[8px] border-neutral-300 bg-white pr-12 pl-11 text-sm font-medium text-neutral-700 shadow-none placeholder:text-neutral-400 focus-visible:ring-primary/20"
+              className="h-13 w-full rounded-md border-neutral-300 bg-white pr-12 pl-11 text-sm font-medium text-neutral-700 shadow-none placeholder:text-neutral-400 focus-visible:ring-primary/20"
             />
             <button
               type="button"
@@ -216,7 +216,7 @@ export function LoginForm() {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="h-13! w-full rounded-[8px] bg-[#9A9A9A] shadow-none transition-colors hover:bg-[#8A8A8A]"
+        className="h-13! w-full rounded-md bg-[#9A9A9A] shadow-none transition-colors hover:bg-[#8A8A8A]"
       >
         {isSubmitting ? (
           <span className="flex items-center gap-2 text-sm font-semibold text-white">

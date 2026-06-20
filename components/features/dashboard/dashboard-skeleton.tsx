@@ -8,7 +8,7 @@ export function DashboardSkeleton() {
         {Array.from({ length: 4 }).map((_, i) => (
           <Card
             key={i}
-            className="rounded-[8px] border-slate-200 bg-white shadow-none"
+            className="rounded-md border-slate-200 bg-white shadow-none"
           >
             <CardContent className="flex flex-col gap-4 p-6">
               <div className="flex items-center justify-between">
@@ -27,7 +27,7 @@ export function DashboardSkeleton() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="rounded-[8px] border-slate-200 bg-white shadow-sm">
+        <Card className="rounded-md border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-2">
               <Skeleton className="size-6 rounded-full" />
@@ -39,7 +39,7 @@ export function DashboardSkeleton() {
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between gap-1.75 rounded-[8px] border border-slate-200 bg-slate-50 p-3"
+                className="flex items-center justify-between gap-1.75 rounded-md border border-slate-200 bg-slate-50 p-3"
               >
                 <div className="w-full space-y-1">
                   <Skeleton className="mb-1 h-3 w-16" />
@@ -52,7 +52,7 @@ export function DashboardSkeleton() {
           </CardContent>
         </Card>
 
-        <Card className="gap-3 rounded-[8px] border-slate-200 bg-white shadow-none">
+        <Card className="gap-3 rounded-md border-slate-200 bg-white shadow-none">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-2">
               <Skeleton className="size-6 rounded-full" />
@@ -61,7 +61,7 @@ export function DashboardSkeleton() {
             <Skeleton className="h-6 w-24" />
           </div>
           <CardContent className="space-y-3 pt-0">
-            <div className="flex items-center justify-between gap-1.75 rounded-[8px] border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between gap-1.75 rounded-md border border-slate-200 bg-slate-50 p-4">
               <div className="flex w-full items-center justify-between">
                 <div>
                   <Skeleton className="mb-2 h-5 w-28" />
