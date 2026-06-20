@@ -633,20 +633,34 @@ export function OrderFulfillmentPanel({
         onConfirm={async (received: number) => {
           if (!selectedReceivedItem) return
           const isGlobal = !selectedReceivedItem.productId
-          const ids = isGlobal
-            ? items.map((i) => i.productId)
-            : [selectedReceivedItem.productId]
+          const payloadItems: { item_id: string; items_received: number }[] = []
+
+          if (isGlobal) {
+            let remaining = received
+            for (const item of items) {
+              const itemQty = item.quantity
+              const itemReceived = Math.min(remaining, itemQty)
+              payloadItems.push({
+                item_id: item.productId,
+                items_received: itemReceived,
+              })
+              remaining = Math.max(0, remaining - itemQty)
+            }
+          } else {
+            payloadItems.push({
+              item_id: selectedReceivedItem.productId,
+              items_received: received,
+            })
+          }
 
           await updateReceived.mutateAsync({
             orderId: order.id,
             body: {
-              item_ids: ids,
-              items_received: received,
+              items: payloadItems,
             },
           })
           setSelectedReceivedItem(null)
 
-          // Force refetch to ensure fresh data
           await queryClient.invalidateQueries({
             queryKey: queryKeys.orders.detail(order.id),
           })
@@ -654,7 +668,6 @@ export function OrderFulfillmentPanel({
             queryKey: queryKeys.orders.detail(order.id),
           })
 
-          // Show animation overlay
           setReceivedSuccess(true)
           setTimeout(() => {
             setReceivedSuccess(false)

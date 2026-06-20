@@ -81,9 +81,13 @@ export interface CreateOrderInput {
   shipping_method: string
 }
 
-export interface UpdateReceivedDto {
-  item_ids: string[]
+export interface UpdateReceivedItemDto {
+  item_id: string
   items_received: number
+}
+
+export interface UpdateReceivedDto {
+  items: UpdateReceivedItemDto[]
 }
 
 export interface UpdateStepDto {
