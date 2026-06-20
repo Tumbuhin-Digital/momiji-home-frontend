@@ -308,23 +308,23 @@ export function OrderFulfillmentPanel({
             )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-center">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col items-start justify-start gap-1">
+              {item.itemStatus === "delivered" && (
+                <span className="rounded-full bg-[#49944B1A] px-3 py-0.5 text-[10px] font-bold text-[#49944B] hover:bg-[#49944B1A]">
+                  Delivered
+                </span>
+              )}
+              {order.fulfillmentStatus === "cancelled" && (
+                <span className="rounded-full bg-[#DC26261A] px-3 py-0.5 text-[10px] font-bold text-[#DC2626] hover:bg-[#DC26261A]">
+                  Cancelled
+                </span>
+              )}
               <p
                 className="truncate font-medium text-slate-800"
                 title={item.title}
               >
                 {item.title}
               </p>
-              {order.fulfillmentStatus === "delivered" && (
-                <span className="rounded-full bg-[#49944B1A] px-1.5 py-0.5 text-[10px] font-bold text-[#49944B] hover:bg-[#49944B1A]">
-                  Delivered
-                </span>
-              )}
-              {order.fulfillmentStatus === "cancelled" && (
-                <span className="rounded-full bg-[#DC26261A] px-1.5 py-0.5 text-[10px] font-bold text-[#DC2626] hover:bg-[#DC26261A]">
-                  Cancelled
-                </span>
-              )}
             </div>
             <p className="mt-1 text-sm text-slate-500">
               {item.quantity} pcs - {formatCurrency(item.unitPrice)} USD
