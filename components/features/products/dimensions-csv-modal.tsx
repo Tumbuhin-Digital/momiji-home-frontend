@@ -126,7 +126,7 @@ export function DimensionsCsvModal({
         {/* Step sections */}
         <div className="flex flex-col gap-4 px-6">
           {/* Step 1: Download Template */}
-          <div className="rounded-lg border border-primary/30 bg-primary/20 p-4">
+          <div className="rounded border border-primary/30 bg-primary/20 p-4">
             <div className="mb-3 flex items-center gap-2 font-medium text-slate-700">
               <Download className="size-4 text-primary" />
               1. Download Template
@@ -156,7 +156,7 @@ export function DimensionsCsvModal({
           </div>
 
           {/* Step 2: Upload CSV */}
-          <div className="rounded-lg border border-primary/30 bg-primary/20 p-4">
+          <div className="rounded border border-primary/30 bg-primary/20 p-4">
             <div className="mb-3 flex items-center gap-2 font-medium text-slate-700">
               <Upload className="size-4 text-primary" />
               2. Upload CSV File

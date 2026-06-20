@@ -199,7 +199,7 @@ export default function ProductsPageClient() {
 
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2">
-            <InputGroup className="h-11 flex-1 rounded-[8px] border-primary shadow-sm has-[input:focus-visible]:border-primary/20 has-[input:focus-visible]:ring-primary/20">
+            <InputGroup className="h-11 flex-1 rounded-md border-primary shadow-sm has-[input:focus-visible]:border-primary/20 has-[input:focus-visible]:ring-primary/20">
               <InputGroupAddon>
                 <div className="flex size-6 items-center justify-center gap-2 rounded-full bg-primary/20">
                   <Search
@@ -221,7 +221,7 @@ export default function ProductsPageClient() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="h-11! gap-2 rounded-[6px] border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
+                    className="h-11! gap-2 rounded-sm border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
                   >
                     <ListFilter className="size-5" strokeWidth={1.5} /> Filter
                   </Button>
@@ -287,7 +287,7 @@ export default function ProductsPageClient() {
                     setSort(null)
                     setPage(1)
                   }}
-                  className="size-11! gap-2 rounded-[6px] border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
+                  className="size-11! gap-2 rounded-sm border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
                 >
                   <RotateCcw className="size-5" strokeWidth={1.5} />
                 </Button>
@@ -295,7 +295,7 @@ export default function ProductsPageClient() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-t-[8px] border border-primary/50 bg-white">
+          <div className="overflow-hidden rounded-t-md border border-primary/50 bg-white">
             <div className="h-[calc(100vh-280px)] overflow-x-auto overflow-y-auto">
               <table className="w-full min-w-250 text-left text-sm text-slate-600">
                 <thead className="sticky top-0 z-10 bg-primary text-white">
@@ -555,7 +555,7 @@ export default function ProductsPageClient() {
                                     {variant.inventory.quantity}
                                   </td>
                                   <td className="px-6 py-4">
-                                    <div className="flex h-10 w-40 items-center justify-start gap-2 rounded-lg border border-black/20 bg-white px-3 font-medium text-slate-700 hover:bg-white hover:text-slate-700">
+                                    <div className="flex h-10 w-40 items-center justify-start gap-2 rounded border border-black/20 bg-white px-3 font-medium text-slate-700 hover:bg-white hover:text-slate-700">
                                       <div
                                         className={`size-2 rounded-full ${
                                           variant.category === "ship-ready"

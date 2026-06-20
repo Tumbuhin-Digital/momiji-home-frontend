@@ -111,7 +111,7 @@ export function UpdateBatchModal({
                 onChange={(e) => setBatchLabel(e.target.value)}
                 placeholder="e.g. Wave 1, Summer Collection"
                 disabled={isPending}
-                className="h-11 rounded-lg border-slate-200 text-sm shadow-sm focus-visible:ring-[#00B4F5]"
+                className="h-11 rounded border-slate-200 text-sm shadow-sm focus-visible:ring-[#00B4F5]"
               />
             </div>
 
@@ -128,7 +128,7 @@ export function UpdateBatchModal({
                 value={shipDate}
                 onChange={(e) => setShipDate(e.target.value)}
                 disabled={isPending}
-                className="h-11 rounded-lg border-slate-200 text-sm shadow-sm focus-visible:ring-[#00B4F5]"
+                className="h-11 rounded border-slate-200 text-sm shadow-sm focus-visible:ring-[#00B4F5]"
               />
               <p className="text-[11px] text-slate-400">Format: YYYY-MM-DD</p>
             </div>

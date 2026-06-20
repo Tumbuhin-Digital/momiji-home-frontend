@@ -22,7 +22,7 @@ export function ProductTableSkeleton() {
               <Skeleton className="h-4 w-8" />
             </td>
             <td className="px-6 py-4">
-              <Skeleton className="h-10 w-40 rounded-lg" />
+              <Skeleton className="h-10 w-40 rounded" />
             </td>
             <td className="px-6 py-4">
               <Skeleton className="h-4 w-32" />

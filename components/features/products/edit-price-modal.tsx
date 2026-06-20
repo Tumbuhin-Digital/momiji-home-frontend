@@ -98,7 +98,7 @@ export function EditPriceModal({
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 disabled={isPending}
-                className="h-11 rounded-lg border-slate-200 pl-11 text-sm shadow-sm focus-visible:ring-[#00B4F5]"
+                className="h-11 rounded border-slate-200 pl-11 text-sm shadow-sm focus-visible:ring-[#00B4F5]"
               />
             </div>
             <p className="text-[12px] text-slate-500">Currency in USD</p>
