@@ -15,7 +15,6 @@ import {
 } from "lucide-react"
 
 import { toastManager } from "@/components/ui/toast"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Carousel,
