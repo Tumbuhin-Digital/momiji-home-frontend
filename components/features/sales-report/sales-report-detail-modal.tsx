@@ -91,7 +91,7 @@ export function SalesReportDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="flex max-h-[90vh] w-[95vw] max-w-5xl flex-col gap-4 sm:gap-6 overflow-y-auto rounded-2xl border-none p-5 sm:p-8 shadow-xl"
+        className="flex max-h-[90vh] w-[95vw] max-w-5xl flex-col gap-4 overflow-y-auto rounded-2xl border-none p-5 shadow-xl sm:gap-6 sm:p-8"
         showCloseButton={false}
       >
         {/* Header */}
@@ -131,7 +131,7 @@ export function SalesReportDetailModal({
             )}
           </div>
 
-          <div className="flex shrink-0 items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex w-full shrink-0 items-center justify-between gap-3 sm:w-auto sm:justify-end">
             {order && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <StatusBadge
@@ -260,7 +260,10 @@ export function SalesReportDetailModal({
                       >
                         <CarouselContent className="-ml-2 sm:-ml-4">
                           {shipReadyItems.map((item) => (
-                            <CarouselItem key={item.productId} className="pl-2 sm:pl-4 basis-full md:basis-1/2">
+                            <CarouselItem
+                              key={item.productId}
+                              className="basis-full pl-2 sm:pl-4 md:basis-1/2"
+                            >
                               <LineItemCard item={item} />
                             </CarouselItem>
                           ))}
@@ -291,7 +294,10 @@ export function SalesReportDetailModal({
                       >
                         <CarouselContent className="-ml-2 sm:-ml-4">
                           {preOrderItems.map((item) => (
-                            <CarouselItem key={item.productId} className="pl-2 sm:pl-4 basis-full md:basis-1/2">
+                            <CarouselItem
+                              key={item.productId}
+                              className="basis-full pl-2 sm:pl-4 md:basis-1/2"
+                            >
                               <LineItemCard item={item} />
                             </CarouselItem>
                           ))}
