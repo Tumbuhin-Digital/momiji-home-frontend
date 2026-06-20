@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-img-element */
@@ -17,7 +16,6 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Stepper,
@@ -100,8 +98,6 @@ export function OrderFulfillmentPanel({
   const [showAcceptModal, setShowAcceptModal] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
 
-  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([])
-
   const queryClient = useQueryClient()
 
   const acceptOrder = useAcceptOrder()
@@ -113,11 +109,6 @@ export function OrderFulfillmentPanel({
   const items = order.lineItems.filter(
     (item) => item.type === type || (!item.type && order.type === type)
   )
-
-  useEffect(() => {
-    setSelectedItemIds(items.map((item) => item.productId))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [order.id, type, order.lineItems])
 
   const isPreOrder = type === "pre-order"
 
@@ -242,7 +233,9 @@ export function OrderFulfillmentPanel({
     trackingUrl: string
   ) => {
     const isGlobal = !selectedTrackingItem?.productId
-    const ids = isGlobal ? selectedItemIds : [selectedTrackingItem.productId]
+    const ids = isGlobal
+      ? items.map((i) => i.productId)
+      : [selectedTrackingItem.productId]
 
     await updateTracking.mutateAsync({
       orderId: order.id,
@@ -295,26 +288,8 @@ export function OrderFulfillmentPanel({
   }
 
   const renderItemContent = (item: OrderLineItem) => {
-    const showCheckbox = isPreOrder && currentStep === 3
-
     return (
-      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-none sm:flex-row sm:items-center">
-        {showCheckbox && (
-          <div className="flex items-center px-1">
-            <Checkbox
-              id={`select-item-${item.productId}`}
-              checked={selectedItemIds.includes(item.productId)}
-              onCheckedChange={(checked) => {
-                setSelectedItemIds((prev) =>
-                  checked
-                    ? [...prev, item.productId]
-                    : prev.filter((id) => id !== item.productId)
-                )
-              }}
-              className="size-4.5 cursor-pointer rounded border-neutral-300"
-            />
-          </div>
-        )}
+      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-none sm:flex-row">
         <div className="flex min-w-0 flex-1 gap-4">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-linear-to-b from-white via-white to-black/5">
             {item.imageSrc ? (
@@ -513,19 +488,15 @@ export function OrderFulfillmentPanel({
                   size="sm"
                   className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
                   onClick={() => {
-                    if (selectedItemIds.length === 1) {
-                      const target = items.find(
-                        (i) => i.productId === selectedItemIds[0]
-                      )
-                      setSelectedTrackingItem(target || null)
+                    if (items.length === 1) {
+                      setSelectedTrackingItem(items[0])
                     } else {
                       setSelectedTrackingItem({
                         productId: "",
-                        title: `${selectedItemIds.length} Selected Items`,
+                        title: "All Items",
                       } as any)
                     }
                   }}
-                  disabled={selectedItemIds.length === 0}
                 >
                   Add Tracking
                 </Button>
@@ -536,34 +507,26 @@ export function OrderFulfillmentPanel({
                   size="sm"
                   className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
                   onClick={() => {
-                    if (selectedItemIds.length === 1) {
-                      const target = items.find(
-                        (i) => i.productId === selectedItemIds[0]
-                      )
-                      setSelectedReceivedItem(target || null)
+                    if (items.length === 1) {
+                      setSelectedReceivedItem(items[0])
                     } else {
-                      const selectedItems = items.filter((i) =>
-                        selectedItemIds.includes(i.productId)
-                      )
-                      const totalQuantity = selectedItems.reduce(
+                      const totalQuantity = items.reduce(
                         (sum, item) => sum + item.quantity,
                         0
                       )
-                      const totalItemsReceived = selectedItems.reduce(
+                      const totalItemsReceived = items.reduce(
                         (sum, item) => sum + (item.itemsReceived || 0),
                         0
                       )
                       setSelectedReceivedItem({
                         productId: "",
-                        title: `${selectedItemIds.length} Selected Items`,
+                        title: "All Items",
                         quantity: totalQuantity,
                         itemsReceived: totalItemsReceived,
                       } as any)
                     }
                   }}
-                  disabled={
-                    updateReceived.isPending || selectedItemIds.length === 0
-                  }
+                  disabled={updateReceived.isPending}
                 >
                   Update Received
                 </Button>
@@ -671,7 +634,7 @@ export function OrderFulfillmentPanel({
           if (!selectedReceivedItem) return
           const isGlobal = !selectedReceivedItem.productId
           const ids = isGlobal
-            ? selectedItemIds
+            ? items.map((i) => i.productId)
             : [selectedReceivedItem.productId]
 
           await updateReceived.mutateAsync({
