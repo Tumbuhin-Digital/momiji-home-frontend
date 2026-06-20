@@ -7,13 +7,12 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
-  const s = status.toLowerCase()
+  const displayStatus = status.replace(/_/g, " ")
+  const s = displayStatus.toLowerCase()
 
   let variantClass = "bg-[#9090901A] text-[#5D6F76] hover:bg-[#9090901A]"
 
-  if (s === "new order") {
-    variantClass = "bg-[#1976FF1A] text-[#1976FF] hover:bg-[#1976FF1A]"
-  } else if (s === "invoiced") {
+  if (s === "new order" || s === "invoiced" || s === "ship ready") {
     variantClass = "bg-[#1976FF1A] text-[#1976FF] hover:bg-[#1976FF1A]"
   } else if (s.includes("pre") || s === "in progress" || s === "on progress") {
     variantClass = "bg-[#FF850D1A] text-[#FF850D] hover:bg-[#FF850D1A]"
@@ -40,7 +39,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
         className
       )}
     >
-      {status}
+      {displayStatus}
     </Badge>
   )
 }

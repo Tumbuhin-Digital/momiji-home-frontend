@@ -262,7 +262,7 @@ export function SalesReportDetailModal({
                           {shipReadyItems.map((item) => (
                             <CarouselItem
                               key={item.productId}
-                              className="basis-full pl-2 sm:pl-4 md:basis-1/2"
+                              className="basis-full pl-2 sm:pl-4"
                             >
                               <LineItemCard item={item} />
                             </CarouselItem>
@@ -296,7 +296,7 @@ export function SalesReportDetailModal({
                           {preOrderItems.map((item) => (
                             <CarouselItem
                               key={item.productId}
-                              className="basis-full pl-2 sm:pl-4 md:basis-1/2"
+                              className="basis-full pl-2 sm:pl-4"
                             >
                               <LineItemCard item={item} />
                             </CarouselItem>
@@ -402,16 +402,10 @@ function LineItemCard({ item }: { item: OrderLineItem }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <Badge
-            variant="outline"
-            className={
-              isPreOrder
-                ? "border-amber-200 bg-amber-50 text-[10px] font-semibold text-amber-700 uppercase"
-                : "border-primary/20 bg-primary/5 text-[10px] font-semibold text-primary uppercase"
-            }
-          >
-            {isPreOrder ? "Pre-Order" : "Ship Ready"}
-          </Badge>
+          <StatusBadge
+            status={isPreOrder ? "Pre-Order" : "Ship Ready"}
+            className="h-5! rounded-full px-2 text-[10px] font-semibold uppercase"
+          />
           {item.itemStatus && (
             <StatusBadge
               status={itemStatusLabelMap[item.itemStatus] || item.itemStatus}
