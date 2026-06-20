@@ -49,6 +49,9 @@ export interface OrderLineItem {
   trackingUrl?: string
   type?: string
   unitPrice: number
+  dpAmount?: number
+  balanceDue?: number
+  finalAmount?: number
 }
 
 export interface Order {
@@ -164,6 +167,9 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
           : item.type === "pre_order"
             ? "pre-order"
             : item.type,
+      dpAmount: parseFloat(item.dp_amount) || undefined,
+      balanceDue: parseFloat(item.balance_due) || undefined,
+      finalAmount: parseFloat(item.final_amount) || undefined,
     })),
     totalBalanceDue: parseFloat(dto.total_balance_due) || 0,
     totalChargedNow: parseFloat(dto.total_charged_now) || 0,

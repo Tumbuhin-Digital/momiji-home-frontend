@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { CloudDownload, Loader2, Search } from "lucide-react"
 
@@ -13,12 +13,14 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 
+import { SalesReportDetailModal } from "@/components/features/sales-report/sales-report-detail-modal"
 import { SalesReportTableSkeleton } from "@/components/features/sales-report/sales-report-table-skeleton"
 
 import { useExportOrders, useInfiniteOrders } from "@/hooks/use-orders"
 import { formatCurrency, formatLastSynced } from "@/lib/utils"
 
 export function SalesReportClient() {
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const {
     data,
     isLoading,
@@ -182,7 +184,10 @@ export function SalesReportClient() {
                       className="border-b border-black/10 last:border-0 hover:bg-slate-50/50"
                     >
                       <td className="gap-1 px-6 py-4 align-middle">
-                        <div className="text-base font-medium text-black">
+                        <div
+                          className="cursor-pointer text-base font-medium text-primary hover:underline"
+                          onClick={() => setSelectedOrderId(order.id)}
+                        >
                           #{order.orderNumber}
                         </div>
                         <div className="text-xs text-black/60">
@@ -235,6 +240,14 @@ export function SalesReportClient() {
           </table>
         </div>
       </div>
+
+      {selectedOrderId && (
+        <SalesReportDetailModal
+          orderId={selectedOrderId}
+          isOpen={!!selectedOrderId}
+          onClose={() => setSelectedOrderId(null)}
+        />
+      )}
     </div>
   )
 }

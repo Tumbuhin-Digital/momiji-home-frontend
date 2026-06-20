@@ -19,3 +19,9 @@ export interface AcceptOrderModalProps {
 export interface CustomerOrderCardProps {
   order: Order
 }
+
+export interface SalesReportDetailModalProps {
+  orderId: string | null
+  isOpen: boolean
+  onClose: () => void
+}
