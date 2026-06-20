@@ -1,5 +1,6 @@
 "use client"
 
+import React, { useEffect, useState } from "react"
 import { Toast } from "@base-ui/react/toast"
 import {
   CircleAlertIcon,
@@ -12,8 +13,6 @@ import {
 import { buttonVariants } from "@/components/ui/button"
 
 import { cn } from "@/lib/utils"
-
-import type React from "react"
 
 const TOAST_ICONS = {
   error: CircleAlertIcon,
@@ -70,7 +69,20 @@ function Toasts({
   portalProps?: React.ComponentProps<typeof Toast.Portal>
 }): React.ReactElement {
   const { toasts } = Toast.useToastManager()
-  const swipeDirection = getSwipeDirection(position)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640)
+    }
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
+
+  const activePosition =
+    isMobile && position === "bottom-right" ? "top-center" : position
+  const swipeDirection = getSwipeDirection(activePosition)
 
   return (
     <Toast.Portal data-slot="toast-portal" {...portalProps}>
@@ -85,7 +97,7 @@ function Toasts({
           "data-[position*=right]:right-(--toast-inset)",
           "data-[position*=center]:left-1/2 data-[position*=center]:-translate-x-1/2"
         )}
-        data-position={position}
+        data-position={activePosition}
         data-slot="toast-viewport"
       >
         {toasts.map((toast) => {
@@ -149,7 +161,7 @@ function Toasts({
                 upsertReplayClassName(toast)
               )}
               {...toastData?.rootProps}
-              data-position={position}
+              data-position={activePosition}
               swipeDirection={swipeDirection}
               toast={toast}
             >
