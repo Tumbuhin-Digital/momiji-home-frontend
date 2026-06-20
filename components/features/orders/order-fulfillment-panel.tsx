@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-img-element */
 import dynamic from "next/dynamic"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { useQueryClient } from "@tanstack/react-query"
 
@@ -16,6 +16,7 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Stepper,
@@ -98,6 +99,8 @@ export function OrderFulfillmentPanel({
   const [showAcceptModal, setShowAcceptModal] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
 
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([])
+
   const queryClient = useQueryClient()
 
   const acceptOrder = useAcceptOrder()
@@ -109,6 +112,10 @@ export function OrderFulfillmentPanel({
   const items = order.lineItems.filter(
     (item) => item.type === type || (!item.type && order.type === type)
   )
+
+  useEffect(() => {
+    setSelectedItemIds(items.map((item) => item.productId))
+  }, [order.id, type, order.lineItems])
 
   const isPreOrder = type === "pre-order"
 
@@ -233,18 +240,18 @@ export function OrderFulfillmentPanel({
     trackingUrl: string
   ) => {
     const isGlobal = !selectedTrackingItem?.productId
-    const itemsToUpdate = isGlobal ? items : [selectedTrackingItem]
+    const ids = isGlobal
+      ? selectedItemIds
+      : [selectedTrackingItem.productId]
 
-    for (const item of itemsToUpdate) {
-      await updateTracking.mutateAsync({
-        orderId: order.id,
-        itemId: item.productId,
-        body: {
-          tracking_number: trackingNumber,
-          tracking_url: trackingUrl,
-        },
-      })
-    }
+    await updateTracking.mutateAsync({
+      orderId: order.id,
+      body: {
+        item_ids: ids,
+        tracking_number: trackingNumber,
+        tracking_url: trackingUrl,
+      },
+    })
 
     setSelectedTrackingItem(null)
 
@@ -288,8 +295,26 @@ export function OrderFulfillmentPanel({
   }
 
   const renderItemContent = (item: OrderLineItem) => {
+    const showCheckbox = isPreOrder && currentStep === 3
+
     return (
-      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-none sm:flex-row">
+      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-none sm:flex-row sm:items-center">
+        {showCheckbox && (
+          <div className="flex items-center px-1">
+            <Checkbox
+              id={`select-item-${item.productId}`}
+              checked={selectedItemIds.includes(item.productId)}
+              onCheckedChange={(checked) => {
+                setSelectedItemIds((prev) =>
+                  checked
+                    ? [...prev, item.productId]
+                    : prev.filter((id) => id !== item.productId)
+                )
+              }}
+              className="size-4.5 cursor-pointer rounded border-neutral-300"
+            />
+          </div>
+        )}
         <div className="flex min-w-0 flex-1 gap-4">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-linear-to-b from-white via-white to-black/5">
             {item.imageSrc ? (
@@ -487,9 +512,20 @@ export function OrderFulfillmentPanel({
                   variant="outline"
                   size="sm"
                   className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                  onClick={() =>
-                    setSelectedTrackingItem({ title: "All Items" } as any)
-                  }
+                  onClick={() => {
+                    if (selectedItemIds.length === 1) {
+                      const target = items.find(
+                        (i) => i.productId === selectedItemIds[0]
+                      )
+                      setSelectedTrackingItem(target || null)
+                    } else {
+                      setSelectedTrackingItem({
+                        productId: "",
+                        title: `${selectedItemIds.length} Selected Items`,
+                      } as any)
+                    }
+                  }}
+                  disabled={selectedItemIds.length === 0}
                 >
                   Add Tracking
                 </Button>
@@ -500,26 +536,34 @@ export function OrderFulfillmentPanel({
                   size="sm"
                   className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
                   onClick={() => {
-                    if (items.length === 1) {
-                      setSelectedReceivedItem(items[0])
+                    if (selectedItemIds.length === 1) {
+                      const target = items.find(
+                        (i) => i.productId === selectedItemIds[0]
+                      )
+                      setSelectedReceivedItem(target || null)
                     } else {
-                      const totalQuantity = items.reduce(
+                      const selectedItems = items.filter((i) =>
+                        selectedItemIds.includes(i.productId)
+                      )
+                      const totalQuantity = selectedItems.reduce(
                         (sum, item) => sum + item.quantity,
                         0
                       )
-                      const totalItemsReceived = items.reduce(
+                      const totalItemsReceived = selectedItems.reduce(
                         (sum, item) => sum + (item.itemsReceived || 0),
                         0
                       )
                       setSelectedReceivedItem({
                         productId: "",
-                        title: "All Items",
+                        title: `${selectedItemIds.length} Selected Items`,
                         quantity: totalQuantity,
                         itemsReceived: totalItemsReceived,
                       } as any)
                     }
                   }}
-                  disabled={updateReceived.isPending}
+                  disabled={
+                    updateReceived.isPending || selectedItemIds.length === 0
+                  }
                 >
                   Update Received
                 </Button>
@@ -626,25 +670,17 @@ export function OrderFulfillmentPanel({
         onConfirm={async (received: number) => {
           if (!selectedReceivedItem) return
           const isGlobal = !selectedReceivedItem.productId
-          if (isGlobal) {
-            let remaining = received
-            for (const item of items) {
-              const itemQty = item.quantity
-              const itemReceived = Math.min(remaining, itemQty)
-              await updateReceived.mutateAsync({
-                orderId: order.id,
-                itemId: item.productId,
-                body: { items_received: itemReceived },
-              })
-              remaining = Math.max(0, remaining - itemQty)
-            }
-          } else {
-            await updateReceived.mutateAsync({
-              orderId: order.id,
-              itemId: selectedReceivedItem.productId,
-              body: { items_received: received },
-            })
-          }
+          const ids = isGlobal
+            ? selectedItemIds
+            : [selectedReceivedItem.productId]
+
+          await updateReceived.mutateAsync({
+            orderId: order.id,
+            body: {
+              item_ids: ids,
+              items_received: received,
+            },
+          })
           setSelectedReceivedItem(null)
 
           // Force refetch to ensure fresh data

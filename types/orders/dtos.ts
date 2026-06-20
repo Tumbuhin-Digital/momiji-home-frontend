@@ -82,6 +82,7 @@ export interface CreateOrderInput {
 }
 
 export interface UpdateReceivedDto {
+  item_ids: string[]
   items_received: number
 }
 
@@ -90,6 +91,7 @@ export interface UpdateStepDto {
 }
 
 export interface UpdateTrackingDto {
+  item_ids: string[]
   tracking_number: string
   tracking_url: string
 }

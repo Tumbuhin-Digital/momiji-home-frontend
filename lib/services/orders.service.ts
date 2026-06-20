@@ -94,11 +94,10 @@ async function createOrder(input: CreateOrderInput): Promise<Order> {
 
 async function updateItemReceived(
   orderId: string,
-  itemId: string,
   body: UpdateReceivedDto
 ): Promise<Order | null> {
   const response = await apiClient.patch<BaseResponse<OrderResponseDto>>(
-    `/orders/${orderId}/items/${itemId}/received`,
+    `/orders/${orderId}/received`,
     body
   )
   return response.data ? mapOrderResponseToOrder(response.data) : null
@@ -118,11 +117,10 @@ async function updateItemStep(
 
 async function updateItemTracking(
   orderId: string,
-  itemId: string,
   body: UpdateTrackingDto
 ): Promise<Order | null> {
   const response = await apiClient.patch<BaseResponse<OrderResponseDto>>(
-    `/orders/${orderId}/items/${itemId}/tracking`,
+    `/orders/${orderId}/tracking`,
     body
   )
   return response.data ? mapOrderResponseToOrder(response.data) : null

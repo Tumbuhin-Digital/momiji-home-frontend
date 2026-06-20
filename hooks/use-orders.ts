@@ -147,13 +147,11 @@ export function useUpdateItemReceived() {
   return useMutation({
     mutationFn: ({
       orderId,
-      itemId,
       body,
     }: {
       orderId: string
-      itemId: string
       body: UpdateReceivedDto
-    }) => ordersService.updateItemReceived(orderId, itemId, body),
+    }) => ordersService.updateItemReceived(orderId, body),
     onSuccess: (order, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.orders.detail(variables.orderId),
@@ -196,13 +194,11 @@ export function useUpdateItemTracking() {
   return useMutation({
     mutationFn: ({
       orderId,
-      itemId,
       body,
     }: {
       orderId: string
-      itemId: string
       body: UpdateTrackingDto
-    }) => ordersService.updateItemTracking(orderId, itemId, body),
+    }) => ordersService.updateItemTracking(orderId, body),
     onSuccess: (order, variables) => {
       if (order) {
         queryClient.invalidateQueries({
