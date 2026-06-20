@@ -94,7 +94,7 @@ export function ManageOrderModal({
             onClick={onClose}
             size="icon"
             variant="ghost"
-            className="shrink-0 rounded-lg bg-[#F1F2F6] hover:bg-[#E1E2E6]"
+            className="shrink-0 rounded bg-[#F1F2F6] hover:bg-[#E1E2E6]"
           >
             <XIcon className="size-5 text-[#7F8C8D]" />
             <span className="sr-only">Close</span>

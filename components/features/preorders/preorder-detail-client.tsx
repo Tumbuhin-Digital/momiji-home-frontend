@@ -162,7 +162,7 @@ export function PreorderDetailClient({
             </div>
 
             <div className="sm:col-span-2">
-              <div className="grid grid-cols-2 gap-4 rounded-lg border bg-neutral-50 p-4 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 rounded border bg-neutral-50 p-4 md:grid-cols-4">
                 <div>
                   <p className="mb-1 flex items-center gap-1 text-xs text-neutral-500">
                     <Clock className="h-3 w-3" /> Created At

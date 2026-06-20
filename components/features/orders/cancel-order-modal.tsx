@@ -89,7 +89,7 @@ export function CancelOrderModal({
             )}
           </div>
 
-          <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+          <div className="flex items-start gap-3 rounded border border-destructive/20 bg-destructive/5 p-3">
             <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
             <p className="text-xs leading-relaxed text-destructive/80">
               Cancelling this order will notify the customer and cannot be

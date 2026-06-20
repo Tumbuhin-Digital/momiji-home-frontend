@@ -6,7 +6,7 @@ export function PreorderListSkeleton() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="overflow-hidden rounded-[12px] border border-[#E5E5E5] bg-[#F7F7F7]"
+          className="overflow-hidden rounded-xl border border-[#E5E5E5] bg-[#F7F7F7]"
         >
           {/* Group header skeleton */}
           <div className="flex items-start justify-between px-6 py-5">
@@ -21,7 +21,7 @@ export function PreorderListSkeleton() {
           </div>
 
           {/* Inner table skeleton */}
-          <div className="mx-4 mb-4 overflow-hidden rounded-[8px] border border-[#E5E5E5] bg-white">
+          <div className="mx-4 mb-4 overflow-hidden rounded-md border border-[#E5E5E5] bg-white">
             {/* Header row */}
             <div className="grid grid-cols-3 gap-4 border-b border-[#F0F0F0] px-5 py-2.5">
               <Skeleton className="h-3 w-16 rounded" />

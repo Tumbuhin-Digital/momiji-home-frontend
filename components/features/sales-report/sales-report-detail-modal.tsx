@@ -153,7 +153,7 @@ export function SalesReportDetailModal({
               onClick={onClose}
               size="icon"
               variant="ghost"
-              className="shrink-0 rounded-lg bg-neutral-100 hover:bg-neutral-200"
+              className="shrink-0 rounded bg-neutral-100 hover:bg-neutral-200"
             >
               <XIcon className="size-5 text-neutral-500" />
               <span className="sr-only">Close</span>
@@ -375,9 +375,9 @@ function LineItemCard({ item }: { item: OrderLineItem }) {
   const finalAmount = item.finalAmount ?? item.unitPrice * item.quantity
 
   return (
-    <div className="flex gap-3 rounded-lg border border-neutral-200 p-3">
+    <div className="flex gap-3 rounded border border-neutral-200 p-3">
       {/* Thumbnail */}
-      <div className="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-linear-to-b from-white via-white to-black/5 ring-1 ring-neutral-200">
+      <div className="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5 ring-1 ring-neutral-200">
         {item.imageSrc ? (
           <Image
             src={item.imageSrc}

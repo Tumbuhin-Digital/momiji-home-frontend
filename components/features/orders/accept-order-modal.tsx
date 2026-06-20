@@ -60,7 +60,7 @@ export function AcceptOrderModal({
               <Package className="size-3" />
               Items
             </p>
-            <div className="divide-y divide-neutral-100 rounded-lg border border-neutral-200 bg-neutral-50">
+            <div className="divide-y divide-neutral-100 rounded border border-neutral-200 bg-neutral-50">
               {order.lineItems.slice(0, 4).map((item, idx) => (
                 <div
                   key={idx}
@@ -82,7 +82,7 @@ export function AcceptOrderModal({
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+          <div className="flex items-center justify-between rounded border border-primary/20 bg-primary/5 px-4 py-3">
             <span className="text-sm font-medium text-neutral-600">
               Order Total
             </span>

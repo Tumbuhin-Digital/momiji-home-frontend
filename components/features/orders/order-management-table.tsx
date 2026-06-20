@@ -82,7 +82,7 @@ export function OrderManagementTable({
 
   return (
     <>
-      <div className="overflow-hidden rounded-t-[8px] bg-[#F9F9F9]">
+      <div className="overflow-hidden rounded-t-md bg-[#F9F9F9]">
         {/* Refetch loading bar */}
         {isRefetching && (
           <div className="h-0.5 w-full overflow-hidden bg-primary/10">

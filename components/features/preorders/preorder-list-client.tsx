@@ -174,7 +174,7 @@ export function PreorderListClient() {
 
       {/* Search + Filter */}
       <div className="flex items-center gap-2">
-        <InputGroup className="h-11 flex-1 rounded-[8px] border-primary shadow-sm has-[input:focus-visible]:border-primary/20 has-[input:focus-visible]:ring-primary/20">
+        <InputGroup className="h-11 flex-1 rounded-md border-primary shadow-sm has-[input:focus-visible]:border-primary/20 has-[input:focus-visible]:ring-primary/20">
           <InputGroupAddon>
             <div className="flex size-6 items-center justify-center gap-2 rounded-full bg-primary/20">
               <Search
@@ -197,7 +197,7 @@ export function PreorderListClient() {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className={`h-11! gap-2 rounded-[6px] border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600 ${isFilterActive ? "border-primary text-primary" : ""}`}
+                className={`h-11! gap-2 rounded-sm border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600 ${isFilterActive ? "border-primary text-primary" : ""}`}
               >
                 <ListFilter className="size-5" strokeWidth={1.5} />
                 Filter
@@ -270,7 +270,7 @@ export function PreorderListClient() {
                 setStatusFilter("all")
                 setPage(1)
               }}
-              className="size-11! rounded-[6px] border-neutral-300 bg-white text-neutral-600"
+              className="size-11! rounded-sm border-neutral-300 bg-white text-neutral-600"
             >
               <RotateCcw className="size-4" strokeWidth={1.5} />
             </Button>
@@ -300,7 +300,7 @@ export function PreorderListClient() {
           filteredGroups.map((group) => (
             <div
               key={group.productName}
-              className="overflow-hidden rounded-[12px] border border-[#E5E5E5] bg-[#F7F7F7] shadow-none"
+              className="overflow-hidden rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] shadow-none"
             >
               {/* Group header */}
               <div className="flex items-start justify-between px-4 py-4 sm:px-6 sm:py-5">
@@ -323,7 +323,7 @@ export function PreorderListClient() {
               </div>
 
               {/* Settlement table */}
-              <div className="mx-4 mb-4 overflow-hidden rounded-[8px] border border-[#E5E5E5] bg-white">
+              <div className="mx-4 mb-4 overflow-hidden rounded-md border border-[#E5E5E5] bg-white">
                 {/* Column labels */}
                 <div className="grid grid-cols-[2fr_2fr_1fr_1.5fr] gap-2 border-b border-[#F0F0F0] px-3 py-2.5 sm:grid-cols-4 sm:gap-4 sm:px-5">
                   <span className="text-[10px] font-semibold tracking-wide text-[#888888] uppercase sm:text-[11px]">

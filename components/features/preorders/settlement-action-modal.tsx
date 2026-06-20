@@ -97,7 +97,7 @@ export function SettlementActionModal({
         {/* Body */}
         <div className="space-y-4 px-6">
           {isLoading ? (
-            <div className="divide-y divide-neutral-100 rounded-lg border border-neutral-200 bg-neutral-50">
+            <div className="divide-y divide-neutral-100 rounded border border-neutral-200 bg-neutral-50">
               <div className="flex items-center justify-between px-4 py-2.5 text-sm">
                 <span className="text-neutral-500">Status</span>
                 <Skeleton className="h-6 w-20 animate-pulse rounded-full" />
@@ -112,7 +112,7 @@ export function SettlementActionModal({
               </div>
             </div>
           ) : isError || !settlement ? (
-            <div className="flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+            <div className="flex items-center gap-3 rounded border border-destructive/20 bg-destructive/5 p-4">
               <AlertCircle className="size-5 shrink-0 text-destructive" />
               <p className="text-sm text-destructive">
                 Failed to load settlement details. Please try again.
@@ -121,7 +121,7 @@ export function SettlementActionModal({
           ) : (
             <>
               {/* Info rows */}
-              <div className="divide-y divide-neutral-100 rounded-lg border border-neutral-200 bg-neutral-50">
+              <div className="divide-y divide-neutral-100 rounded border border-neutral-200 bg-neutral-50">
                 <div className="flex items-center justify-between px-4 py-2.5 text-sm">
                   <span className="text-neutral-500">Status</span>
                   <StatusBadge
@@ -155,7 +155,7 @@ export function SettlementActionModal({
 
               {/* Mutation error */}
               {mutationError && (
-                <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+                <div className="flex items-start gap-3 rounded border border-destructive/20 bg-destructive/5 p-3">
                   <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
                   <p className="text-xs text-destructive">
                     {(mutationError as any)?.response?.status === 409
@@ -189,7 +189,7 @@ export function SettlementActionModal({
           </DialogClose>
 
           {isLoading && (
-            <Skeleton className="h-10 w-full animate-pulse rounded-[6px] sm:h-9" />
+            <Skeleton className="h-10 w-full animate-pulse rounded-sm sm:h-9" />
           )}
 
           {!isLoading && !isError && settlement?.status === "pending" && (
@@ -237,7 +237,7 @@ export function SettlementActionModal({
           )}
 
           {!isLoading && !isError && settlement?.status === "paid" && (
-            <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-green-200 bg-green-50 py-3 text-sm font-medium text-green-700">
+            <div className="flex w-full items-center justify-center gap-2 rounded border border-green-200 bg-green-50 py-3 text-sm font-medium text-green-700">
               <CheckCircle className="size-4" />
               Completed
             </div>

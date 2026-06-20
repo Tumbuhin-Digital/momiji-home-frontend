@@ -52,7 +52,6 @@ export function UpdateReceivedModal({
       onOpenChange={(open) => !open && !isConfirming && onClose()}
     >
       <DialogContent className="sm:max-w-md" showCloseButton={false}>
-        {/* Icon + Header */}
         <DialogPanel className="flex flex-col items-center gap-6 p-4!">
           <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
             <PackageCheck className="size-8 text-primary" />
@@ -71,7 +70,6 @@ export function UpdateReceivedModal({
           </div>
         </DialogPanel>
 
-        {/* Input */}
         <div className="px-6">
           <Input
             type="number"

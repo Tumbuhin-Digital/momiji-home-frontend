@@ -122,7 +122,7 @@ export default function CustomerTrackingClient({
 
                   {/* TRACKING NUMBER */}
                   {order.fulfillment?.trackingNumber && (
-                    <div className="mt-3 rounded-lg border bg-muted/30 p-3">
+                    <div className="mt-3 rounded border bg-muted/30 p-3">
                       <p className="mb-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase">
                         Tracking Number
                       </p>

@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-img-element */
 import dynamic from "next/dynamic"
 import { useState } from "react"
+
+import { useQueryClient } from "@tanstack/react-query"
 
 import Autoplay from "embla-carousel-autoplay"
 import { AnimatePresence, motion } from "motion/react"
@@ -32,8 +35,8 @@ import {
   useUpdateItemReceived,
   useUpdateItemStep,
   useUpdateItemTracking,
-  // useItemTracking,
 } from "@/hooks/use-orders"
+import { queryKeys } from "@/lib/query/query-keys"
 import { formatCurrency } from "@/lib/utils"
 
 import type { Order } from "@/types/orders"
@@ -89,8 +92,13 @@ export function OrderFulfillmentPanel({
 
   const [acceptSuccess, setAcceptSuccess] = useState(false)
   const [cancelSuccess, setCancelSuccess] = useState(false)
+  const [stockReadySuccess, setStockReadySuccess] = useState(false)
+  const [trackingSuccess, setTrackingSuccess] = useState(false)
+  const [receivedSuccess, setReceivedSuccess] = useState(false)
   const [showAcceptModal, setShowAcceptModal] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
+
+  const queryClient = useQueryClient()
 
   const acceptOrder = useAcceptOrder()
   const cancelOrder = useCancelOrder()
@@ -104,6 +112,11 @@ export function OrderFulfillmentPanel({
 
   const isPreOrder = type === "pre-order"
 
+  const currentStep = items.reduce(
+    (max, item) => Math.max(max, item.fulfillmentStep || 1),
+    1
+  )
+
   if (isLoading) {
     const steps = isPreOrder ? preOrderSteps : shipReadySteps
     return (
@@ -113,7 +126,7 @@ export function OrderFulfillmentPanel({
             {type === "ship-ready" ? "Ship Ready" : "Pre-Order"}
           </h3>
           <div className="flex flex-wrap gap-2">
-            <Skeleton className="h-7 w-24 rounded-[6px]" />
+            <Skeleton className="h-7 w-24 rounded-sm" />
           </div>
         </div>
 
@@ -134,9 +147,8 @@ export function OrderFulfillmentPanel({
             </div>
           </div>
 
-          {/* Stepper Skeleton */}
-          <Stepper value={1} className="mb-6">
-            {steps.map(({ step, title }) => (
+          <Stepper value={currentStep} className="mb-6">
+            {steps.map(({ step, title }, idx, arr) => (
               <StepperItem
                 key={step}
                 step={step}
@@ -150,9 +162,23 @@ export function OrderFulfillmentPanel({
                     <StepperTitle>{title}</StepperTitle>
                   </div>
                 </StepperTrigger>
+                {idx < arr.length - 1 && (
+                  <StepperSeparator className="absolute inset-x-0 top-3 left-[calc(50%+0.75rem+0.125rem)] -order-1 m-0 -translate-y-1/2 border-dashed group-data-[orientation=horizontal]/stepper:w-[calc(100%-1.5rem-0.25rem)] group-data-[orientation=horizontal]/stepper:flex-none" />
+                )}
               </StepperItem>
             ))}
           </Stepper>
+
+          {currentStep >= 3 && (
+            <div className="mt-3 flex flex-col gap-2 rounded-xl border border-[#D9E2E8] bg-white p-4">
+              <h4 className="text-sm font-bold text-slate-700">Airway Bill</h4>
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-1/4" />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -168,17 +194,8 @@ export function OrderFulfillmentPanel({
       item.trackingLastEvent
   )
 
-  // const trackedItem = items.find((item) => item.trackingNumber)
-  // const { data: liveTracking } = useItemTracking(
-  //   order.id,
-  //   trackedItem?.productId || "",
-  //   {
-  //     enabled: !!trackedItem?.productId && !!trackedItem?.trackingNumber,
-  //   }
-  // )
   const apiFulfillmentType = type.replace("-", "_")
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleAccept = async (_orderId: string) => {
     await acceptOrder.mutateAsync({
       orderId: order.id,
@@ -206,11 +223,6 @@ export function OrderFulfillmentPanel({
     }, 2000)
   }
 
-  const currentStep = items.reduce(
-    (max, item) => Math.max(max, item.fulfillmentStep || 1),
-    1
-  )
-
   const visualStep = currentStep
 
   const isCancelled = order.fulfillmentStatus === "cancelled"
@@ -220,7 +232,6 @@ export function OrderFulfillmentPanel({
     trackingNumber: string,
     trackingUrl: string
   ) => {
-    // Apply tracking to all items in the panel that need it
     const isGlobal = !selectedTrackingItem?.productId
     const itemsToUpdate = isGlobal ? items : [selectedTrackingItem]
 
@@ -236,6 +247,19 @@ export function OrderFulfillmentPanel({
     }
 
     setSelectedTrackingItem(null)
+
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.orders.detail(order.id),
+    })
+    await queryClient.refetchQueries({
+      queryKey: queryKeys.orders.detail(order.id),
+    })
+
+    setTrackingSuccess(true)
+    setTimeout(() => {
+      setTrackingSuccess(false)
+      onOrderActioned?.()
+    }, 2000)
   }
 
   const handleUpdateStepAll = async (targetStep: number) => {
@@ -248,16 +272,26 @@ export function OrderFulfillmentPanel({
         })
       }
     }
+
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.orders.detail(order.id),
+    })
+    await queryClient.refetchQueries({
+      queryKey: queryKeys.orders.detail(order.id),
+    })
+
+    setStockReadySuccess(true)
+    setTimeout(() => {
+      setStockReadySuccess(false)
+      onOrderActioned?.()
+    }, 2000)
   }
 
   const renderItemContent = (item: OrderLineItem) => {
-    const step = item.fulfillmentStep || 1
-
     return (
       <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-none sm:flex-row">
         <div className="flex min-w-0 flex-1 gap-4">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-linear-to-b from-white via-white to-black/5">
-            {/* Product Image placeholder */}
             {item.imageSrc ? (
               <img
                 src={item.imageSrc}
@@ -281,42 +315,22 @@ export function OrderFulfillmentPanel({
               >
                 {item.title}
               </p>
+              {order.fulfillmentStatus === "delivered" && (
+                <span className="rounded-full bg-[#49944B1A] px-1.5 py-0.5 text-[10px] font-bold text-[#49944B] hover:bg-[#49944B1A]">
+                  Delivered
+                </span>
+              )}
               {order.fulfillmentStatus === "cancelled" && (
-                <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">
-                  CANCELLED
+                <span className="rounded-full bg-[#DC26261A] px-1.5 py-0.5 text-[10px] font-bold text-[#DC2626] hover:bg-[#DC26261A]">
+                  Cancelled
                 </span>
               )}
             </div>
             <p className="mt-1 text-sm text-slate-500">
               {item.quantity} pcs - {formatCurrency(item.unitPrice)} USD
             </p>
-            {item.trackingNumber && (
-              <p className="mt-1 text-xs font-semibold text-slate-600">
-                Tracking: {item.trackingNumber}
-              </p>
-            )}
-            {item.itemsReceived !== undefined && step === 5 && isPreOrder && (
-              <p className="mt-0.5 text-xs text-slate-500">
-                Received: {item.itemsReceived}
-              </p>
-            )}
           </div>
         </div>
-
-        {step === 4 &&
-          isPreOrder &&
-          order.fulfillmentStatus !== "cancelled" && (
-            <div className="flex items-center gap-2 sm:flex-col sm:justify-center sm:border-l sm:border-slate-100 sm:pl-4">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs whitespace-nowrap"
-                onClick={() => setSelectedReceivedItem(item)}
-              >
-                Update Received
-              </Button>
-            </div>
-          )}
       </div>
     )
   }
@@ -358,9 +372,12 @@ export function OrderFulfillmentPanel({
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-[#D9E2E8] bg-[#F4F7F9]/30">
-      {/* Success overlay animation */}
       <AnimatePresence>
-        {(acceptSuccess || cancelSuccess) && (
+        {(acceptSuccess ||
+          cancelSuccess ||
+          stockReadySuccess ||
+          trackingSuccess ||
+          receivedSuccess) && (
           <motion.div
             key="success-overlay"
             initial={{ opacity: 0 }}
@@ -369,7 +386,10 @@ export function OrderFulfillmentPanel({
             transition={{ duration: 0.3 }}
             className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-xl bg-white/95 backdrop-blur-sm"
           >
-            {acceptSuccess ? (
+            {acceptSuccess ||
+            stockReadySuccess ||
+            trackingSuccess ||
+            receivedSuccess ? (
               <>
                 <motion.div
                   initial={{ scale: 0 }}
@@ -389,7 +409,10 @@ export function OrderFulfillmentPanel({
                   transition={{ delay: 0.2 }}
                   className="text-base font-bold text-emerald-700"
                 >
-                  Order Accepted!
+                  {acceptSuccess && "Order Accepted!"}
+                  {stockReadySuccess && "Stock Marked as Ready!"}
+                  {trackingSuccess && "Tracking Added Successfully!"}
+                  {receivedSuccess && "Received Count Updated!"}
                 </motion.p>
               </>
             ) : (
@@ -471,6 +494,36 @@ export function OrderFulfillmentPanel({
                   Add Tracking
                 </Button>
               )}
+              {currentStep === 3 && hasTrackingInfo && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                  onClick={() => {
+                    if (items.length === 1) {
+                      setSelectedReceivedItem(items[0])
+                    } else {
+                      const totalQuantity = items.reduce(
+                        (sum, item) => sum + item.quantity,
+                        0
+                      )
+                      const totalItemsReceived = items.reduce(
+                        (sum, item) => sum + (item.itemsReceived || 0),
+                        0
+                      )
+                      setSelectedReceivedItem({
+                        productId: "",
+                        title: "All Items",
+                        quantity: totalQuantity,
+                        itemsReceived: totalItemsReceived,
+                      } as any)
+                    }
+                  }}
+                  disabled={updateReceived.isPending}
+                >
+                  Update Received
+                </Button>
+              )}
             </>
           ) : null}
         </div>
@@ -502,7 +555,6 @@ export function OrderFulfillmentPanel({
           <div className="mb-8 w-full">{renderItemContent(items[0])}</div>
         )}
 
-        {/* Stepper */}
         <Stepper value={visualStep} className="mb-6">
           {(isPreOrder ? preOrderSteps : shipReadySteps).map(
             ({ step, title }, idx, arr) => (
@@ -525,11 +577,9 @@ export function OrderFulfillmentPanel({
           )}
         </Stepper>
 
-        {/* Airway Bill Section */}
         {items.map((item) => renderAirwayBill(item))}
       </div>
 
-      {/* Update Step Modal */}
       <UpdateStepModal
         item={selectedStepItem}
         isOpen={!!selectedStepItem}
@@ -546,24 +596,52 @@ export function OrderFulfillmentPanel({
         isConfirming={updateStep.isPending}
       />
 
-      {/* Update Received Modal */}
       <UpdateReceivedModal
         item={selectedReceivedItem}
         isOpen={!!selectedReceivedItem}
         onClose={() => setSelectedReceivedItem(null)}
         onConfirm={async (received: number) => {
           if (!selectedReceivedItem) return
-          await updateReceived.mutateAsync({
-            orderId: order.id,
-            itemId: selectedReceivedItem.productId,
-            body: { items_received: received },
-          })
+          const isGlobal = !selectedReceivedItem.productId
+          if (isGlobal) {
+            let remaining = received
+            for (const item of items) {
+              const itemQty = item.quantity
+              const itemReceived = Math.min(remaining, itemQty)
+              await updateReceived.mutateAsync({
+                orderId: order.id,
+                itemId: item.productId,
+                body: { items_received: itemReceived },
+              })
+              remaining = Math.max(0, remaining - itemQty)
+            }
+          } else {
+            await updateReceived.mutateAsync({
+              orderId: order.id,
+              itemId: selectedReceivedItem.productId,
+              body: { items_received: received },
+            })
+          }
           setSelectedReceivedItem(null)
+
+          // Force refetch to ensure fresh data
+          await queryClient.invalidateQueries({
+            queryKey: queryKeys.orders.detail(order.id),
+          })
+          await queryClient.refetchQueries({
+            queryKey: queryKeys.orders.detail(order.id),
+          })
+
+          // Show animation overlay
+          setReceivedSuccess(true)
+          setTimeout(() => {
+            setReceivedSuccess(false)
+            onOrderActioned?.()
+          }, 2000)
         }}
         isConfirming={updateReceived.isPending}
       />
 
-      {/* Update Tracking Modal */}
       <UpdateTrackingModal
         item={selectedTrackingItem}
         isOpen={!!selectedTrackingItem}
@@ -572,7 +650,6 @@ export function OrderFulfillmentPanel({
         isConfirming={updateTracking.isPending || updateStep.isPending}
       />
 
-      {/* Accept confirmation modal */}
       <AcceptOrderModal
         order={order}
         isOpen={showAcceptModal}
@@ -581,7 +658,6 @@ export function OrderFulfillmentPanel({
         isConfirming={acceptOrder.isPending}
       />
 
-      {/* Cancel confirmation modal */}
       <CancelOrderModal
         order={order}
         isOpen={showCancelModal}
