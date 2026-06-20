@@ -80,12 +80,12 @@ export function ManageOrderModal({
         className="flex max-h-[90vh] w-[95vw] max-w-6xl flex-col gap-6 overflow-y-auto rounded-2xl border-none p-8 shadow-xl"
         showCloseButton={false}
       >
-        <DialogHeader className="flex shrink-0 flex-col items-center justify-between sm:flex-row">
-          <div>
-            <DialogTitle className="text-[32px] text-[#2C3E50]">
+        <DialogHeader className="flex shrink-0 flex-row items-start justify-between gap-4 p-0">
+          <div className="text-left">
+            <DialogTitle className="text-[28px] font-bold tracking-tight text-[#2C3E50] sm:text-[32px]">
               #{currentOrder.orderNumber}
             </DialogTitle>
-            <span className="text-lg text-[#7F8C8D]">
+            <span className="text-sm text-[#7F8C8D] sm:text-lg">
               {totalItems} items - {formatCurrency(currentOrder.totalPrice)} USD
             </span>
           </div>
@@ -93,18 +93,19 @@ export function ManageOrderModal({
             type="button"
             onClick={onClose}
             size="icon"
-            className="rounded-[8px] bg-[#F1F2F6] hover:bg-[#E1E2E6]"
+            variant="ghost"
+            className="shrink-0 rounded-lg bg-[#F1F2F6] hover:bg-[#E1E2E6]"
           >
-            <XIcon className="h-5 w-5 text-[#7F8C8D]" />
+            <XIcon className="size-5 text-[#7F8C8D]" />
             <span className="sr-only">Close</span>
           </Button>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 rounded-[12px] border border-[#EBEBEB] bg-[#F4F1ED] p-6">
-          <p className="text-sm font-medium text-[#4A4A4A]">
+        <div className="flex flex-col gap-4 rounded-xl border border-[#EBEBEB] bg-[#F4F1ED] p-6">
+          <p className="text-sm font-semibold text-[#4A4A4A]">
             Customer Information
           </p>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
                 <p className="text-xs text-[#959595]">Name</p>

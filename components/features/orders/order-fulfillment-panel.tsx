@@ -108,11 +108,11 @@ export function OrderFulfillmentPanel({
     const steps = isPreOrder ? preOrderSteps : shipReadySteps
     return (
       <div className="relative overflow-hidden rounded-xl border border-[#D9E2E8] bg-[#F4F7F9]/30">
-        <div className="flex items-center justify-between border-b border-[#D9E2E8] bg-[#EBF0F3] px-6 py-3">
+        <div className="flex flex-col gap-3 border-b border-[#D9E2E8] bg-[#EBF0F3] px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg font-bold text-slate-700">
             {type === "ship-ready" ? "Ship Ready" : "Pre-Order"}
           </h3>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Skeleton className="h-7 w-24 rounded-[6px]" />
           </div>
         </div>
@@ -420,11 +420,11 @@ export function OrderFulfillmentPanel({
         )}
       </AnimatePresence>
 
-      <div className="flex items-center justify-between border-b border-[#D9E2E8] bg-[#EBF0F3] px-6 py-3">
+      <div className="flex flex-col gap-3 border-b border-[#D9E2E8] bg-[#EBF0F3] px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-bold text-slate-700">
           {type === "ship-ready" ? "Ship Ready" : "Pre-Order"}
         </h3>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {isNewOrder ? (
             <>
               <Button
