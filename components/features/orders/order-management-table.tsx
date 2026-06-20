@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import { useEffect, useRef, useState } from "react"
@@ -131,12 +130,12 @@ export function OrderManagementTable({
                     on_progress: "In Progress",
                     paid: "Paid",
                     cancelled: "Cancelled",
+                    completed: "Completed",
                   }
 
                   const displayStatus =
                     statusMap[order.aggregateStatus] || "Pending"
 
-                  const isCompleted = displayStatus === "Completed"
                   const isPending = displayStatus === "Pending"
 
                   const progressBgClass = isPending
