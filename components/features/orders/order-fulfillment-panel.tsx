@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-img-element */
@@ -115,6 +116,7 @@ export function OrderFulfillmentPanel({
 
   useEffect(() => {
     setSelectedItemIds(items.map((item) => item.productId))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order.id, type, order.lineItems])
 
   const isPreOrder = type === "pre-order"
@@ -240,9 +242,7 @@ export function OrderFulfillmentPanel({
     trackingUrl: string
   ) => {
     const isGlobal = !selectedTrackingItem?.productId
-    const ids = isGlobal
-      ? selectedItemIds
-      : [selectedTrackingItem.productId]
+    const ids = isGlobal ? selectedItemIds : [selectedTrackingItem.productId]
 
     await updateTracking.mutateAsync({
       orderId: order.id,
