@@ -127,7 +127,7 @@ export function SalesReportClient() {
       {/* Table */}
       <div className="overflow-hidden rounded-t-[8px] bg-[#F9F9F9]">
         <div className="h-[calc(100vh-150px)] overflow-x-auto overflow-y-auto">
-          <table className="w-full text-left text-sm text-slate-600">
+          <table className="w-full min-w-225 text-left text-sm text-slate-600">
             <thead className="sticky top-0 z-10 bg-[#F2EDE4] text-black">
               <tr>
                 <th className="px-6 py-4 font-medium text-black">ORDER ID</th>
@@ -183,7 +183,7 @@ export function SalesReportClient() {
                       key={order.id}
                       className="border-b border-black/10 last:border-0 hover:bg-slate-50/50"
                     >
-                      <td className="gap-1 px-6 py-4 align-middle">
+                      <td className="gap-1 px-6 py-4 align-middle whitespace-nowrap">
                         <div
                           className="cursor-pointer text-base font-medium text-primary hover:underline"
                           onClick={() => setSelectedOrderId(order.id)}

@@ -297,7 +297,7 @@ export default function ProductsPageClient() {
 
           <div className="overflow-hidden rounded-t-[8px] border border-primary/50 bg-white">
             <div className="h-[calc(100vh-280px)] overflow-x-auto overflow-y-auto">
-              <table className="w-full text-left text-sm text-slate-600">
+              <table className="w-full min-w-250 text-left text-sm text-slate-600">
                 <thead className="sticky top-0 z-10 bg-primary text-white">
                   <tr>
                     <th className="px-6 py-4 font-medium">Product</th>
@@ -386,7 +386,7 @@ export default function ProductsPageClient() {
                                     </div>
                                   )}
                                 </div>
-                                <div className="flex flex-col">
+                                <div className="flex min-w-0 flex-1 flex-col">
                                   <span className="font-medium text-slate-800">
                                     {group.title}
                                   </span>

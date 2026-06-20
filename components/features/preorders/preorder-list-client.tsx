@@ -303,16 +303,16 @@ export function PreorderListClient() {
               className="overflow-hidden rounded-[12px] border border-[#E5E5E5] bg-[#F7F7F7] shadow-none"
             >
               {/* Group header */}
-              <div className="flex items-start justify-between px-6 py-5">
-                <div>
-                  <h3 className="text-lg font-bold text-[#1A1A1A]">
+              <div className="flex items-start justify-between px-4 py-4 sm:px-6 sm:py-5">
+                <div className="min-w-0 flex-1 pr-4">
+                  <h3 className="text-base font-bold text-[#1A1A1A] sm:text-lg">
                     {group.productName}
                   </h3>
                   <p className="mt-0.5 text-sm text-[#888888]">
                     {group.settlements.length} Order
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="shrink-0 text-right">
                   <p className="text-xs font-medium text-[#888888]">
                     Total Quantity
                   </p>
@@ -325,17 +325,17 @@ export function PreorderListClient() {
               {/* Settlement table */}
               <div className="mx-4 mb-4 overflow-hidden rounded-[8px] border border-[#E5E5E5] bg-white">
                 {/* Column labels */}
-                <div className="grid grid-cols-4 gap-4 border-b border-[#F0F0F0] px-5 py-2.5">
-                  <span className="text-[11px] font-semibold tracking-wide text-[#888888] uppercase">
+                <div className="grid grid-cols-[2fr_2fr_1fr_1.5fr] gap-2 border-b border-[#F0F0F0] px-3 py-2.5 sm:grid-cols-4 sm:gap-4 sm:px-5">
+                  <span className="text-[10px] font-semibold tracking-wide text-[#888888] uppercase sm:text-[11px]">
                     Order ID
                   </span>
-                  <span className="text-[11px] font-semibold tracking-wide text-[#888888] uppercase">
+                  <span className="text-[10px] font-semibold tracking-wide text-[#888888] uppercase sm:text-[11px]">
                     Pre-order Date
                   </span>
-                  <span className="text-[11px] font-semibold tracking-wide text-[#888888] uppercase">
+                  <span className="text-[10px] font-semibold tracking-wide text-[#888888] uppercase sm:text-[11px]">
                     Quantity
                   </span>
-                  <span className="text-[11px] font-semibold tracking-wide text-[#888888] uppercase">
+                  <span className="text-[10px] font-semibold tracking-wide text-[#888888] uppercase sm:text-[11px]">
                     Status
                   </span>
                 </div>
@@ -344,7 +344,7 @@ export function PreorderListClient() {
                 {group.settlements.map((s, idx) => (
                   <div
                     key={s.settlementId}
-                    className={`grid cursor-pointer grid-cols-4 items-center gap-4 px-5 py-3 transition-colors hover:bg-[#FAFAFA] ${
+                    className={`grid cursor-pointer grid-cols-[2fr_2fr_1fr_1.5fr] items-center gap-2 px-3 py-3 transition-colors hover:bg-[#FAFAFA] sm:grid-cols-4 sm:gap-4 sm:px-5 ${
                       idx !== group.settlements.length - 1
                         ? "border-b border-[#F0F0F0]"
                         : ""
@@ -353,20 +353,22 @@ export function PreorderListClient() {
                       handleRowClick(s.settlementId, `#${s.orderNumber}`)
                     }
                   >
-                    <span className="text-sm font-medium text-primary hover:underline">
+                    <span className="text-xs font-medium text-primary hover:underline sm:text-sm">
                       #{s.orderNumber}
                     </span>
-                    <span className="text-sm text-[#555555]">
+                    <span className="text-xs text-[#555555] sm:text-sm">
                       {formatOrderDate(s.createdAt ? s.createdAt : s.dueDate)}
                     </span>
-                    <span className="text-sm text-[#555555]">{s.quantity}</span>
+                    <span className="text-xs text-[#555555] sm:text-sm">
+                      {s.quantity}
+                    </span>
                     <span>
                       <StatusBadge
                         status={
                           SETTLEMENT_STATUS_LABEL[s.settlementStatus] ||
                           s.settlementStatus
                         }
-                        className="h-7! w-fit rounded-full px-3 py-1.5 text-xs"
+                        className="h-6! w-fit rounded-full px-2 py-1 text-[10px] sm:h-7! sm:px-3 sm:py-1.5 sm:text-xs"
                       />
                     </span>
                   </div>

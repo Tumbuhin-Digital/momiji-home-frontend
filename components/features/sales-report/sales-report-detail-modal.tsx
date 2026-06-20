@@ -91,7 +91,7 @@ export function SalesReportDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="flex max-h-[90vh] w-[95vw] max-w-5xl flex-col gap-6 overflow-y-auto rounded-2xl border-none p-8 shadow-xl"
+        className="flex max-h-[90vh] w-[95vw] max-w-5xl flex-col gap-4 sm:gap-6 overflow-y-auto rounded-2xl border-none p-5 sm:p-8 shadow-xl"
         showCloseButton={false}
       >
         {/* Header */}
@@ -131,9 +131,9 @@ export function SalesReportDetailModal({
             )}
           </div>
 
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
             {order && (
-              <div className="flex flex-wrap items-center justify-end gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <StatusBadge
                   status={order.aggregateStatus}
                   className="h-6! rounded-full px-3 text-xs capitalize"
@@ -171,7 +171,7 @@ export function SalesReportDetailModal({
         ) : (
           <>
             {/* Customer Information */}
-            <div className="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-neutral-50 p-6">
+            <div className="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4 sm:p-6">
               <p className="text-sm font-semibold text-neutral-700">
                 Customer Information
               </p>
@@ -241,12 +241,14 @@ export function SalesReportDetailModal({
                 No items in this order.
               </div>
             ) : (
-              <div className="space-y-5">
+              <div className="space-y-4 sm:space-y-5">
                 {shipReadyItems.length > 0 && (
                   <div className="space-y-2">
                     <p className="flex items-center gap-2 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
                       <Truck className="size-3.5" />
                       Ship Ready Items
+                      {shipReadyItems.length > 1 &&
+                        ` (${shipReadyItems.length})`}
                     </p>
                     {shipReadyItems.length > 1 ? (
                       <Carousel
@@ -256,9 +258,9 @@ export function SalesReportDetailModal({
                         ]}
                         className="w-full"
                       >
-                        <CarouselContent>
+                        <CarouselContent className="-ml-2 sm:-ml-4">
                           {shipReadyItems.map((item) => (
-                            <CarouselItem key={item.productId}>
+                            <CarouselItem key={item.productId} className="pl-2 sm:pl-4 basis-full md:basis-1/2">
                               <LineItemCard item={item} />
                             </CarouselItem>
                           ))}
@@ -277,6 +279,7 @@ export function SalesReportDetailModal({
                     <p className="flex items-center gap-2 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
                       <Package className="size-3.5" />
                       Pre-Order Items
+                      {preOrderItems.length > 1 && ` (${preOrderItems.length})`}
                     </p>
                     {preOrderItems.length > 1 ? (
                       <Carousel
@@ -286,9 +289,9 @@ export function SalesReportDetailModal({
                         ]}
                         className="w-full"
                       >
-                        <CarouselContent>
+                        <CarouselContent className="-ml-2 sm:-ml-4">
                           {preOrderItems.map((item) => (
-                            <CarouselItem key={item.productId}>
+                            <CarouselItem key={item.productId} className="pl-2 sm:pl-4 basis-full md:basis-1/2">
                               <LineItemCard item={item} />
                             </CarouselItem>
                           ))}
@@ -383,11 +386,11 @@ function LineItemCard({ item }: { item: OrderLineItem }) {
 
       {/* Detail */}
       <div className="min-w-0 flex-1 space-y-1.5">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <p className="truncate text-sm font-semibold text-neutral-900">
+        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
+          <p className="text-sm font-semibold text-neutral-900 sm:truncate">
             {item.title}
           </p>
-          <span className="shrink-0 font-bold text-neutral-900">
+          <span className="shrink-0 text-sm font-bold text-neutral-900 sm:text-base">
             {formatCurrency(finalAmount)} USD
           </span>
         </div>

@@ -90,7 +90,7 @@ export function OrderManagementTable({
           </div>
         )}
         <div className="h-[calc(100vh-150px)] overflow-x-auto overflow-y-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-225 text-left text-sm">
             <thead className="sticky top-0 z-10 bg-[#F2EDE4]">
               <tr>
                 <th className="px-6 py-4 font-medium text-black">ORDER ID</th>
@@ -148,7 +148,7 @@ export function OrderManagementTable({
                       key={order.id}
                       className="border-b border-black/10 last:border-0 hover:bg-muted/50"
                     >
-                      <td className="gap-1 px-6 py-4 align-middle">
+                      <td className="gap-1 px-6 py-4 align-middle whitespace-nowrap">
                         <div className="text-base font-medium text-black">
                           #{order.orderNumber}
                         </div>

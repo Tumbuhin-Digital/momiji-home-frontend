@@ -478,7 +478,9 @@ export function OrderFulfillmentPanel({
 
       <div className="p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h4 className="text-sm font-bold">Total Item ({items.length})</h4>
+          <h4 className="text-sm font-semibold">
+            Total Item{items.length > 1 && ` (${items.length})`}
+          </h4>
         </div>
         {items.length > 1 ? (
           <Carousel
