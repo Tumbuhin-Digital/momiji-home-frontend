@@ -7,7 +7,10 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
-  const displayStatus = status.replace(/_/g, " ")
+  let displayStatus = status.replace(/_/g, " ")
+  if (displayStatus.toLowerCase() === "on progress") {
+    displayStatus = "In Progress"
+  }
   const s = displayStatus.toLowerCase()
 
   let variantClass = "bg-[#9090901A] text-[#5D6F76] hover:bg-[#9090901A]"
