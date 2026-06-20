@@ -153,6 +153,8 @@ export function useUpdateItemReceived() {
       body: UpdateReceivedDto
     }) => ordersService.updateItemReceived(orderId, body),
     onSuccess: (order, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
       queryClient.invalidateQueries({
         queryKey: queryKeys.orders.detail(variables.orderId),
       })
@@ -177,6 +179,8 @@ export function useUpdateItemStep() {
       body: UpdateStepDto
     }) => ordersService.updateItemStep(orderId, itemId, body),
     onSuccess: (order, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
       queryClient.invalidateQueries({
         queryKey: queryKeys.orders.detail(variables.orderId),
       })
@@ -200,6 +204,8 @@ export function useUpdateItemTracking() {
       body: UpdateTrackingDto
     }) => ordersService.updateItemTracking(orderId, body),
     onSuccess: (order, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
       if (order) {
         queryClient.invalidateQueries({
           queryKey: queryKeys.orders.detail(variables.orderId),
