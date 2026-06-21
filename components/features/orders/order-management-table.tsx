@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client"
 
 import { useEffect, useRef, useState } from "react"
@@ -5,14 +6,15 @@ import { useEffect, useRef, useState } from "react"
 import { format } from "date-fns"
 import { Loader2, Pencil } from "lucide-react"
 
-import { formatCurrency } from "@/lib/utils"
-
-import { StatusBadge } from "@/components/global/status-badge"
 import { Button } from "@/components/ui/button"
 
 import { ManageOrderModal } from "@/components/features/orders/manage-order-modal"
 import { OrderManagementTableEmpty } from "@/components/features/orders/order-management-table-empty"
 import { OrderManagementTableSkeleton } from "@/components/features/orders/order-management-table-skeleton"
+import { StatusBadge } from "@/components/global/status-badge"
+
+import { useOrderById } from "@/hooks/use-orders"
+import { formatCurrency } from "@/lib/utils"
 
 import type { Order } from "@/types/orders"
 
@@ -34,7 +36,22 @@ export function OrderManagementTable({
   orders,
 }: OrderManagementTableProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [queryOrderId, setQueryOrderId] = useState<string | null>(null)
   const observerRef = useRef<HTMLTableRowElement>(null)
+
+  const { data: queryOrder, isLoading: isQueryOrderLoading } = useOrderById(
+    queryOrderId || "",
+    {
+      enabled: !!queryOrderId,
+    }
+  )
+
+  useEffect(() => {
+    if (queryOrder) {
+      setSelectedOrder(queryOrder)
+      setQueryOrderId(null)
+    }
+  }, [queryOrder])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -65,8 +82,11 @@ export function OrderManagementTable({
     const orderId = params.get("orderId")
     if (orderId) {
       const found = orders.find((o) => o.id === orderId)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (found) setSelectedOrder(found)
+      if (found) {
+        setSelectedOrder(found)
+      } else {
+        setQueryOrderId(orderId)
+      }
     }
   }, [isLoading, orders])
 
@@ -83,7 +103,7 @@ export function OrderManagementTable({
     <>
       <div className="overflow-hidden rounded-t-md bg-[#F9F9F9]">
         {/* Refetch loading bar */}
-        {isRefetching && (
+        {(isRefetching || isQueryOrderLoading) && (
           <div className="h-0.5 w-full overflow-hidden bg-primary/10">
             <div className="h-full animate-progress-indeterminate bg-primary" />
           </div>
