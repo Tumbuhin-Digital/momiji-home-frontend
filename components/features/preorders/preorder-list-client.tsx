@@ -43,7 +43,7 @@ import {
 import { StatusBadge } from "@/components/global/status-badge"
 
 import { PreorderListSkeleton } from "@/components/features/preorders/preorder-list-skeleton"
-import { SettlementActionModal } from "@/components/features/preorders/settlement-action-modal"
+import { SettlementPreOrderModal } from "@/components/features/preorders/settlement-preorder-modal"
 
 import { useExportPreorders, usePreorders } from "@/hooks/use-preorders"
 import { formatLastSynced } from "@/lib/utils"
@@ -432,7 +432,7 @@ export function PreorderListClient() {
       )}
 
       {/* Unified Settlement Action Modal */}
-      <SettlementActionModal
+      <SettlementPreOrderModal
         isOpen={actionModal.isOpen}
         settlementId={actionModal.settlementId}
         orderNumber={actionModal.orderNumber}
