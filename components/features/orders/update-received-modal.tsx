@@ -22,18 +22,18 @@ import type { OrderLineItem } from "@/types/orders/entities"
 
 interface UpdateReceivedModalProps {
   item: OrderLineItem | null
+  isConfirming: boolean
   isOpen: boolean
   onClose: () => void
   onConfirm: (received: number) => void
-  isConfirming: boolean
 }
 
 export function UpdateReceivedModal({
   item,
+  isConfirming,
   isOpen,
   onClose,
   onConfirm,
-  isConfirming,
 }: UpdateReceivedModalProps) {
   const [received, setReceived] = useState<number>(0)
 
@@ -76,7 +76,16 @@ export function UpdateReceivedModal({
             min={0}
             max={item.quantity}
             value={received}
-            onChange={(e) => setReceived(parseInt(e.target.value) || 0)}
+            onChange={(e) => {
+              const val = parseInt(e.target.value) || 0
+              if (val > item.quantity) {
+                setReceived(item.quantity)
+              } else if (val < 0) {
+                setReceived(0)
+              } else {
+                setReceived(val)
+              }
+            }}
             disabled={isConfirming}
             className="h-11 text-sm"
           />
@@ -103,7 +112,9 @@ export function UpdateReceivedModal({
             type="button"
             size="lg"
             className="w-full font-medium"
-            onClick={() => onConfirm(received)}
+            onClick={() =>
+              onConfirm(Math.max(0, Math.min(received, item.quantity)))
+            }
             disabled={isConfirming}
           >
             {isConfirming ? (
