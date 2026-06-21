@@ -26,8 +26,9 @@ import {
   StepperTrigger,
 } from "@/components/ui/stepper"
 
-import { AcceptOrderModal } from "@/components/features/orders/accept-order-modal"
+import { SecondPaymentConfirmationModal } from "@/components/features/orders/second-payment-confirmation-modal"
 import { CancelOrderModal } from "@/components/features/orders/cancel-order-modal"
+import { IconTruckFast } from "@/public/icons/iconsax-truck-fast"
 
 import {
   useAcceptOrder,
@@ -36,6 +37,7 @@ import {
   useUpdateItemStep,
   useUpdateItemTracking,
 } from "@/hooks/use-orders"
+import { useInvoiceSettlement } from "@/hooks/use-preorders"
 import { queryKeys } from "@/lib/query/query-keys"
 import { formatCurrency } from "@/lib/utils"
 
@@ -59,13 +61,13 @@ const UpdateTrackingModal = dynamic(
 
 const shipReadySteps = [
   { step: 1, title: "Order Placed" },
-  { step: 3, title: "Shipped" },
-  { step: 4, title: "Delivered" },
+  { step: 2, title: "Shipped" },
+  { step: 3, title: "Delivered" },
 ]
 
 const preOrderSteps = [
   { step: 1, title: "Order Placed" },
-  { step: 2, title: "Stock Ready" },
+  { step: 2, title: "Second Payment" },
   { step: 3, title: "Shipped" },
   { step: 4, title: "Delivered" },
 ]
@@ -97,6 +99,7 @@ export function OrderFulfillmentPanel({
   const [receivedSuccess, setReceivedSuccess] = useState(false)
   const [showAcceptModal, setShowAcceptModal] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
+  const [acceptError, setAcceptError] = useState<string | undefined>(undefined)
 
   const queryClient = useQueryClient()
 
@@ -105,6 +108,7 @@ export function OrderFulfillmentPanel({
   const updateReceived = useUpdateItemReceived()
   const updateStep = useUpdateItemStep()
   const updateTracking = useUpdateItemTracking()
+  const invoiceSettlement = useInvoiceSettlement()
 
   const items = order.lineItems.filter(
     (item) => item.type === type || (!item.type && order.type === type)
@@ -196,17 +200,39 @@ export function OrderFulfillmentPanel({
 
   const apiFulfillmentType = type.replace("-", "_")
 
-  const handleAccept = async (_orderId: string) => {
-    await acceptOrder.mutateAsync({
-      orderId: order.id,
-      fulfillmentType: apiFulfillmentType,
-    })
-    setShowAcceptModal(false)
-    setAcceptSuccess(true)
-    setTimeout(() => {
-      setAcceptSuccess(false)
-      onOrderActioned?.()
-    }, 2000)
+  const handlePayment = async (_orderId: string) => {
+    setAcceptError(undefined)
+    try {
+      if (isPreOrder) {
+        const orderLineItemIds = items.map((item) => item.productId)
+        await Promise.all([
+          acceptOrder.mutateAsync({
+            orderId: order.id,
+            fulfillmentType: apiFulfillmentType,
+          }),
+          invoiceSettlement.mutateAsync(orderLineItemIds),
+        ])
+      } else {
+        await acceptOrder.mutateAsync({
+          orderId: order.id,
+          fulfillmentType: apiFulfillmentType,
+        })
+      }
+
+      setShowAcceptModal(false)
+      setAcceptSuccess(true)
+      setTimeout(() => {
+        setAcceptSuccess(false)
+        onOrderActioned?.()
+      }, 2000)
+    } catch (error: any) {
+      console.error("Fulfillment processing failed:", error)
+      const errMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to process pre-order. Please check that all items belong to the same customer."
+      setAcceptError(errMsg)
+    }
   }
 
   const handleCancel = async (_orderId: string, reason: string) => {
@@ -289,7 +315,7 @@ export function OrderFulfillmentPanel({
 
   const renderItemContent = (item: OrderLineItem) => {
     return (
-      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-none sm:flex-row">
+      <div className="flex flex-col gap-4 rounded-md bg-white p-3 shadow-none sm:flex-row">
         <div className="flex min-w-0 flex-1 gap-4">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-linear-to-b from-white via-white to-black/5">
             {item.imageSrc ? (
@@ -320,7 +346,7 @@ export function OrderFulfillmentPanel({
                 </span>
               )}
               <p
-                className="truncate font-medium text-slate-800"
+                className="font-medium wrap-break-word text-slate-800"
                 title={item.title}
               >
                 {item.title}
@@ -347,31 +373,48 @@ export function OrderFulfillmentPanel({
     return (
       <div
         key={`airway-bill-${item.productId}`}
-        className="mt-3 flex flex-col gap-2 rounded-xl border border-[#D9E2E8] bg-white p-4"
+        className="mt-3 flex flex-col gap-3 rounded-md bg-white p-4"
       >
-        <h4 className="text-sm font-bold text-slate-700">Airway Bill</h4>
-        <div className="flex flex-col gap-1 text-sm text-slate-600">
-          <p>
-            <span className="font-medium">Carrier:</span>{" "}
-            {item.trackingCompany || ""}
-          </p>
-          <p>
-            <span className="font-medium">Tracking Number:</span>{" "}
-            {item.trackingNumber || ""}
-          </p>
-          {item.trackingLastEvent && (
-            <p>
-              <span className="font-medium">Last Event:</span>{" "}
-              {item.trackingLastEvent || ""}
+        <h4 className="font-medium text-black">Airway Bill</h4>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center justify-center gap-3">
+            <div className="mt-0.5 shrink-0">
+              <IconTruckFast className="size-6 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[#323232]">
+                {item.trackingCompany || "Carrier"}
+              </p>
+              <p className="text-sm text-[#323232]/60">
+                Tracking number:{" "}
+                {item.trackingUrl ? (
+                  <a
+                    href={item.trackingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline hover:text-primary/80"
+                  >
+                    {item.trackingNumber || "-"}
+                  </a>
+                ) : (
+                  item.trackingNumber || "-"
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs text-[#323232]/60">Last Updated</p>
+            <p className="text-sm text-[#323232]">
+              {item.trackingLastEvent || "Package info updated"}
             </p>
-          )}
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-[#D9E2E8] bg-[#F4F7F9]/30">
+    <div className="relative overflow-hidden rounded-t-xl bg-[#F4F7F9]/60">
       <AnimatePresence>
         {(acceptSuccess ||
           cancelSuccess ||
@@ -443,30 +486,24 @@ export function OrderFulfillmentPanel({
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col gap-3 border-b border-[#D9E2E8] bg-[#EBF0F3] px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-lg font-bold text-slate-700">
+      <div className="flex flex-col gap-3 rounded-t-xl border border-primary bg-primary/20 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="text-lg font-bold text-primary">
           {type === "ship-ready" ? "Ship Ready" : "Pre-Order"}
         </h3>
         <div className="flex flex-wrap gap-2">
-          {isNewOrder ? (
+          {isNewOrder && isPreOrder ? (
             <>
               <Button
                 variant="outline"
                 size="sm"
                 className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                onClick={() => setShowAcceptModal(true)}
-                disabled={acceptOrder.isPending}
+                onClick={() => {
+                  setAcceptError(undefined)
+                  setShowAcceptModal(true)
+                }}
+                disabled={acceptOrder.isPending || invoiceSettlement.isPending}
               >
-                Accept Order
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-[#FFB3B3] bg-[#FFD6D6] text-[#D8000C] hover:bg-[#FFC2C2]"
-                onClick={() => setShowCancelModal(true)}
-                disabled={cancelOrder.isPending}
-              >
-                Cancel
+                Request Second Payment Receipt
               </Button>
             </>
           ) : !isCancelled ? (
@@ -538,7 +575,7 @@ export function OrderFulfillmentPanel({
 
       <div className="p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h4 className="text-sm font-semibold">
+          <h4 className="text-sm font-medium text-black">
             Total Item{items.length > 1 && ` (${items.length})`}
           </h4>
         </div>
@@ -685,12 +722,16 @@ export function OrderFulfillmentPanel({
         isConfirming={updateTracking.isPending || updateStep.isPending}
       />
 
-      <AcceptOrderModal
+      <SecondPaymentConfirmationModal
         order={order}
         isOpen={showAcceptModal}
-        onClose={() => setShowAcceptModal(false)}
-        onConfirm={handleAccept}
-        isConfirming={acceptOrder.isPending}
+        onClose={() => {
+          setShowAcceptModal(false)
+          setAcceptError(undefined)
+        }}
+        onConfirm={handlePayment}
+        isConfirming={acceptOrder.isPending || invoiceSettlement.isPending}
+        error={acceptError}
       />
 
       <CancelOrderModal

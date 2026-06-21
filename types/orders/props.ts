@@ -8,12 +8,13 @@ export interface CancelOrderModalProps {
   isConfirming: boolean
 }
 
-export interface AcceptOrderModalProps {
+export interface SecondPaymentConfirmationModalProps {
   order: Order
   isOpen: boolean
   onClose: () => void
   onConfirm: (orderId: string) => Promise<void>
   isConfirming: boolean
+  error?: string
 }
 
 export interface CustomerOrderCardProps {
