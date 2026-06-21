@@ -16,10 +16,13 @@ export function useInvoiceSettlement() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => preorderService.invoiceSettlement(id),
+    mutationFn: (orderLineItemIds: string[]) =>
+      preorderService.invoiceSettlement(orderLineItemIds),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.preorders.all })
-      queryClient.setQueryData(queryKeys.preorders.detail(data.id), data)
+      data.forEach((item) => {
+        queryClient.setQueryData(queryKeys.preorders.detail(item.id), item)
+      })
     },
   })
 }
@@ -28,10 +31,13 @@ export function usePaidSettlement() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => preorderService.paidSettlement(id),
+    mutationFn: (orderLineItemIds: string[]) =>
+      preorderService.paidSettlement(orderLineItemIds),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.preorders.all })
-      queryClient.setQueryData(queryKeys.preorders.detail(data.id), data)
+      data.forEach((item) => {
+        queryClient.setQueryData(queryKeys.preorders.detail(item.id), item)
+      })
     },
   })
 }

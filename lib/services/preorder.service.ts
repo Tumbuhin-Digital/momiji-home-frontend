@@ -90,28 +90,35 @@ async function getSettlementById(
   return mapPreorderDtoToDomain(response.data)
 }
 
-async function invoiceSettlement(id: string): Promise<PreorderSettlement> {
-  const response = await apiClient.patch<BaseResponse<PreorderSettlementDto>>(
-    `/preorders/settlements/${id}/invoice`
+async function invoiceSettlement(
+  orderLineItemIds: string[]
+): Promise<PreorderSettlement[]> {
+  const response = await apiClient.patch<BaseResponse<any>>(
+    "/preorders/invoice",
+    { order_line_item_ids: orderLineItemIds }
   )
 
   if (!response.data) {
     throw new Error("Failed to invoice settlement")
   }
 
-  return mapPreorderDtoToDomain(response.data)
+  const items = Array.isArray(response.data) ? response.data : [response.data]
+  return items.map(mapPreorderDtoToDomain)
 }
 
-async function paidSettlement(id: string): Promise<PreorderSettlement> {
-  const response = await apiClient.patch<BaseResponse<PreorderSettlementDto>>(
-    `/preorders/settlements/${id}/paid`
-  )
+async function paidSettlement(
+  orderLineItemIds: string[]
+): Promise<PreorderSettlement[]> {
+  const response = await apiClient.patch<BaseResponse<any>>("/preorders/paid", {
+    order_line_item_ids: orderLineItemIds,
+  })
 
   if (!response.data) {
     throw new Error("Failed to mark settlement as paid")
   }
 
-  return mapPreorderDtoToDomain(response.data)
+  const items = Array.isArray(response.data) ? response.data : [response.data]
+  return items.map(mapPreorderDtoToDomain)
 }
 
 async function exportPreorders(
