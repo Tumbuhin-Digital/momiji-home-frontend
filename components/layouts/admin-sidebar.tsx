@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator"
 
 import { LogoutConfirmModal } from "@/components/layouts/logout-confirm-modal"
 
-import { navItems } from "@/constants/navigation"
+import { NAV_ITEMS } from "@/constants/navigation"
 import { cn } from "@/lib/utils"
 import { IconlyLogout } from "@/public/icons/iconly-logout"
 
@@ -48,7 +48,7 @@ export function AdminSidebar({ className, onClose }: AdminSidebarProps) {
       </div>
       <nav className="flex flex-col gap-2">
         <p className="font-medium text-neutral-400">Operations</p>
-        {navItems.map((item) => {
+        {NAV_ITEMS.map((item) => {
           const isActive =
             pathname === item.href || pathname?.startsWith(`${item.href}/`)
           const Icon = item.icon

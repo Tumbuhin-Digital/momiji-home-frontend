@@ -5,7 +5,10 @@ import type {
   DashboardSummary,
   DashboardSummaryResponseDto,
   MonthlyRevenueDto,
+  RecentOrder,
   RecentOrderDto,
+  SalesReport,
+  StatCards,
   StatCardsDto,
 } from "@/types/dashboard"
 
@@ -27,7 +30,7 @@ async function getDashboardSummary(): Promise<DashboardSummary> {
   }
 }
 
-function mapRecentOrders(dtos: RecentOrderDto[]) {
+function mapRecentOrders(dtos: RecentOrderDto[]): RecentOrder[] {
   return dtos.map((dto) => ({
     customerName: dto.customer_name,
     itemsPreview: dto.items_preview,
@@ -37,7 +40,9 @@ function mapRecentOrders(dtos: RecentOrderDto[]) {
   }))
 }
 
-function mapSalesReport(dto: DashboardSummaryResponseDto["sales_report"]) {
+function mapSalesReport(
+  dto: DashboardSummaryResponseDto["sales_report"]
+): SalesReport {
   return {
     currency: dto.currency,
     monthlyRevenue: dto.monthly_revenue.map((m: MonthlyRevenueDto) => ({
@@ -48,7 +53,7 @@ function mapSalesReport(dto: DashboardSummaryResponseDto["sales_report"]) {
   }
 }
 
-function mapStatCards(dto: StatCardsDto) {
+function mapStatCards(dto: StatCardsDto): StatCards {
   return {
     availableStock: {
       count: dto.available_stock.count,

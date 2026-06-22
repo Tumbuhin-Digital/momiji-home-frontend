@@ -4,7 +4,7 @@ import { IconlyCategory } from "@/public/icons/iconly-category"
 import { IconShopRemove } from "@/public/icons/iconsax-shop-remove"
 import { IconShoppingCart } from "@/public/icons/iconsax-shopping-cart"
 
-export const navItems = [
+export const NAV_ITEMS = [
   {
     title: "Dashboard",
     href: "/dashboard",

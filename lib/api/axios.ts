@@ -29,7 +29,9 @@ function isOnCheckoutPage(): boolean {
   )
 }
 
-async function onRequest(config: InternalAxiosRequestConfig) {
+async function onRequest(
+  config: InternalAxiosRequestConfig
+): Promise<InternalAxiosRequestConfig> {
   config.headers.set("Accept", "application/json")
 
   if (!config.headers.get("Content-Type") && config.method !== "get") {
@@ -62,13 +64,13 @@ async function onRequest(config: InternalAxiosRequestConfig) {
   return config
 }
 
-function onRequestError(error: AxiosError) {
+function onRequestError(error: AxiosError): Promise<never> {
   return Promise.reject(error)
 }
 
 let localLock: Promise<void> | null = null
 
-async function acquireLock(callback: () => Promise<void>) {
+async function acquireLock(callback: () => Promise<void>): Promise<any> {
   if (typeof navigator !== "undefined" && navigator.locks) {
     return navigator.locks.request("momiji_auth_refresh", callback)
   }
@@ -90,7 +92,9 @@ async function acquireLock(callback: () => Promise<void>) {
   }
 }
 
-async function onResponseError(error: AxiosError<ApiErrorPayload>) {
+async function onResponseError(
+  error: AxiosError<ApiErrorPayload>
+): Promise<any> {
   const status = error.response?.status
   const payload = error.response?.data
   const message =

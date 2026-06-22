@@ -5,7 +5,9 @@ import type { OrderQueryParams } from "@/types/orders"
 import type { PreorderQueryParams } from "@/types/preorders"
 import type { ProductQueryParams } from "@/types/products"
 
-function normalizeProductParams(params: ProductQueryParams = {}) {
+function normalizeProductParams(
+  params: ProductQueryParams = {}
+): ProductQueryParams {
   return {
     search: params.search?.trim() ?? "",
     category: params.category ?? "all",
