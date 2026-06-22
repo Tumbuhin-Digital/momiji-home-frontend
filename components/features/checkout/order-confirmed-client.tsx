@@ -99,7 +99,13 @@ export default function OrderConfirmedClient({
   const orderDate = data.orderDate
   const buyerEmail = data.customerEmail
 
-  const displayItems: Array<{
+  const paidItems: Array<{
+    title: string
+    amount: number
+    isPaid: boolean
+  }> = []
+
+  const unpaidItems: Array<{
     title: string
     amount: number
     isPaid: boolean
@@ -107,20 +113,41 @@ export default function OrderConfirmedClient({
 
   if (data.items) {
     data.items.forEach((item) => {
+      const isShipping =
+        item.type === "shipping" ||
+        item.title.toLowerCase().includes("shipping")
+
       if (item.amountCharged > 0) {
-        displayItems.push({
-          title: item.title,
+        let title = item.title
+        if (isShipping) {
+          if (!title.startsWith("↳")) {
+            title = `↳ ${title}`
+          }
+        } else {
+          title = `${title} ${item.quantity}x pcs`
+        }
+        paidItems.push({
+          title,
           amount: item.amountCharged,
           isPaid: true,
         })
       }
+
       if (item.balanceDue > 0) {
-        const cleanTitle = item.title
-          .replace(/\[PREORDER\]\s*/i, "")
-          .replace(/\(DP \d+%\)/i, "")
-          .trim()
-        displayItems.push({
-          title: `Payment Proceed - ${cleanTitle || item.title}`,
+        let title = item.title
+        if (isShipping) {
+          if (!title.startsWith("↳")) {
+            title = `↳ ${title}`
+          }
+        } else {
+          const cleanTitle = title
+            .replace(/\[PREORDER\]\s*/i, "")
+            .replace(/\(DP \d+%\)/i, "")
+            .trim()
+          title = `Payment Proceed - ${cleanTitle || title}`
+        }
+        unpaidItems.push({
+          title,
           amount: item.balanceDue,
           isPaid: false,
         })
@@ -132,11 +159,13 @@ export default function OrderConfirmedClient({
   const paidPercent =
     totalPayment > 0 ? Math.round((paidToday / totalPayment) * 100) : 100
 
+  const hasPaid = paidItems.length > 0
+  const hasUnpaid = unpaidItems.length > 0
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-white/5 p-4 backdrop-blur-sm sm:p-6">
       <div className="relative m-auto w-full max-w-2xl rounded-4xl p-6 sm:p-10">
         <div className="flex flex-col items-center gap-8 text-center">
-          {/* Confirmation Icon */}
           <div className="relative flex size-24 items-center justify-center rounded-full bg-primary/20">
             <div className="absolute inset-0 animate-ping rounded-full bg-primary/50 duration-3000" />
             <div className="relative flex size-14 items-center justify-center rounded-full bg-primary">
@@ -144,7 +173,6 @@ export default function OrderConfirmedClient({
             </div>
           </div>
 
-          {/* Order Confirmed Title + Subtitle */}
           <div className="flex flex-col gap-3.75">
             <h1 className="text-3xl font-semibold text-header sm:text-5xl">
               Order Confirmed!
@@ -161,10 +189,8 @@ export default function OrderConfirmedClient({
             </p>
           </div>
 
-          {/* Order Details Card */}
           <Card className="w-full rounded-xl border border-primary bg-primary/20">
             <CardContent className="space-y-6 p-6 text-left">
-              {/* Header: Order ID + Status Badge */}
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-black/40 sm:text-sm">
@@ -186,7 +212,6 @@ export default function OrderConfirmedClient({
                 </Badge>
               </div>
 
-              {/* 3-column summary row */}
               {(orderDate || paidToday > 0 || remainingBalance > 0) && (
                 <>
                   <div className="grid grid-cols-3 gap-4">
@@ -224,10 +249,8 @@ export default function OrderConfirmedClient({
                 </>
               )}
 
-              {/* Payment Breakdown */}
-              {displayItems.length > 0 && (
+              {(hasPaid || hasUnpaid) && (
                 <div className="space-y-3 rounded-xl border border-primary bg-[#F3EEEC] p-6">
-                  {/* Progress bar */}
                   <div className="space-y-1">
                     <div
                       className="h-2 w-full overflow-hidden rounded-full bg-[#E5ECEE]"
@@ -251,33 +274,45 @@ export default function OrderConfirmedClient({
                     </div>
                   </div>
 
-                  {/* Item list */}
                   <div className="space-y-3">
-                    {displayItems.map((item, idx) => (
+                    {paidItems.map((item, idx) => (
                       <div
-                        key={idx}
+                        key={`paid-${idx}`}
                         className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-0"
                       >
                         <span className="text-sm text-alternate/60 sm:text-base">
                           {item.title}
                         </span>
-                        <div className="flex items-center gap-1">
-                          {item.isPaid ? (
-                            <Check
-                              className="size-3 text-[#34C759] sm:size-4.5"
-                              strokeWidth={3}
-                            />
-                          ) : (
-                            <Clock
-                              className="size-3 text-[#FF8D28] sm:size-4.5"
-                              strokeWidth={1.5}
-                            />
-                          )}
-                          <span
-                            className={`text-sm sm:text-base ${
-                              item.isPaid ? "text-[#34C759]" : "text-[#FF8D28]"
-                            }`}
-                          >
+                        <div className="flex items-center gap-1.5">
+                          <Check
+                            className="size-3.5 text-[#34C759] sm:size-4.5"
+                            strokeWidth={3}
+                          />
+                          <span className="text-sm font-medium text-[#34C759] sm:text-base">
+                            {formatCurrency(item.amount)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+
+                    {hasPaid && hasUnpaid && (
+                      <div className="my-4 border-t border-dashed border-[#CCCCCC]" />
+                    )}
+
+                    {unpaidItems.map((item, idx) => (
+                      <div
+                        key={`unpaid-${idx}`}
+                        className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-0"
+                      >
+                        <span className="text-sm text-alternate/60 sm:text-base">
+                          {item.title}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <Clock
+                            className="size-3.5 text-[#FF8D28] sm:size-4.5"
+                            strokeWidth={1.5}
+                          />
+                          <span className="text-sm font-medium text-[#FF8D28] sm:text-base">
                             {formatCurrency(item.amount)}
                           </span>
                         </div>
@@ -287,7 +322,6 @@ export default function OrderConfirmedClient({
                 </div>
               )}
 
-              {/* Remaining balance notice */}
               {remainingBalance > 0 && (
                 <div className="flex items-start gap-3">
                   <div className="flex size-5 items-center justify-center sm:size-6">
@@ -304,7 +338,6 @@ export default function OrderConfirmedClient({
                 </div>
               )}
 
-              {/* CTA Button */}
               <div>
                 <Button
                   type="button"
