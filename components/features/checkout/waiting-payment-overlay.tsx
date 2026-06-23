@@ -59,7 +59,15 @@ export function WaitingPaymentOverlay({
             <Button
               type="button"
               onClick={() => {
-                if (checkoutUrl) window.open(checkoutUrl, "_blank")
+                if (!checkoutUrl) return
+                const win = window.open(
+                  checkoutUrl,
+                  "momiji_shopify_checkout",
+                  "noopener=no,noreferrer=no"
+                )
+                if (!win) {
+                  window.location.assign(checkoutUrl)
+                }
               }}
               className="h-13! w-full rounded-sm text-lg font-medium"
             >

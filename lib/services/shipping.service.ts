@@ -44,6 +44,7 @@ async function getShippingRates(
       city: input.city,
       state: input.state,
       address1: input.address1,
+      segment: input.segment,
     }
   )
 

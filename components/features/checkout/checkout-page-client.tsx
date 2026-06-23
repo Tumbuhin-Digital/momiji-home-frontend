@@ -33,7 +33,6 @@ import {
   PreviewCardTrigger,
 } from "@/components/ui/preview-card"
 import { Progress } from "@/components/ui/progress"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   Select,
   SelectContent,
@@ -62,6 +61,7 @@ import {
 import { useShippingRates, useValidateAddress } from "@/hooks/use-shipping"
 import { useCheckoutNotes } from "@/hooks/use-settings"
 import { checkoutService } from "@/lib/services/checkout.service"
+import { writePreparingCheckoutDocument } from "@/lib/checkout/preparing-checkout-document"
 import { queryKeys } from "@/lib/query/query-keys"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
@@ -84,6 +84,49 @@ const checkoutSchema = z.object({
 })
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>
+
+const CHECKOUT_PAYMENT_WINDOW = "momiji_shopify_checkout"
+const CHECKOUT_WINDOW_FEATURES = "noopener=no,noreferrer=no"
+
+function openCheckoutPaymentWindow(): Window | null {
+  const win = window.open("", CHECKOUT_PAYMENT_WINDOW, CHECKOUT_WINDOW_FEATURES)
+  if (!win) return null
+
+  try {
+    writePreparingCheckoutDocument(win)
+  } catch {
+    // Ignore if the document is not writable in this browser.
+  }
+
+  return win
+}
+
+function redirectCheckoutPaymentWindow(
+  paymentWindow: Window | null,
+  checkoutUrl: string
+): boolean {
+  if (paymentWindow && !paymentWindow.closed) {
+    try {
+      paymentWindow.location.replace(checkoutUrl)
+      paymentWindow.focus()
+      return true
+    } catch {
+      paymentWindow.close()
+    }
+  }
+
+  const reopened = window.open(
+    checkoutUrl,
+    CHECKOUT_PAYMENT_WINDOW,
+    CHECKOUT_WINDOW_FEATURES
+  )
+  if (reopened) {
+    reopened.focus()
+    return true
+  }
+
+  return false
+}
 
 export default function CheckoutPageClient() {
   const form = useForm<CheckoutFormValues>({
@@ -110,7 +153,6 @@ export default function CheckoutPageClient() {
     setValue,
     handleSubmit,
     setError,
-    clearErrors,
     formState: { errors },
   } = form
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -160,27 +202,38 @@ export default function CheckoutPageClient() {
     formValues.state || ""
   )
 
+  const ratesAddressInput = {
+    zip: formValues.zipCode || "",
+    country: mappedCountryForRates,
+    city: formValues.city || "",
+    state: normalizedState,
+    address1: formValues.address || "",
+  }
+
+  const ratesEnabledBase =
+    hasFlushedCart &&
+    !flushPendingCart.isPending &&
+    !!formValues.zipCode &&
+    formValues.zipCode.length >= 5 &&
+    !!formValues.city &&
+    !!normalizedState
+
+  const { data: shipReadyRates, isFetching: isLoadingShipReadyRates } =
+    useShippingRates(
+      { ...ratesAddressInput, segment: "ship_ready" },
+      {
+        enabled: ratesEnabledBase && shipReadyItems.length > 0,
+      }
+    )
+
   const {
-    data: shippingRates,
-    isFetching: isLoadingShipping,
-    isError: isShippingRatesError,
+    data: preOrderRates,
+    isFetching: isLoadingPreOrderRates,
+    isError: isPreOrderRatesError,
   } = useShippingRates(
+    { ...ratesAddressInput, segment: "pre_order" },
     {
-      zip: formValues.zipCode || "",
-      country: mappedCountryForRates,
-      city: formValues.city || "",
-      state: normalizedState,
-      address1: formValues.address || "",
-    },
-    {
-      enabled:
-        hasFlushedCart &&
-        !flushPendingCart.isPending &&
-        preOrderItems.length > 0 &&
-        !!formValues.zipCode &&
-        formValues.zipCode.length >= 5 &&
-        !!formValues.city &&
-        !!normalizedState,
+      enabled: ratesEnabledBase && preOrderItems.length > 0,
     }
   )
 
@@ -218,12 +271,12 @@ export default function CheckoutPageClient() {
   }, [])
 
   useEffect(() => {
-    if (!hasFlushedCart || preOrderItems.length === 0) return
+    if (!hasFlushedCart) return
 
     void queryClient.invalidateQueries({
       queryKey: queryKeys.shipping.methods(),
     })
-  }, [hasFlushedCart, preOrderItems.length, queryClient])
+  }, [hasFlushedCart, shipReadyItems.length, preOrderItems.length, queryClient])
 
   useEffect(() => {
     if (cartData?.summary) {
@@ -239,8 +292,40 @@ export default function CheckoutPageClient() {
   }, [cartData])
 
   useEffect(() => {
-    if (preOrderItems.length === 0) return
+    const groundRate = preOrderRates?.[0]
+    if (!groundRate) return
+    if (formValues.shippingMethod !== groundRate.serviceCode) {
+      setValue("shippingMethod", groundRate.serviceCode)
+    }
+  }, [preOrderRates, formValues.shippingMethod, setValue])
 
+  useEffect(() => {
+    const shipReadyShipping = shipReadyRates?.[0]
+      ? parseFloat(shipReadyRates[0].cost)
+      : 0
+    const preOrderShipping = preOrderRates?.[0]
+      ? parseFloat(preOrderRates[0].cost)
+      : 0
+
+    setSummaryState((prev) => {
+      const shipReadyTotal = parseFloat(prev.shipReadyTotal || "0")
+      const preorderDeposit = parseFloat(prev.preorderDeposit || "0")
+      const preorderBalance = parseFloat(prev.preorderBalance || "0")
+
+      return {
+        ...prev,
+        shippingCost: String(shipReadyShipping),
+        shippingPreorder: String(preOrderShipping),
+        totalDueNow: String(
+          shipReadyTotal + shipReadyShipping + preorderDeposit
+        ),
+        totalDueLater: String(preorderBalance + preOrderShipping),
+      }
+    })
+  }, [shipReadyRates, preOrderRates])
+
+  useEffect(() => {
+    if (preOrderItems.length === 0) return
     if (
       !formValues.shippingMethod ||
       !formValues.country ||
@@ -261,41 +346,43 @@ export default function CheckoutPageClient() {
 
         const summary = await checkoutSummaryMutation.mutateAsync(payload)
 
-        const selectedRate = shippingRates?.find(
-          (r) => r.serviceCode === formValues.shippingMethod
-        )
-        const shippingCost = selectedRate ? parseFloat(selectedRate.cost) : 0
+        setSummaryState((prev) => {
+          const shipReadyShipping = parseFloat(prev.shippingCost || "0")
+          const preOrderShipping = parseFloat(prev.shippingPreorder || "0")
+          const shipReadyTotal = parseFloat(
+            summary.dueNow.shipReadyTotal || "0"
+          )
+          const preorderDeposit = parseFloat(
+            summary.dueNow.preorderDeposit || "0"
+          )
+          const preorderBalance = parseFloat(
+            summary.dueAugust.preorderBalance || "0"
+          )
 
-        const shipReadyTotal = parseFloat(summary.dueNow.shipReadyTotal || "0")
-        const preorderDeposit = parseFloat(
-          summary.dueNow.preorderDeposit || "0"
-        )
-        const preorderBalance = parseFloat(
-          summary.dueAugust.preorderBalance || "0"
-        )
-
-        setSummaryState({
-          shippingCost: "0",
-          shipReadyTotal: summary.dueNow.shipReadyTotal,
-          preorderDeposit: summary.dueNow.preorderDeposit,
-          totalDueNow: String(shipReadyTotal + preorderDeposit),
-          preorderBalance: summary.dueAugust.preorderBalance,
-          shippingPreorder: String(shippingCost),
-          totalDueLater: String(preorderBalance + shippingCost),
+          return {
+            shippingCost: prev.shippingCost,
+            shipReadyTotal: summary.dueNow.shipReadyTotal,
+            preorderDeposit: summary.dueNow.preorderDeposit,
+            totalDueNow: String(
+              shipReadyTotal + shipReadyShipping + preorderDeposit
+            ),
+            preorderBalance: summary.dueAugust.preorderBalance,
+            shippingPreorder: prev.shippingPreorder,
+            totalDueLater: String(preorderBalance + preOrderShipping),
+          }
         })
       } catch (err) {
         console.error("Failed to recalculate shipping/summary", err)
       }
     }
 
-    doRecalculate()
+    void doRecalculate()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     formValues.shippingMethod,
     formValues.country,
     formValues.zipCode,
     preOrderItems.length,
-    shippingRates,
   ])
 
   const handleAddressPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -366,6 +453,8 @@ export default function CheckoutPageClient() {
 
     const normalizedState = getNormalizedState(values.country, values.state)
 
+    const paymentWindow = openCheckoutPaymentWindow()
+
     try {
       await validateAddressMutation.mutateAsync({
         city: values.city,
@@ -374,6 +463,7 @@ export default function CheckoutPageClient() {
         zip: values.zipCode,
       })
     } catch (err: any) {
+      paymentWindow?.close()
       console.error("Address validation failed:", err)
       const errorMsg =
         err?.response?.data?.message ||
@@ -408,8 +498,11 @@ export default function CheckoutPageClient() {
       setIsWaitingForPayment(true)
       setPaymentExpiresAt(Date.now() + 15 * 60 * 1000)
 
-      window.open(checkoutUrl, "_blank")
+      if (!redirectCheckoutPaymentWindow(paymentWindow, checkoutUrl)) {
+        window.location.assign(checkoutUrl)
+      }
     } catch (err) {
+      paymentWindow?.close()
       console.error("Checkout failed:", err)
       toastManager.add({
         title: "Error",
@@ -866,63 +959,41 @@ export default function CheckoutPageClient() {
                       </PreviewCardPopup>
                     </PreviewCard>
                   </div>
-                  {isLoadingShipping ? (
+                  {isLoadingPreOrderRates ? (
                     <div className="flex h-24 items-center justify-center rounded bg-muted/50">
                       <Loader2 className="size-6 animate-spin text-muted-foreground" />
                     </div>
-                  ) : isShippingRatesError ? (
+                  ) : isPreOrderRatesError ? (
                     <div className="rounded border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">
                       Failed to load shipping rates. Please check your address
                       and try again.
                     </div>
                   ) : (
                     <div className="overflow-hidden rounded border bg-white">
-                      {!shippingRates || shippingRates.length === 0 ? (
+                      {!preOrderRates || preOrderRates.length === 0 ? (
                         <div className="p-6 text-center text-sm text-slate-500">
                           Please enter your ZIP Code to see available shipping
                           rates.
                         </div>
                       ) : (
-                        <div className="max-h-75 overflow-y-auto sm:max-h-100">
-                          <RadioGroup
-                            value={formValues.shippingMethod}
-                            onValueChange={(v) => {
-                              setValue("shippingMethod", v)
-                              clearErrors("shippingMethod")
-                            }}
-                            className="flex flex-col gap-0"
-                          >
-                            {shippingRates.map((rate, idx) => (
-                              <div
-                                key={rate.serviceCode}
-                                className={`flex items-center justify-between p-4 ${idx !== shippingRates.length - 1 ? "border-b" : ""}`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <RadioGroupItem
-                                    value={rate.serviceCode}
-                                    id={`shipping-${rate.serviceCode}`}
-                                  />
-                                  <label
-                                    htmlFor={`shipping-${rate.serviceCode}`}
-                                    className="flex cursor-pointer flex-col gap-1"
-                                  >
-                                    <span className="font-medium text-slate-800">
-                                      {rate.label}
-                                    </span>
-                                    <span className="text-sm text-slate-500">
-                                      Estimated Delivery: {rate.deliveryDays}{" "}
-                                      Days
-                                    </span>
-                                  </label>
-                                </div>
-                                <span className="font-medium text-slate-800">
-                                  {rate.cost === "0" || rate.cost === "0.00"
-                                    ? "Free"
-                                    : formatCurrency(parseFloat(rate.cost))}
-                                </span>
-                              </div>
-                            ))}
-                          </RadioGroup>
+                        <div className="flex items-center justify-between p-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-medium text-slate-800">
+                              {preOrderRates[0].label}
+                            </span>
+                            <span className="text-sm text-slate-500">
+                              Estimated Delivery:{" "}
+                              {preOrderRates[0].deliveryDays} Days
+                            </span>
+                          </div>
+                          <span className="font-medium text-slate-800">
+                            {preOrderRates[0].cost === "0" ||
+                            preOrderRates[0].cost === "0.00"
+                              ? "Free"
+                              : formatCurrency(
+                                  parseFloat(preOrderRates[0].cost)
+                                )}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -1055,8 +1126,16 @@ export default function CheckoutPageClient() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-alternate/60">+ Shipping</span>
-                          <span className="text-alternate/60 italic">
-                            Calculated at checkout
+                          <span className="text-alternate/60">
+                            {isLoadingShipReadyRates ? (
+                              <Loader2 className="inline size-4 animate-spin" />
+                            ) : shipReadyRates?.[0] ? (
+                              formatCurrency(parseFloat(shipReadyRates[0].cost))
+                            ) : (
+                              <span className="italic">
+                                Calculated at checkout
+                              </span>
+                            )}
                           </span>
                         </div>
                         {preOrderItems.length > 0 && (
