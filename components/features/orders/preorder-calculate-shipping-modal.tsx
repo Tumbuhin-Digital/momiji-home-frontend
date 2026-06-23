@@ -93,6 +93,7 @@ export function PreorderCalculateShippingModal({
   items,
   isOpen,
   onClose,
+  mode = "initial",
   onSaved,
   onShippingConfigured,
 }: PreorderCalculateShippingModalProps) {
@@ -285,12 +286,6 @@ export function PreorderCalculateShippingModal({
                 <p className="text-xs text-[#959595]">Address</p>
                 <p className="text-[#4A4A4A]">{formatAddress(order)}</p>
               </div>
-              {order.shippingMethod && (
-                <div>
-                  <p className="text-xs text-[#959595]">Carrier</p>
-                  <p className="text-[#4A4A4A]">{order.shippingMethod}</p>
-                </div>
-              )}
             </div>
           </div>
 
@@ -449,18 +444,26 @@ export function PreorderCalculateShippingModal({
             )}
 
             <div className="space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="modal-final-shipping-price">
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="modal-final-shipping-price"
+                  className="text-sm font-medium"
+                >
                   Final shipping price
                 </Label>
                 <Input
                   id="modal-final-shipping-price"
-                  type="number"
-                  min={0}
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={finalPrice}
-                  onChange={(e) => setFinalPrice(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                      setFinalPrice(val)
+                    }
+                  }}
                   placeholder="0.00"
+                  className="**:data-[slot=input]:h-11 **:data-[slot=input]:px-3 **:data-[slot=input]:text-lg **:data-[slot=input]:leading-11 **:data-[slot=input]:font-medium"
                 />
               </div>
               <div className="space-y-1">
@@ -515,6 +518,8 @@ export function PreorderCalculateShippingModal({
                 <Spinner className="mr-2" />
                 Saving...
               </>
+            ) : mode === "edit" ? (
+              "Save changes"
             ) : (
               "Save shipping & close"
             )}

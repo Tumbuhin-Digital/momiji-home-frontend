@@ -163,7 +163,7 @@ function buildPreparingCheckoutHTML(): string {
       </div>
     </div>
 
-    <p class="eyebrow">Securing your order</p>
+    <p class="eyebrow">Preparing checkout</p>
     <h1>Taking you to payment</h1>
     <p class="subtitle">
       We&rsquo;re setting up a secure Shopify checkout for your order.

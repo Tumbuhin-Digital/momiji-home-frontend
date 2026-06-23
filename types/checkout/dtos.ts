@@ -35,6 +35,11 @@ export interface CheckoutSummaryDto {
 export interface CheckoutCreateResponseDto {
   checkout_reference?: string
   checkout_url: string
+  expires_at?: string
+}
+
+export interface CheckoutReleaseInput {
+  checkout_reference?: string
 }
 
 export interface CheckoutConfirmItemDto {

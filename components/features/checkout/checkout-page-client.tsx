@@ -44,6 +44,7 @@ import { Separator } from "@/components/ui/separator"
 
 import { CheckoutSkeleton } from "@/components/features/checkout/checkout-skeleton"
 import { WaitingPaymentOverlay } from "@/components/features/checkout/waiting-payment-overlay"
+import { allowCheckoutNavigation } from "@/hooks/use-before-unload"
 import { IconBag } from "@/public/icons/icon-bag"
 
 import {
@@ -57,6 +58,7 @@ import { useCart, useFlushPendingCart } from "@/hooks"
 import {
   useCheckoutSummaryMutation,
   useCreateCheckout,
+  useReleaseCheckout,
 } from "@/hooks/use-checkout"
 import { useShippingRates, useValidateAddress } from "@/hooks/use-shipping"
 import { useCheckoutNotes } from "@/hooks/use-settings"
@@ -183,6 +185,7 @@ export default function CheckoutPageClient() {
 
   const checkoutSummaryMutation = useCheckoutSummaryMutation()
   const createCheckoutMutation = useCreateCheckout()
+  const releaseCheckoutMutation = useReleaseCheckout()
   const validateAddressMutation = useValidateAddress()
   const { data: checkoutNotes } = useCheckoutNotes()
 
@@ -239,6 +242,29 @@ export default function CheckoutPageClient() {
 
   const isInitialLoading =
     isCartLoading || !hasFlushedCart || flushPendingCart.isPending
+
+  const isShipReadyShippingPending =
+    shipReadyItems.length > 0 &&
+    (!ratesEnabledBase || isLoadingShipReadyRates || !shipReadyRates?.[0])
+
+  const isPreOrderShippingPending =
+    preOrderItems.length > 0 &&
+    (!ratesEnabledBase ||
+      isLoadingPreOrderRates ||
+      isPreOrderRatesError ||
+      !preOrderRates?.length ||
+      !formValues.shippingMethod)
+
+  const isShippingNotReady =
+    isShipReadyShippingPending || isPreOrderShippingPending
+
+  const isCalculatingShipping =
+    ratesEnabledBase &&
+    ((shipReadyItems.length > 0 && isLoadingShipReadyRates) ||
+      (preOrderItems.length > 0 && isLoadingPreOrderRates))
+
+  const isCheckoutDisabled =
+    createCheckoutMutation.isPending || isShippingNotReady
 
   useEffect(() => {
     if (!isUS || !formValues.state) return
@@ -455,6 +481,16 @@ export default function CheckoutPageClient() {
 
     const paymentWindow = openCheckoutPaymentWindow()
 
+    const releaseCheckoutLocks = async (checkoutReference?: string) => {
+      try {
+        await releaseCheckoutMutation.mutateAsync({
+          checkoutReference,
+        })
+      } catch {
+        // Best-effort release; locks still expire via backend TTL.
+      }
+    }
+
     try {
       await validateAddressMutation.mutateAsync({
         city: values.city,
@@ -478,8 +514,10 @@ export default function CheckoutPageClient() {
       return
     }
 
+    let initiatedCheckoutReference = ""
+
     try {
-      const { checkoutUrl, checkoutReference } =
+      const { checkoutUrl, checkoutReference, expiresAt } =
         await createCheckoutMutation.mutateAsync({
           address1: values.address,
           address_id: 0,
@@ -493,16 +531,22 @@ export default function CheckoutPageClient() {
           state: normalizedState,
           zip: values.zipCode,
         })
+      initiatedCheckoutReference = checkoutReference
       setCurrentCheckoutUrl(checkoutUrl)
       setCheckoutReference(checkoutReference)
       setIsWaitingForPayment(true)
-      setPaymentExpiresAt(Date.now() + 15 * 60 * 1000)
+      setPaymentExpiresAt(
+        expiresAt ? new Date(expiresAt).getTime() : Date.now() + 15 * 60 * 1000
+      )
 
       if (!redirectCheckoutPaymentWindow(paymentWindow, checkoutUrl)) {
         window.location.assign(checkoutUrl)
       }
     } catch (err) {
       paymentWindow?.close()
+      if (initiatedCheckoutReference) {
+        await releaseCheckoutLocks(initiatedCheckoutReference)
+      }
       console.error("Checkout failed:", err)
       toastManager.add({
         title: "Error",
@@ -520,6 +564,7 @@ export default function CheckoutPageClient() {
           const res =
             await checkoutService.getCheckoutConfirm(checkoutReference)
           if (res && res.orderNumber) {
+            allowCheckoutNavigation()
             window.location.href = `/order-confirmed?checkout_reference=${checkoutReference}`
           }
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1262,7 +1307,7 @@ export default function CheckoutPageClient() {
                     <Button
                       type="submit"
                       size="2xl"
-                      disabled={createCheckoutMutation.isPending}
+                      disabled={isCheckoutDisabled}
                       className="w-full"
                     >
                       <span className="text-base font-medium uppercase">
@@ -1271,6 +1316,13 @@ export default function CheckoutPageClient() {
                             <Spinner className="text-current" />
                             Processing...
                           </span>
+                        ) : isCalculatingShipping ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Loader2 className="size-4 animate-spin" />
+                            Calculating shipping...
+                          </span>
+                        ) : isShippingNotReady ? (
+                          "Complete address for shipping"
                         ) : (
                           "Checkout"
                         )}
@@ -1301,7 +1353,14 @@ export default function CheckoutPageClient() {
           onOpenChange={setIsWaitingForPayment}
           checkoutUrl={currentCheckoutUrl}
           expiresAt={paymentExpiresAt}
-          onExpire={() => {
+          onExpire={async () => {
+            try {
+              await releaseCheckoutMutation.mutateAsync({
+                checkoutReference: checkoutReference || undefined,
+              })
+            } catch {
+              // Best-effort release; locks still expire via backend TTL.
+            }
             setIsWaitingForPayment(false)
             toastManager.add({
               title: "Payment Timer Expired",
@@ -1309,6 +1368,15 @@ export default function CheckoutPageClient() {
                 "The time to secure your items has expired. Please try checking out again.",
               type: "warning",
             })
+          }}
+          onAbandon={async () => {
+            try {
+              await releaseCheckoutMutation.mutateAsync({
+                checkoutReference: checkoutReference || undefined,
+              })
+            } catch {
+              // Best-effort release; locks still expire via backend TTL.
+            }
           }}
         />
       </div>

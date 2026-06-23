@@ -45,7 +45,7 @@ export function SettlementPreOrderModal({
     data: settlement,
     isLoading,
     isError,
-  } = usePreorderDetail(isOpen ? settlementId : "")
+  } = usePreorderDetail(settlementId, isOpen)
 
   const invoiceMutation = useInvoiceSettlement()
   const paidMutation = usePaidSettlement()

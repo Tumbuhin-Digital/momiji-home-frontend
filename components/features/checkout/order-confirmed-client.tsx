@@ -142,7 +142,7 @@ export default function OrderConfirmedClient({
         } else {
           const cleanTitle = title
             .replace(/\[PREORDER\]\s*/i, "")
-            .replace(/\(DP \d+%\)/i, "")
+            .replace(/\(Deposit \d+%\)/i, "")
             .trim()
           title = `Payment Proceed - ${cleanTitle || title}`
         }

@@ -75,7 +75,11 @@ async function getSummary(
 
 async function createCheckout(
   input: CheckoutCreateInput
-): Promise<{ checkoutUrl: string; checkoutReference: string }> {
+): Promise<{
+  checkoutUrl: string
+  checkoutReference: string
+  expiresAt: string | null
+}> {
   const response = await apiClient.post<
     BaseResponse<CheckoutCreateResponseDto>
   >("/checkout", input)
@@ -87,7 +91,16 @@ async function createCheckout(
   return {
     checkoutUrl: response.data.checkout_url,
     checkoutReference: response.data.checkout_reference || "",
+    expiresAt: response.data.expires_at || null,
   }
+}
+
+async function releaseCheckout(input?: {
+  checkoutReference?: string
+}): Promise<void> {
+  await apiClient.post<BaseResponse<null>>("/checkout/release", {
+    checkout_reference: input?.checkoutReference,
+  })
 }
 
 // GET /checkout/confirm?checkout_reference=<id>
@@ -126,4 +139,5 @@ export const checkoutService = {
   createCheckout,
   getCheckoutConfirm,
   getSummary,
+  releaseCheckout,
 }

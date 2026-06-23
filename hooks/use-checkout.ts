@@ -46,3 +46,10 @@ export function useCreateCheckout() {
       checkoutService.createCheckout(input),
   })
 }
+
+export function useReleaseCheckout() {
+  return useMutation({
+    mutationFn: (input?: { checkoutReference?: string }) =>
+      checkoutService.releaseCheckout(input),
+  })
+}

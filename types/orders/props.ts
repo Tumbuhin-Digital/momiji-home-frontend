@@ -22,6 +22,7 @@ export interface PreorderCalculateShippingModalProps {
   items: OrderLineItem[]
   isOpen: boolean
   onClose: () => void
+  mode?: "initial" | "edit"
   onSaved?: () => void
   onShippingConfigured?: () => void
 }

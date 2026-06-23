@@ -21,7 +21,7 @@ const DynamicImageCarousel = dynamic(
   }
 )
 
-import { useCart, useLocalCartVariantUpdate, useSyncCartVariant } from "@/hooks"
+import { useCart, useSyncCartVariant } from "@/hooks"
 import { ensureCartSession } from "@/lib/cart/ensure-cart-session"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
@@ -35,7 +35,6 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
   const [showDepletedModal, setShowDepletedModal] = useState(false)
 
   const { data: cartData } = useCart()
-  const updateLocalCart = useLocalCartVariantUpdate()
   const syncCartVariant = useSyncCartVariant()
 
   const isShipReady = product.category === "ship-ready"
@@ -77,14 +76,16 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
 
   const isPending = syncCartVariant.isPending
 
-  const applyLocalUpdate = (newTotal: number) => {
+  const applyCartUpdate = (newTotal: number) => {
     setLocalQuantity(newTotal)
-    updateLocalCart({
-      variantId: product.sku,
-      totalQuantity: newTotal,
-      meta: variantMeta,
+    void ensureCartSession().then((hasSession) => {
+      if (!hasSession) return
+      syncCartVariant.mutate({
+        variantId: product.sku,
+        totalQuantity: newTotal,
+        meta: variantMeta,
+      })
     })
-    void ensureCartSession()
   }
 
   const handleIncrease = () => {
@@ -95,11 +96,11 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         return
       }
     }
-    applyLocalUpdate(localQuantity + 1)
+    applyCartUpdate(localQuantity + 1)
   }
 
   const handleDecrease = () => {
-    applyLocalUpdate(localQuantity - 1)
+    applyCartUpdate(localQuantity - 1)
   }
 
   const handleCustomChange = (newTotal: number) => {
@@ -110,7 +111,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         return
       }
     }
-    applyLocalUpdate(newTotal)
+    applyCartUpdate(newTotal)
   }
 
   const handlePreorderConfirm = async () => {

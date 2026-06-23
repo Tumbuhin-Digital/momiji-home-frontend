@@ -107,6 +107,9 @@ export function OrderFulfillmentPanel({
   const [showCalculateShippingModal, setShowCalculateShippingModal] =
     useState(false)
   const [calculateShippingModalKey, setCalculateShippingModalKey] = useState(0)
+  const [calculateShippingMode, setCalculateShippingMode] = useState<
+    "initial" | "edit"
+  >("initial")
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [acceptError, setAcceptError] = useState<string | undefined>(undefined)
 
@@ -248,6 +251,14 @@ export function OrderFulfillmentPanel({
     setShowAcceptModal(true)
   }
 
+  const handleShippingEdited = async () => {
+    onOrderActioned?.()
+    await queryClient.refetchQueries({
+      queryKey: queryKeys.orders.detail(order.id),
+    })
+    setShowCalculateShippingModal(false)
+  }
+
   const isCancelled = order.fulfillmentStatus === "cancelled"
 
   const canRequestSecondPayment =
@@ -256,6 +267,12 @@ export function OrderFulfillmentPanel({
     order.preorderShipment?.finalShippingPrice != null
 
   const showCalculateShipping = isPreOrder && currentStep === 1 && !isCancelled
+
+  const showEditShipping =
+    isPreOrder &&
+    currentStep === 2 &&
+    !isCancelled &&
+    order.preorderShipment?.finalShippingPrice != null
 
   const trackingActionStep = isPreOrder ? 4 : 3
 
@@ -496,11 +513,26 @@ export function OrderFulfillmentPanel({
               size="sm"
               className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
               onClick={() => {
+                setCalculateShippingMode("initial")
                 setCalculateShippingModalKey((k) => k + 1)
                 setShowCalculateShippingModal(true)
               }}
             >
               Calculate Shipping
+            </Button>
+          )}
+          {showEditShipping && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+              onClick={() => {
+                setCalculateShippingMode("edit")
+                setCalculateShippingModalKey((k) => k + 1)
+                setShowCalculateShippingModal(true)
+              }}
+            >
+              Edit Shipping Rate
             </Button>
           )}
           {isPreOrder && currentStep === 2 && !isCancelled && (
@@ -528,14 +560,7 @@ export function OrderFulfillmentPanel({
                     Waiting for payment
                   </span>
                 )}
-                {isPreOrder &&
-                  currentStep === 4 &&
-                  isPaymentReceived &&
-                  !hasTrackingInfo && (
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800">
-                      Payment received
-                    </span>
-                  )}
+
                 {currentStep === trackingActionStep && !hasTrackingInfo && (
                   <Button
                     variant="outline"
@@ -681,28 +706,6 @@ export function OrderFulfillmentPanel({
           </div>
         )}
 
-        {isPreOrder && currentStep === 3 && !isCancelled && (
-          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <p>
-              Second payment invoice sent. Status:{" "}
-              <strong>Waiting for payment</strong>. Payment status updates
-              automatically when the customer pays.
-            </p>
-          </div>
-        )}
-
-        {isPreOrder &&
-          currentStep === 4 &&
-          !hasTrackingInfo &&
-          !isCancelled && (
-            <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-              <p>
-                <strong>Payment received.</strong> Add a tracking number — the
-                customer will receive a shipment email automatically.
-              </p>
-            </div>
-          )}
-
         {(() => {
           const uniqueTrackings = new Map<string, OrderLineItem>()
           items.forEach((item) => {
@@ -810,8 +813,17 @@ export function OrderFulfillmentPanel({
         items={items}
         isOpen={showCalculateShippingModal}
         onClose={() => setShowCalculateShippingModal(false)}
-        onSaved={onOrderActioned}
-        onShippingConfigured={handleShippingConfigured}
+        mode={calculateShippingMode}
+        onSaved={
+          calculateShippingMode === "edit"
+            ? handleShippingEdited
+            : onOrderActioned
+        }
+        onShippingConfigured={
+          calculateShippingMode === "initial"
+            ? handleShippingConfigured
+            : undefined
+        }
       />
 
       <SecondPaymentConfirmationModal

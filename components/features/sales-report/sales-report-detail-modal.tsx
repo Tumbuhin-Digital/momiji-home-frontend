@@ -420,7 +420,7 @@ function LineItemCard({ item }: { item: OrderLineItem }) {
           {isPreOrder && item.dpAmount !== undefined && (
             <>
               {" "}
-              · DP {formatCurrency(item.dpAmount)} USD
+              · Deposit {formatCurrency(item.dpAmount)} USD
               {item.balanceDue !== undefined && (
                 <> · Balance {formatCurrency(item.balanceDue)} USD</>
               )}

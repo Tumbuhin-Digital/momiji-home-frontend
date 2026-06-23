@@ -42,11 +42,11 @@ export function usePaidSettlement() {
   })
 }
 
-export function usePreorderDetail(id: string) {
+export function usePreorderDetail(id: string, enabled = true) {
   return useQuery({
     queryKey: queryKeys.preorders.detail(id),
     queryFn: () => preorderService.getSettlementById(id),
-    enabled: !!id,
+    enabled: enabled && !!id,
   })
 }
 

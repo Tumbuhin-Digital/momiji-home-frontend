@@ -42,7 +42,9 @@ export function ManageOrderModal({
   const currentOrder = fetchedOrder || order
 
   const handleOrderActioned = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) })
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.orders.detail(order.id),
+    })
     queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
   }
 
@@ -167,14 +169,6 @@ export function ManageOrderModal({
                   </p>
                 )}
               </div>
-              {currentOrder.shippingMethod && (
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-[#959595]">Carrier</p>
-                  <p className="text-sm text-[#4A4A4A]">
-                    {currentOrder.shippingMethod}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>
