@@ -9,6 +9,7 @@ const ADMIN_ROUTES = [
   "/order-management",
   "/pre-order-list",
   "/sales-report",
+  "/settings",
 ]
 
 export function proxy(request: NextRequest) {

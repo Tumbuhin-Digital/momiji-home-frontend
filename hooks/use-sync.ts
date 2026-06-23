@@ -19,7 +19,7 @@ export function useForceSync() {
   })
 }
 
-export function useProductSyncPolling(intervalMs = 30000) {
+export function useProductSyncPolling(intervalMs = 60 * 60 * 1000) {
   const queryClient = useQueryClient()
 
   useQuery({

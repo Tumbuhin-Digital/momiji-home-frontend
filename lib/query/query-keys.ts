@@ -78,6 +78,11 @@ const queryKeys = {
     all: ["shipping"] as const,
     methods: () => ["shipping", "methods"] as const,
   },
+  settings: {
+    all: ["settings"] as const,
+    checkoutNotes: () => ["settings", "checkout-notes"] as const,
+    admin: () => ["settings", "admin"] as const,
+  },
   sync: {
     all: ["sync"] as const,
     stats: () => ["sync", "stats"] as const,

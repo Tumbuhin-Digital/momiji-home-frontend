@@ -1,3 +1,4 @@
+import { Settings } from "lucide-react"
 import { IconlyActivity } from "@/public/icons/iconly-activity"
 import { IconlyBag } from "@/public/icons/iconly-bag"
 import { IconlyCategory } from "@/public/icons/iconly-category"
@@ -29,5 +30,10 @@ export const NAV_ITEMS = [
     title: "Sales Report",
     href: "/sales-report",
     icon: IconlyActivity,
+  },
+  {
+    title: "Settings",
+    href: "/settings",
+    icon: Settings,
   },
 ]

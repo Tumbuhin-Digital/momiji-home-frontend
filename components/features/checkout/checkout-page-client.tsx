@@ -60,6 +60,7 @@ import {
   useCreateCheckout,
 } from "@/hooks/use-checkout"
 import { useShippingRates, useValidateAddress } from "@/hooks/use-shipping"
+import { useCheckoutNotes } from "@/hooks/use-settings"
 import { checkoutService } from "@/lib/services/checkout.service"
 import { queryKeys } from "@/lib/query/query-keys"
 import { useCartStore } from "@/lib/stores/cart.store"
@@ -141,6 +142,7 @@ export default function CheckoutPageClient() {
   const checkoutSummaryMutation = useCheckoutSummaryMutation()
   const createCheckoutMutation = useCreateCheckout()
   const validateAddressMutation = useValidateAddress()
+  const { data: checkoutNotes } = useCheckoutNotes()
 
   const shipReadyItems = cartData?.ship_ready || []
   const preOrderItems = cartData?.pre_order || []
@@ -1145,8 +1147,8 @@ export default function CheckoutPageClient() {
                       </div>
                     </div>
                     <p className="text-sm text-alternate/80 sm:text-base">
-                      1-2 business days dispatch, UPS Ground or equivalent
-                      carrier
+                      {checkoutNotes?.dueNowNote ??
+                        "1-2 business days dispatch, UPS Ground or equivalent carrier"}
                     </p>
                   </div>
 
@@ -1171,8 +1173,8 @@ export default function CheckoutPageClient() {
                           </div>
                         </div>
                         <p className="text-sm text-alternate/80 sm:text-base">
-                          You will be notified when our next shipment arrives in
-                          the US
+                          {checkoutNotes?.dueLaterNote ??
+                            "You will be notified when our next shipment arrives in the US"}
                         </p>
                       </div>
                     )}
