@@ -35,6 +35,9 @@ export function SecondPaymentConfirmationModal({
     order.preOrderInfo?.remainingAmount ||
     order.totalPrice - (order.totalDepositPaid || 0)
 
+  const shippingAmount = order.preorderShipment?.finalShippingPrice ?? 0
+  const totalDue = remainingBalance + shippingAmount
+
   return (
     <Dialog
       open={isOpen}
@@ -48,14 +51,14 @@ export function SecondPaymentConfirmationModal({
           <div className="w-full">
             <DialogHeader className="p-0 text-center">
               <DialogTitle className="tracking-wide sm:text-[22px]">
-                Second Payment Confirmation for #{order.orderNumber}?
+                Request Second Payment for #{order.orderNumber}?
               </DialogTitle>
               <DialogDescription className="text-[15px] leading-relaxed">
-                Please confirm that the second payment has been collected for{" "}
+                Send a settlement invoice to{" "}
                 <span className="font-bold text-slate-800">
                   {order.customer?.name || "Customer"}
-                </span>
-                .
+                </span>{" "}
+                for the remaining balance and shipping.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -86,18 +89,46 @@ export function SecondPaymentConfirmationModal({
 
           <div className="flex items-center justify-between rounded border border-primary/20 bg-primary/5 px-4 py-3">
             <span className="text-sm font-medium text-neutral-600">
-              Total Remaining Balance
+              Remaining balance (50%)
             </span>
             <span className="font-bold text-neutral-900">
               {formatCurrency(remainingBalance)} USD
             </span>
           </div>
 
+          {shippingAmount > 0 && (
+            <div className="flex items-center justify-between rounded border border-slate-200 bg-slate-50 px-4 py-3">
+              <span className="text-sm font-medium text-neutral-600">
+                Shipping
+              </span>
+              <span className="font-bold text-neutral-900">
+                {formatCurrency(shippingAmount)} USD
+              </span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between rounded border border-primary/30 bg-primary/10 px-4 py-3">
+            <span className="text-sm font-semibold text-neutral-700">
+              Total invoice amount
+            </span>
+            <span className="text-lg font-bold text-neutral-900">
+              {formatCurrency(totalDue)} USD
+            </span>
+          </div>
+
+          {order.preorderShipment?.shippingNotes && (
+            <p className="text-xs text-slate-600">
+              <span className="font-medium">Shipping notes:</span>{" "}
+              {order.preorderShipment.shippingNotes}
+            </p>
+          )}
+
           <div className="flex items-start gap-2.5 rounded border border-[#FF850D] bg-[#FF850D1A] p-3.5 text-xs leading-normal text-[#FF850D]">
             <AlertCircle className="mt-0.5 size-4 shrink-0 text-[#FF850D]" />
             <span>
-              Only mark this order as collected once the payment has been
-              received.
+              This will send a Shopify invoice for the remaining balance plus
+              shipping. Confirm only when packing and final shipping price are
+              correct.
             </span>
           </div>
 
@@ -141,7 +172,7 @@ export function SecondPaymentConfirmationModal({
             ) : (
               <>
                 <CheckCircle2 className="mr-2 size-4" />
-                Payment Collected
+                Send Invoice
               </>
             )}
           </Button>

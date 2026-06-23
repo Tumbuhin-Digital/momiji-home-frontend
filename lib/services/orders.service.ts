@@ -5,8 +5,12 @@ import { mapOrderResponseToOrder } from "@/types/orders/entities"
 import type { BaseResponse } from "@/types/core"
 import type { LiveTrackingInfo, Order, OrderQueryParams } from "@/types/orders"
 import type {
+  CalculatePreorderShippingRequest,
+  CalculatePreorderShippingResponse,
   CreateOrderInput,
   OrderResponseDto,
+  PreorderShipmentDto,
+  UpdatePreorderShippingRequest,
   UpdateReceivedDto,
   UpdateStepDto,
   UpdateTrackingDto,
@@ -145,6 +149,37 @@ async function getItemTracking(
   return response.data ?? null
 }
 
+async function calculatePreorderShipping(
+  orderId: string,
+  body: CalculatePreorderShippingRequest
+): Promise<CalculatePreorderShippingResponse> {
+  const response = await apiClient.post<
+    BaseResponse<CalculatePreorderShippingResponse>
+  >(`/orders/${orderId}/preorder/calculate-shipping`, body)
+  if (!response.data) {
+    throw new Error("Failed to calculate shipping")
+  }
+  return response.data
+}
+
+async function updatePreorderShipping(
+  orderId: string,
+  body: UpdatePreorderShippingRequest
+): Promise<PreorderShipmentDto> {
+  const response = await apiClient.put<BaseResponse<PreorderShipmentDto>>(
+    `/orders/${orderId}/preorder/shipping`,
+    body
+  )
+  if (!response.data) {
+    throw new Error("Failed to update shipping")
+  }
+  return response.data
+}
+
+async function requestSecondPayment(orderId: string): Promise<void> {
+  await apiClient.post(`/orders/${orderId}/preorder/request-second-payment`)
+}
+
 export const ordersService = {
   acceptOrder,
   cancelOrder,
@@ -157,4 +192,7 @@ export const ordersService = {
   updateItemReceived,
   updateItemStep,
   updateItemTracking,
+  calculatePreorderShipping,
+  updatePreorderShipping,
+  requestSecondPayment,
 }

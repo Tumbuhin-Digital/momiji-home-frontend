@@ -14,7 +14,9 @@ import { ordersService } from "@/lib/services"
 import type { UseQueryOptions } from "@tanstack/react-query"
 import type { LiveTrackingInfo, Order, OrderQueryParams } from "@/types/orders"
 import type {
+  CalculatePreorderShippingRequest,
   CreateOrderInput,
+  UpdatePreorderShippingRequest,
   UpdateReceivedDto,
   UpdateStepDto,
   UpdateTrackingDto,
@@ -212,6 +214,49 @@ export function useUpdateItemTracking() {
         })
         queryClient.setQueryData(queryKeys.orders.detail(order.id), order)
       }
+    },
+  })
+}
+
+export function useCalculatePreorderShipping(orderId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (body: CalculatePreorderShippingRequest) =>
+      ordersService.calculatePreorderShipping(orderId, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.orders.detail(orderId),
+      })
+    },
+  })
+}
+
+export function useUpdatePreorderShipping(orderId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (body: UpdatePreorderShippingRequest) =>
+      ordersService.updatePreorderShipping(orderId, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.orders.detail(orderId),
+      })
+    },
+  })
+}
+
+export function useRequestSecondPayment(orderId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => ordersService.requestSecondPayment(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.orders.detail(orderId),
+      })
     },
   })
 }

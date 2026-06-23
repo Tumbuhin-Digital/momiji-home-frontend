@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 
 import { format } from "date-fns"
+import { useQueryClient } from "@tanstack/react-query"
 import { XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -17,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { OrderFulfillmentPanel } from "@/components/features/orders/order-fulfillment-panel"
 
 import { useOrderById } from "@/hooks/use-orders"
+import { queryKeys } from "@/lib/query/query-keys"
 import { formatCurrency } from "@/lib/utils"
 
 import type { Order } from "@/types/orders"
@@ -32,11 +34,17 @@ export function ManageOrderModal({
   isOpen,
   onClose,
 }: ManageOrderModalProps) {
+  const queryClient = useQueryClient()
   const { data: fetchedOrder, isLoading } = useOrderById(order.id, {
     enabled: isOpen,
   })
 
   const currentOrder = fetchedOrder || order
+
+  const handleOrderActioned = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) })
+    queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+  }
 
   useEffect(() => {
     if (isOpen && order?.id) {
@@ -159,6 +167,14 @@ export function ManageOrderModal({
                   </p>
                 )}
               </div>
+              {currentOrder.shippingMethod && (
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs text-[#959595]">Carrier</p>
+                  <p className="text-sm text-[#4A4A4A]">
+                    {currentOrder.shippingMethod}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -175,6 +191,7 @@ export function ManageOrderModal({
               order={currentOrder}
               type="ship-ready"
               isLoading={isLoading}
+              onOrderActioned={handleOrderActioned}
             />
           )}
 
@@ -183,6 +200,7 @@ export function ManageOrderModal({
               order={currentOrder}
               type="pre-order"
               isLoading={isLoading}
+              onOrderActioned={handleOrderActioned}
             />
           )}
         </div>

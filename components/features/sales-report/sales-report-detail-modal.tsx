@@ -40,6 +40,8 @@ import type { OrderLineItem, SalesReportDetailModalProps } from "@/types/orders"
 const itemStatusLabelMap: Record<string, string> = {
   paid: "Paid",
   pending_deposit: "Pending Deposit",
+  waiting_payment: "Waiting for Payment",
+  payment_received: "Payment Received",
   pending: "Pending",
   fulfilled: "Fulfilled",
 }

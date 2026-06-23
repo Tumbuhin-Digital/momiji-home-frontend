@@ -31,6 +31,47 @@ export interface OrderItemDetailDto {
   type: string
   unit_price: string
   variant_id: string
+  sku?: string
+  weight_kg?: number
+  width_cm?: number
+  height_cm?: number
+  depth_cm?: number
+}
+
+export interface PackingItemDto {
+  line_item_id: string
+  box_count: number
+  is_nested: boolean
+}
+
+export interface PreorderShipmentDto {
+  estimated_shipping?: string
+  final_shipping_price?: string
+  shipping_notes?: string
+  credit_amount?: string
+  total_boxes: number
+  total_weight_lb?: string
+  invoice_sent_at?: string
+  packing?: PackingItemDto[]
+}
+
+export interface CalculatePreorderShippingRequest {
+  packing: PackingItemDto[]
+}
+
+export interface CalculatePreorderShippingResponse {
+  estimated_shipping: string
+  total_boxes: number
+  total_weight_lb: string
+  packing: PackingItemDto[]
+  service_code: string
+  currency: string
+}
+
+export interface UpdatePreorderShippingRequest {
+  final_shipping_price: number
+  shipping_notes?: string
+  packing?: PackingItemDto[]
 }
 
 export interface OrderResponseDto {
@@ -70,6 +111,8 @@ export interface OrderResponseDto {
   total_deposit_paid: string
   total_price: string
   total_ship_ready: string
+  shipping_method?: string
+  preorder_shipment?: PreorderShipmentDto
 }
 
 export interface CreateOrderInput {

@@ -27,17 +27,17 @@ import {
 } from "@/components/ui/stepper"
 
 import { SecondPaymentConfirmationModal } from "@/components/features/orders/second-payment-confirmation-modal"
+import { PreorderCalculateShippingModal } from "@/components/features/orders/preorder-calculate-shipping-modal"
 import { CancelOrderModal } from "@/components/features/orders/cancel-order-modal"
 import { IconTruckFast } from "@/public/icons/iconsax-truck-fast"
 
 import {
-  useAcceptOrder,
   useCancelOrder,
+  useRequestSecondPayment,
   useUpdateItemReceived,
   useUpdateItemStep,
   useUpdateItemTracking,
 } from "@/hooks/use-orders"
-import { useInvoiceSettlement } from "@/hooks/use-preorders"
 import { queryKeys } from "@/lib/query/query-keys"
 import { formatCurrency } from "@/lib/utils"
 
@@ -67,9 +67,10 @@ const shipReadySteps = [
 
 const preOrderSteps = [
   { step: 1, title: "Order Placed" },
-  { step: 2, title: "Second Payment" },
-  { step: 3, title: "Shipped" },
-  { step: 4, title: "Delivered" },
+  { step: 2, title: "Calculate Shipping" },
+  { step: 3, title: "Second Payment" },
+  { step: 4, title: "Shipped" },
+  { step: 5, title: "Delivered" },
 ]
 
 interface OrderFulfillmentPanelProps {
@@ -94,21 +95,21 @@ export function OrderFulfillmentPanel({
 
   const [acceptSuccess, setAcceptSuccess] = useState(false)
   const [cancelSuccess, setCancelSuccess] = useState(false)
-  const [stockReadySuccess, setStockReadySuccess] = useState(false)
   const [trackingSuccess, setTrackingSuccess] = useState(false)
   const [receivedSuccess, setReceivedSuccess] = useState(false)
   const [showAcceptModal, setShowAcceptModal] = useState(false)
+  const [showCalculateShippingModal, setShowCalculateShippingModal] =
+    useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [acceptError, setAcceptError] = useState<string | undefined>(undefined)
 
   const queryClient = useQueryClient()
 
-  const acceptOrder = useAcceptOrder()
   const cancelOrder = useCancelOrder()
   const updateReceived = useUpdateItemReceived()
   const updateStep = useUpdateItemStep()
   const updateTracking = useUpdateItemTracking()
-  const invoiceSettlement = useInvoiceSettlement()
+  const requestSecondPayment = useRequestSecondPayment(order.id)
 
   const items = order.lineItems.filter(
     (item) => item.type === type || (!item.type && order.type === type)
@@ -200,25 +201,10 @@ export function OrderFulfillmentPanel({
 
   const apiFulfillmentType = type.replace("-", "_")
 
-  const handlePayment = async (_orderId: string) => {
+  const handleRequestSecondPayment = async (_orderId: string) => {
     setAcceptError(undefined)
     try {
-      if (isPreOrder) {
-        const orderLineItemIds = items.map((item) => item.productId)
-        await Promise.all([
-          acceptOrder.mutateAsync({
-            orderId: order.id,
-            fulfillmentType: apiFulfillmentType,
-          }),
-          invoiceSettlement.mutateAsync(orderLineItemIds),
-        ])
-      } else {
-        await acceptOrder.mutateAsync({
-          orderId: order.id,
-          fulfillmentType: apiFulfillmentType,
-        })
-      }
-
+      await requestSecondPayment.mutateAsync()
       setShowAcceptModal(false)
       setAcceptSuccess(true)
       setTimeout(() => {
@@ -226,14 +212,42 @@ export function OrderFulfillmentPanel({
         onOrderActioned?.()
       }, 2000)
     } catch (error: any) {
-      console.error("Fulfillment processing failed:", error)
+      console.error("Request second payment failed:", error)
       const errMsg =
         error?.response?.data?.message ||
         error?.message ||
-        "Failed to process pre-order. Please check that all items belong to the same customer."
+        "Failed to send second payment invoice."
       setAcceptError(errMsg)
     }
   }
+
+  const isPaymentReceived = items.some(
+    (item) =>
+      item.itemStatus === "payment_received" ||
+      (item.fulfillmentStep === 4 && !item.trackingNumber)
+  )
+
+  const handleShippingConfigured = async () => {
+    onOrderActioned?.()
+    await queryClient.refetchQueries({
+      queryKey: queryKeys.orders.detail(order.id),
+    })
+    setShowCalculateShippingModal(false)
+    setAcceptError(undefined)
+    setShowAcceptModal(true)
+  }
+
+  const isCancelled = order.fulfillmentStatus === "cancelled"
+
+  const canRequestSecondPayment =
+    isPreOrder &&
+    currentStep === 2 &&
+    order.preorderShipment?.finalShippingPrice != null
+
+  const showCalculateShipping =
+    isPreOrder && currentStep === 1 && !isCancelled
+
+  const trackingActionStep = isPreOrder ? 4 : 3
 
   const handleCancel = async (_orderId: string, reason: string) => {
     await cancelOrder.mutateAsync({
@@ -250,9 +264,6 @@ export function OrderFulfillmentPanel({
   }
 
   const visualStep = currentStep
-
-  const isCancelled = order.fulfillmentStatus === "cancelled"
-  const isNewOrder = currentStep === 1 && !isCancelled
 
   const handleTrackingConfirm = async (
     trackingNumber: string,
@@ -288,31 +299,6 @@ export function OrderFulfillmentPanel({
     }, 2000)
   }
 
-  const handleUpdateStepAll = async (targetStep: number) => {
-    for (const item of items) {
-      if ((item.fulfillmentStep || 1) < targetStep) {
-        await updateStep.mutateAsync({
-          orderId: order.id,
-          itemId: item.productId,
-          body: { fulfillment_step: targetStep },
-        })
-      }
-    }
-
-    await queryClient.invalidateQueries({
-      queryKey: queryKeys.orders.detail(order.id),
-    })
-    await queryClient.refetchQueries({
-      queryKey: queryKeys.orders.detail(order.id),
-    })
-
-    setStockReadySuccess(true)
-    setTimeout(() => {
-      setStockReadySuccess(false)
-      onOrderActioned?.()
-    }, 2000)
-  }
-
   const renderItemContent = (item: OrderLineItem) => {
     return (
       <div className="flex flex-col gap-4 rounded-md bg-white p-3 shadow-none sm:flex-row">
@@ -338,6 +324,16 @@ export function OrderFulfillmentPanel({
               {item.itemStatus === "delivered" && (
                 <span className="rounded-full bg-[#49944B1A] px-3 py-0.5 text-[10px] font-bold text-[#49944B] hover:bg-[#49944B1A]">
                   Delivered
+                </span>
+              )}
+              {item.itemStatus === "waiting_payment" && (
+                <span className="rounded-full bg-amber-50 px-3 py-0.5 text-[10px] font-bold text-amber-800">
+                  Waiting for Payment
+                </span>
+              )}
+              {item.itemStatus === "payment_received" && (
+                <span className="rounded-full bg-blue-50 px-3 py-0.5 text-[10px] font-bold text-blue-800">
+                  Payment Received
                 </span>
               )}
               {order.fulfillmentStatus === "cancelled" && (
@@ -418,7 +414,6 @@ export function OrderFulfillmentPanel({
       <AnimatePresence>
         {(acceptSuccess ||
           cancelSuccess ||
-          stockReadySuccess ||
           trackingSuccess ||
           receivedSuccess) && (
           <motion.div
@@ -430,7 +425,6 @@ export function OrderFulfillmentPanel({
             className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-xl bg-white/95 backdrop-blur-sm"
           >
             {acceptSuccess ||
-            stockReadySuccess ||
             trackingSuccess ||
             receivedSuccess ? (
               <>
@@ -452,8 +446,7 @@ export function OrderFulfillmentPanel({
                   transition={{ delay: 0.2 }}
                   className="text-base font-bold text-emerald-700"
                 >
-                  {acceptSuccess && "Order Accepted!"}
-                  {stockReadySuccess && "Stock Marked as Ready!"}
+                  {acceptSuccess && "Invoice Sent!"}
                   {trackingSuccess && "Tracking Added Successfully!"}
                   {receivedSuccess && "Received Count Updated!"}
                 </motion.p>
@@ -491,35 +484,47 @@ export function OrderFulfillmentPanel({
           {type === "ship-ready" ? "Ship Ready" : "Pre-Order"}
         </h3>
         <div className="flex flex-wrap gap-2">
-          {isNewOrder && isPreOrder ? (
+          {showCalculateShipping && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+              onClick={() => setShowCalculateShippingModal(true)}
+            >
+              Calculate Shipping
+            </Button>
+          )}
+          {isPreOrder && currentStep === 2 && !isCancelled && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+              onClick={() => {
+                setAcceptError(undefined)
+                setShowAcceptModal(true)
+              }}
+              disabled={
+                !canRequestSecondPayment || requestSecondPayment.isPending
+              }
+            >
+              Request Second Payment
+            </Button>
+          )}
+          {!showCalculateShipping &&
+            !(isPreOrder && currentStep === 2) &&
+            !isCancelled && (
             <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                onClick={() => {
-                  setAcceptError(undefined)
-                  setShowAcceptModal(true)
-                }}
-                disabled={acceptOrder.isPending || invoiceSettlement.isPending}
-              >
-                Request Second Payment Receipt
-              </Button>
-            </>
-          ) : !isCancelled ? (
-            <>
-              {isPreOrder && currentStep === 2 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                  onClick={() => handleUpdateStepAll(3)}
-                  disabled={updateStep.isPending}
-                >
-                  Mark Stock Ready
-                </Button>
+              {isPreOrder && currentStep === 3 && (
+                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+                  Waiting for payment
+                </span>
               )}
-              {isPreOrder && currentStep === 3 && !hasTrackingInfo && (
+              {isPreOrder && currentStep === 4 && isPaymentReceived && !hasTrackingInfo && (
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800">
+                  Payment received
+                </span>
+              )}
+              {currentStep === trackingActionStep && !hasTrackingInfo && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -538,7 +543,7 @@ export function OrderFulfillmentPanel({
                   Add Tracking
                 </Button>
               )}
-              {currentStep === 3 && hasTrackingInfo && (
+              {currentStep === trackingActionStep && hasTrackingInfo && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -569,7 +574,7 @@ export function OrderFulfillmentPanel({
                 </Button>
               )}
             </>
-          ) : null}
+          )}
         </div>
       </div>
 
@@ -620,6 +625,67 @@ export function OrderFulfillmentPanel({
             )
           )}
         </Stepper>
+
+        {isPreOrder && currentStep === 1 && !isCancelled && (
+          <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <p>
+              Step 1: open <strong>Calculate Shipping</strong> to review the
+              checkout estimate, adjust box packing, optionally recalculate the
+              current rate, and set the final shipping price from Unishippers.
+            </p>
+          </div>
+        )}
+
+        {isPreOrder && currentStep === 2 && !isCancelled && (
+          <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            {order.preorderShipment?.finalShippingPrice != null ? (
+              <p>
+                Shipping configured:{" "}
+                <span className="font-semibold text-slate-800">
+                  {formatCurrency(order.preorderShipment.finalShippingPrice)} USD
+                </span>
+                {order.preorderShipment.estimatedShipping != null && (
+                  <span className="text-slate-500">
+                    {" "}
+                    (checkout estimate{" "}
+                    {formatCurrency(order.preorderShipment.estimatedShipping)})
+                  </span>
+                )}
+                . Ready to request second payment.
+              </p>
+            ) : order.preorderShipment?.estimatedShipping != null ? (
+              <p>
+                Checkout estimate saved (
+                {formatCurrency(order.preorderShipment.estimatedShipping)} USD).
+                Open <strong>Calculate Shipping</strong> to set the final price.
+              </p>
+            ) : (
+              <p>
+                Open <strong>Calculate Shipping</strong> to calculate a rate and
+                set the final price before requesting second payment.
+              </p>
+            )}
+          </div>
+        )}
+
+        {isPreOrder && currentStep === 3 && !isCancelled && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p>
+              Second payment invoice sent. Status:{" "}
+              <strong>Waiting for payment</strong>. Payment status updates
+              automatically when the customer pays.
+            </p>
+          </div>
+        )}
+
+        {isPreOrder && currentStep === 4 && !hasTrackingInfo && !isCancelled && (
+          <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+            <p>
+              <strong>Payment received.</strong> Add a tracking number — the
+              customer will receive a shipment email automatically.
+            </p>
+          </div>
+        )}
 
         {(() => {
           const uniqueTrackings = new Map<string, OrderLineItem>()
@@ -722,6 +788,15 @@ export function OrderFulfillmentPanel({
         isConfirming={updateTracking.isPending || updateStep.isPending}
       />
 
+      <PreorderCalculateShippingModal
+        order={order}
+        items={items}
+        isOpen={showCalculateShippingModal}
+        onClose={() => setShowCalculateShippingModal(false)}
+        onSaved={onOrderActioned}
+        onShippingConfigured={handleShippingConfigured}
+      />
+
       <SecondPaymentConfirmationModal
         order={order}
         isOpen={showAcceptModal}
@@ -729,8 +804,8 @@ export function OrderFulfillmentPanel({
           setShowAcceptModal(false)
           setAcceptError(undefined)
         }}
-        onConfirm={handlePayment}
-        isConfirming={acceptOrder.isPending || invoiceSettlement.isPending}
+        onConfirm={handleRequestSecondPayment}
+        isConfirming={requestSecondPayment.isPending}
         error={acceptError}
       />
 

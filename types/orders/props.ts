@@ -1,4 +1,4 @@
-import type { Order } from "./entities"
+import type { Order, OrderLineItem } from "./entities"
 
 export interface CancelOrderModalProps {
   order: Order
@@ -15,6 +15,15 @@ export interface SecondPaymentConfirmationModalProps {
   onConfirm: (orderId: string) => Promise<void>
   isConfirming: boolean
   error?: string
+}
+
+export interface PreorderCalculateShippingModalProps {
+  order: Order
+  items: OrderLineItem[]
+  isOpen: boolean
+  onClose: () => void
+  onSaved?: () => void
+  onShippingConfigured?: () => void
 }
 
 export interface CustomerOrderCardProps {
