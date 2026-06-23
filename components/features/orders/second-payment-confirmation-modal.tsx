@@ -43,7 +43,7 @@ export function SecondPaymentConfirmationModal({
       open={isOpen}
       onOpenChange={(open) => !open && !isConfirming && onClose()}
     >
-      <DialogContent className="sm:max-w-md" showCloseButton={false}>
+      <DialogContent className="sm:max-w-2xl" showCloseButton={false}>
         <DialogPanel className="flex flex-col items-center gap-6 p-4!">
           <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
             <Package className="size-8 text-primary" />

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { AlertCircle, Package, XIcon } from "lucide-react"
 
@@ -24,7 +24,10 @@ import {
 import { formatCurrency } from "@/lib/utils"
 
 import type { PreorderCalculateShippingModalProps } from "@/types/orders"
-import type { OrderLineItem, PreorderPackingItem } from "@/types/orders/entities"
+import type {
+  OrderLineItem,
+  PreorderPackingItem,
+} from "@/types/orders/entities"
 
 const KG_TO_LB = 2.20462
 
@@ -73,6 +76,18 @@ function formatAddress(order: PreorderCalculateShippingModalProps["order"]) {
   return `${addr.address1}${addr.address2 ? `, ${addr.address2}` : ""}, ${addr.city}, ${addr.province} ${addr.zip}`
 }
 
+function initialFinalPrice(
+  shipment: PreorderCalculateShippingModalProps["order"]["preorderShipment"]
+): string {
+  if (shipment?.finalShippingPrice != null) {
+    return shipment.finalShippingPrice.toFixed(2)
+  }
+  if (shipment?.estimatedShipping != null) {
+    return shipment.estimatedShipping.toFixed(2)
+  }
+  return ""
+}
+
 export function PreorderCalculateShippingModal({
   order,
   items,
@@ -90,29 +105,14 @@ export function PreorderCalculateShippingModal({
 
   const shipment = order.preorderShipment
   const checkoutEstimate = shipment?.estimatedShipping
-  const [finalPrice, setFinalPrice] = useState<string>(
-    shipment?.finalShippingPrice?.toFixed(2) ??
-      shipment?.estimatedShipping?.toFixed(2) ??
-      ""
+  const [finalPrice, setFinalPrice] = useState<string>(() =>
+    initialFinalPrice(order.preorderShipment)
   )
-  const [notes, setNotes] = useState(shipment?.shippingNotes ?? "")
+  const [notes, setNotes] = useState(
+    () => order.preorderShipment?.shippingNotes ?? ""
+  )
   const [currentEstimate, setCurrentEstimate] = useState<number | undefined>()
   const [saveError, setSaveError] = useState<string | undefined>()
-
-  useEffect(() => {
-    if (!isOpen) return
-    setPacking(mergePacking(items, order.preorderShipment?.packing))
-    setCurrentEstimate(undefined)
-    if (order.preorderShipment?.finalShippingPrice != null) {
-      setFinalPrice(order.preorderShipment.finalShippingPrice.toFixed(2))
-    } else if (order.preorderShipment?.estimatedShipping != null) {
-      setFinalPrice(order.preorderShipment.estimatedShipping.toFixed(2))
-    } else {
-      setFinalPrice("")
-    }
-    setNotes(order.preorderShipment?.shippingNotes ?? "")
-    setSaveError(undefined)
-  }, [isOpen, items, order.preorderShipment])
 
   const totalBoxes = useMemo(
     () => packing.reduce((sum, p) => sum + (p.isNested ? 0 : p.boxCount), 0),
@@ -138,7 +138,9 @@ export function PreorderCalculateShippingModal({
   const hasCheckoutEstimate = checkoutEstimate != null
   const hasCurrentEstimate = currentEstimate != null
   const canSave =
-    hasCheckoutEstimate || hasCurrentEstimate || shipment?.finalShippingPrice != null
+    hasCheckoutEstimate ||
+    hasCurrentEstimate ||
+    shipment?.finalShippingPrice != null
 
   const toggleNested = (lineItemId: string, checked: boolean) => {
     setPacking((prev) =>
@@ -166,18 +168,26 @@ export function PreorderCalculateShippingModal({
       })
       const est = parseFloat(res.estimated_shipping)
       setCurrentEstimate(est)
-      if (
-        !shipment?.finalShippingPrice &&
-        checkoutEstimate == null &&
-        !finalPrice
-      ) {
+      setPacking(
+        res.packing.map((p) => ({
+          lineItemId: p.line_item_id,
+          boxCount: p.box_count,
+          isNested: p.is_nested,
+        }))
+      )
+      // Pre-fill final price from current ShipStation rate; admin can edit before save.
+      if (!shipment?.finalShippingPrice) {
         setFinalPrice(res.estimated_shipping)
       }
-      onSaved?.()
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      const err = error as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
       setSaveError(
-        err?.response?.data?.message || err?.message || "Failed to calculate shipping"
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to calculate shipping"
       )
     }
   }
@@ -209,9 +219,14 @@ export function PreorderCalculateShippingModal({
       onShippingConfigured?.()
       onClose()
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      const err = error as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
       setSaveError(
-        err?.response?.data?.message || err?.message || "Failed to save shipping"
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to save shipping"
       )
     }
   }
@@ -220,7 +235,10 @@ export function PreorderCalculateShippingModal({
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && !isBusy && onClose()}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !open && !isBusy && onClose()}
+    >
       <DialogContent
         className="flex max-h-[92vh] w-[95vw] max-w-2xl flex-col gap-0 overflow-hidden p-0"
         showCloseButton={false}
@@ -277,7 +295,11 @@ export function PreorderCalculateShippingModal({
           </div>
 
           {/* LCL placeholder — out of scope */}
-          <div data-placeholder="lcl-detection" className="hidden" aria-hidden />
+          <div
+            data-placeholder="lcl-detection"
+            className="hidden"
+            aria-hidden
+          />
 
           <div className="rounded-xl border border-[#D9E2E8] bg-white p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
@@ -291,14 +313,16 @@ export function PreorderCalculateShippingModal({
 
             <div className="space-y-2">
               {items.map((item) => {
-                const pack = packing.find((p) => p.lineItemId === item.productId)
+                const pack = packing.find(
+                  (p) => p.lineItemId === item.productId
+                )
                 const isNested = pack?.isNested ?? false
                 const boxCount = pack?.boxCount ?? item.quantity
 
                 return (
-                  <div
+                  <label
                     key={item.productId}
-                    className={`flex items-start gap-3 rounded-lg border p-3 ${
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${
                       isNested
                         ? "border-orange-200 bg-orange-50/50 opacity-75"
                         : "border-slate-200 bg-slate-50/50"
@@ -327,7 +351,8 @@ export function PreorderCalculateShippingModal({
                       </div>
                       <p className="text-xs text-slate-500">
                         {item.sku || item.shopifyProductId} · {formatDims(item)}{" "}
-                        · {itemWeightLb(item).toFixed(2)} lb · qty {item.quantity}
+                        · {itemWeightLb(item).toFixed(2)} lb · qty{" "}
+                        {item.quantity}
                       </p>
                     </div>
                     <div className="shrink-0 text-right text-sm">
@@ -336,11 +361,8 @@ export function PreorderCalculateShippingModal({
                           ? "0 box"
                           : `${boxCount} box${boxCount !== 1 ? "es" : ""}`}
                       </p>
-                      {isNested && (
-                        <p className="text-xs text-orange-600">not shipped</p>
-                      )}
                     </div>
-                  </div>
+                  </label>
                 )
               })}
             </div>
@@ -407,7 +429,9 @@ export function PreorderCalculateShippingModal({
                 )}
                 {finalPrice && !Number.isNaN(parseFloat(finalPrice)) && (
                   <div className="flex justify-between gap-4 border-t border-slate-200 pt-2">
-                    <span className="text-slate-600">Final shipping (admin)</span>
+                    <span className="text-slate-600">
+                      Final shipping (admin)
+                    </span>
                     <span className="font-semibold text-slate-900">
                       {formatCurrency(parseFloat(finalPrice))} USD
                     </span>
@@ -457,8 +481,9 @@ export function PreorderCalculateShippingModal({
               <div className="mt-4 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
                 <span>
-                  Checkout estimate exceeds final by {formatCurrency(creditAmount)}{" "}
-                  — issue credit manually if applicable. No auto-refund.
+                  Checkout estimate exceeds final by{" "}
+                  {formatCurrency(creditAmount)} — issue credit manually if
+                  applicable. No auto-refund.
                 </span>
               </div>
             )}

@@ -65,6 +65,12 @@ const shipReadySteps = [
   { step: 3, title: "Delivered" },
 ]
 
+function toShipReadyVisualStep(backendStep: number): number {
+  if (backendStep >= 4) return 3
+  if (backendStep >= 3) return 2
+  return 1
+}
+
 const preOrderSteps = [
   { step: 1, title: "Order Placed" },
   { step: 2, title: "Calculate Shipping" },
@@ -100,6 +106,7 @@ export function OrderFulfillmentPanel({
   const [showAcceptModal, setShowAcceptModal] = useState(false)
   const [showCalculateShippingModal, setShowCalculateShippingModal] =
     useState(false)
+  const [calculateShippingModalKey, setCalculateShippingModalKey] = useState(0)
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [acceptError, setAcceptError] = useState<string | undefined>(undefined)
 
@@ -121,6 +128,10 @@ export function OrderFulfillmentPanel({
     (max, item) => Math.max(max, item.fulfillmentStep || 1),
     1
   )
+
+  const visualStep = isPreOrder
+    ? currentStep
+    : toShipReadyVisualStep(currentStep)
 
   if (isLoading) {
     const steps = isPreOrder ? preOrderSteps : shipReadySteps
@@ -152,7 +163,7 @@ export function OrderFulfillmentPanel({
             </div>
           </div>
 
-          <Stepper value={currentStep} className="mb-6">
+          <Stepper value={visualStep} className="mb-6">
             {steps.map(({ step, title }, idx, arr) => (
               <StepperItem
                 key={step}
@@ -244,8 +255,7 @@ export function OrderFulfillmentPanel({
     currentStep === 2 &&
     order.preorderShipment?.finalShippingPrice != null
 
-  const showCalculateShipping =
-    isPreOrder && currentStep === 1 && !isCancelled
+  const showCalculateShipping = isPreOrder && currentStep === 1 && !isCancelled
 
   const trackingActionStep = isPreOrder ? 4 : 3
 
@@ -262,8 +272,6 @@ export function OrderFulfillmentPanel({
       onOrderActioned?.()
     }, 2000)
   }
-
-  const visualStep = currentStep
 
   const handleTrackingConfirm = async (
     trackingNumber: string,
@@ -424,9 +432,7 @@ export function OrderFulfillmentPanel({
             transition={{ duration: 0.3 }}
             className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-xl bg-white/95 backdrop-blur-sm"
           >
-            {acceptSuccess ||
-            trackingSuccess ||
-            receivedSuccess ? (
+            {acceptSuccess || trackingSuccess || receivedSuccess ? (
               <>
                 <motion.div
                   initial={{ scale: 0 }}
@@ -489,7 +495,10 @@ export function OrderFulfillmentPanel({
               variant="outline"
               size="sm"
               className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-              onClick={() => setShowCalculateShippingModal(true)}
+              onClick={() => {
+                setCalculateShippingModalKey((k) => k + 1)
+                setShowCalculateShippingModal(true)
+              }}
             >
               Calculate Shipping
             </Button>
@@ -513,68 +522,71 @@ export function OrderFulfillmentPanel({
           {!showCalculateShipping &&
             !(isPreOrder && currentStep === 2) &&
             !isCancelled && (
-            <>
-              {isPreOrder && currentStep === 3 && (
-                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
-                  Waiting for payment
-                </span>
-              )}
-              {isPreOrder && currentStep === 4 && isPaymentReceived && !hasTrackingInfo && (
-                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800">
-                  Payment received
-                </span>
-              )}
-              {currentStep === trackingActionStep && !hasTrackingInfo && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                  onClick={() => {
-                    if (items.length === 1) {
-                      setSelectedTrackingItem(items[0])
-                    } else {
-                      setSelectedTrackingItem({
-                        productId: "",
-                        title: "All Items",
-                      } as any)
-                    }
-                  }}
-                >
-                  Add Tracking
-                </Button>
-              )}
-              {currentStep === trackingActionStep && hasTrackingInfo && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                  onClick={() => {
-                    if (items.length === 1) {
-                      setSelectedReceivedItem(items[0])
-                    } else {
-                      const totalQuantity = items.reduce(
-                        (sum, item) => sum + item.quantity,
-                        0
-                      )
-                      const totalItemsReceived = items.reduce(
-                        (sum, item) => sum + (item.itemsReceived || 0),
-                        0
-                      )
-                      setSelectedReceivedItem({
-                        productId: "",
-                        title: "All Items",
-                        quantity: totalQuantity,
-                        itemsReceived: totalItemsReceived,
-                      } as any)
-                    }
-                  }}
-                  disabled={updateReceived.isPending}
-                >
-                  Update Received
-                </Button>
-              )}
-            </>
-          )}
+              <>
+                {isPreOrder && currentStep === 3 && (
+                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+                    Waiting for payment
+                  </span>
+                )}
+                {isPreOrder &&
+                  currentStep === 4 &&
+                  isPaymentReceived &&
+                  !hasTrackingInfo && (
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800">
+                      Payment received
+                    </span>
+                  )}
+                {currentStep === trackingActionStep && !hasTrackingInfo && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                    onClick={() => {
+                      if (items.length === 1) {
+                        setSelectedTrackingItem(items[0])
+                      } else {
+                        setSelectedTrackingItem({
+                          productId: "",
+                          title: "All Items",
+                        } as any)
+                      }
+                    }}
+                  >
+                    Add Tracking
+                  </Button>
+                )}
+                {currentStep === trackingActionStep && hasTrackingInfo && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                    onClick={() => {
+                      if (items.length === 1) {
+                        setSelectedReceivedItem(items[0])
+                      } else {
+                        const totalQuantity = items.reduce(
+                          (sum, item) => sum + item.quantity,
+                          0
+                        )
+                        const totalItemsReceived = items.reduce(
+                          (sum, item) => sum + (item.itemsReceived || 0),
+                          0
+                        )
+                        setSelectedReceivedItem({
+                          productId: "",
+                          title: "All Items",
+                          quantity: totalQuantity,
+                          itemsReceived: totalItemsReceived,
+                        } as any)
+                      }
+                    }}
+                    disabled={updateReceived.isPending}
+                  >
+                    Update Received
+                  </Button>
+                )}
+              </>
+            )}
         </div>
       </div>
 
@@ -642,7 +654,8 @@ export function OrderFulfillmentPanel({
               <p>
                 Shipping configured:{" "}
                 <span className="font-semibold text-slate-800">
-                  {formatCurrency(order.preorderShipment.finalShippingPrice)} USD
+                  {formatCurrency(order.preorderShipment.finalShippingPrice)}{" "}
+                  USD
                 </span>
                 {order.preorderShipment.estimatedShipping != null && (
                   <span className="text-slate-500">
@@ -678,14 +691,17 @@ export function OrderFulfillmentPanel({
           </div>
         )}
 
-        {isPreOrder && currentStep === 4 && !hasTrackingInfo && !isCancelled && (
-          <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-            <p>
-              <strong>Payment received.</strong> Add a tracking number — the
-              customer will receive a shipment email automatically.
-            </p>
-          </div>
-        )}
+        {isPreOrder &&
+          currentStep === 4 &&
+          !hasTrackingInfo &&
+          !isCancelled && (
+            <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+              <p>
+                <strong>Payment received.</strong> Add a tracking number — the
+                customer will receive a shipment email automatically.
+              </p>
+            </div>
+          )}
 
         {(() => {
           const uniqueTrackings = new Map<string, OrderLineItem>()
@@ -789,6 +805,7 @@ export function OrderFulfillmentPanel({
       />
 
       <PreorderCalculateShippingModal
+        key={`calc-ship-${order.id}-${calculateShippingModalKey}`}
         order={order}
         items={items}
         isOpen={showCalculateShippingModal}
