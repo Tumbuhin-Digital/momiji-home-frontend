@@ -33,24 +33,11 @@ import { IconBag } from "@/public/icons/icon-bag"
 import {
   useCart,
   useFlushPendingCart,
-  useSyncCartVariant,
+  useLocalCartVariantUpdate,
 } from "@/hooks"
-import { ensureCartSession } from "@/lib/cart/ensure-cart-session"
 import { extractVariantMetaFromCart } from "@/lib/cart/optimistic-cart"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
-
-import type { CartItemDto } from "@/types/cart"
-
-function itemToMeta(item: CartItemDto, isForcedPreOrder = false) {
-  return {
-    title: item.title,
-    image_src: item.image_src,
-    unit_price: item.unit_price,
-    inventory_quantity: item.inventory_quantity,
-    isForcedPreOrder,
-  }
-}
 
 export function CartSheet() {
   const pathname = usePathname()
@@ -87,7 +74,7 @@ export function CartSheet() {
   >(null)
 
   const { data: cartData } = useCart()
-  const syncCartVariant = useSyncCartVariant()
+  const updateLocalCart = useLocalCartVariantUpdate()
   const flushPendingCart = useFlushPendingCart()
 
   const shipReadyItems = cartData?.ship_ready || []
@@ -101,16 +88,12 @@ export function CartSheet() {
   }
 
   const allItemsLength = shipReadyItems.length + preOrderItems.length
-  const isPending = syncCartVariant.isPending || flushPendingCart.isPending
+  const isPending = flushPendingCart.isPending
 
-  const syncVariantQuantity = (variantId: string, totalQuantity: number) => {
+  const updateVariantLocally = (variantId: string, totalQuantity: number) => {
     const meta = extractVariantMetaFromCart(cartData, variantId)
     if (!meta) return
-
-    void ensureCartSession().then((hasSession) => {
-      if (!hasSession) return
-      syncCartVariant.mutate({ variantId, totalQuantity, meta })
-    })
+    updateLocalCart({ variantId, totalQuantity, meta })
   }
 
   const handleProceedToCheckout = async () => {
@@ -213,7 +196,7 @@ export function CartSheet() {
                               preOrderItems.find(
                                 (i) => i.variant_id === item.variant_id
                               )?.quantity || 0
-                            syncVariantQuantity(
+                            updateVariantLocally(
                               item.variant_id,
                               q + currentPreOrderQty
                             )
@@ -301,7 +284,7 @@ export function CartSheet() {
                               shipReadyItems.find(
                                 (i) => i.variant_id === item.variant_id
                               )?.quantity || 0
-                            syncVariantQuantity(
+                            updateVariantLocally(
                               item.variant_id,
                               currentShipReadyQty + q
                             )
@@ -380,31 +363,14 @@ export function CartSheet() {
       <RemoveItemModal
         isOpen={!!itemToRemove}
         onClose={() => setItemToRemove(null)}
-        onConfirm={async () => {
-          if (!itemToRemove) return
-
-          const meta = extractVariantMetaFromCart(
-            cartData,
-            itemToRemove.variantId
-          )
-          if (!meta) return
-
-          try {
-            const hasSession = await ensureCartSession()
-            if (!hasSession) return
-
-            await syncCartVariant.mutateAsync({
-              variantId: itemToRemove.variantId,
-              totalQuantity: itemToRemove.newTotal,
-              meta,
-            })
+        onConfirm={() => {
+          if (itemToRemove) {
+            updateVariantLocally(itemToRemove.variantId, itemToRemove.newTotal)
             setItemToRemove(null)
-          } catch (error) {
-            console.error("Failed to remove item from cart:", error)
           }
         }}
         productName={itemToRemove?.title || ""}
-        isPending={syncCartVariant.isPending}
+        isPending={false}
       />
 
       {depletedProduct && (
@@ -426,24 +392,14 @@ export function CartSheet() {
               preOrderItems.find((i) => i.variant_id === currentProduct.sku)
                 ?.quantity || 0
 
-            const shipItem = shipReadyItems.find(
-              (i) => i.variant_id === currentProduct.sku
-            )
-            const meta = shipItem
-              ? itemToMeta(shipItem)
-              : extractVariantMetaFromCart(cartData, currentProduct.sku)
-
-            if (!meta) return
-
             setBlinkingProductKey(currentProduct.sku)
             setBlinkingMessage("add")
 
             try {
-              await syncCartVariant.mutateAsync({
-                variantId: currentProduct.sku,
-                totalQuantity: currentQuantity + currentPreOrderQty,
-                meta,
-              })
+              updateVariantLocally(
+                currentProduct.sku,
+                currentQuantity + currentPreOrderQty
+              )
               setTimeout(() => {
                 setBlinkingProductKey(null)
                 setBlinkingMessage(null)
@@ -454,7 +410,7 @@ export function CartSheet() {
               setRevertQuantity(null)
             }
           }}
-          isPending={syncCartVariant.isPending}
+          isPending={false}
         />
       )}
     </>

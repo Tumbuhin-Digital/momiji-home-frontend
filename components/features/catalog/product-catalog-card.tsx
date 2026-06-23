@@ -2,7 +2,6 @@
 
 import Image from "next/image"
 import { useEffect, useState } from "react"
-import { toastManager } from "@/components/ui/toast"
 
 import { Boxes } from "lucide-react"
 
@@ -21,7 +20,7 @@ const DynamicImageCarousel = dynamic(
   }
 )
 
-import { useCart, useSyncCartVariant } from "@/hooks"
+import { useCart, useLocalCartVariantUpdate } from "@/hooks"
 import { ensureCartSession } from "@/lib/cart/ensure-cart-session"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
@@ -35,7 +34,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
   const [showDepletedModal, setShowDepletedModal] = useState(false)
 
   const { data: cartData } = useCart()
-  const syncCartVariant = useSyncCartVariant()
+  const updateLocalCart = useLocalCartVariantUpdate()
 
   const isShipReady = product.category === "ship-ready"
 
@@ -74,18 +73,16 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     setLocalQuantity(quantity)
   }, [quantity])
 
-  const isPending = syncCartVariant.isPending
+  const isPending = false
 
-  const applyCartUpdate = (newTotal: number) => {
+  const applyLocalUpdate = (newTotal: number) => {
     setLocalQuantity(newTotal)
-    void ensureCartSession().then((hasSession) => {
-      if (!hasSession) return
-      syncCartVariant.mutate({
-        variantId: product.sku,
-        totalQuantity: newTotal,
-        meta: variantMeta,
-      })
+    updateLocalCart({
+      variantId: product.sku,
+      totalQuantity: newTotal,
+      meta: variantMeta,
     })
+    void ensureCartSession()
   }
 
   const handleIncrease = () => {
@@ -96,11 +93,11 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         return
       }
     }
-    applyCartUpdate(localQuantity + 1)
+    applyLocalUpdate(localQuantity + 1)
   }
 
   const handleDecrease = () => {
-    applyCartUpdate(localQuantity - 1)
+    applyLocalUpdate(localQuantity - 1)
   }
 
   const handleCustomChange = (newTotal: number) => {
@@ -111,27 +108,17 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         return
       }
     }
-    applyCartUpdate(newTotal)
+    applyLocalUpdate(newTotal)
   }
 
-  const handlePreorderConfirm = async () => {
-    try {
-      await ensureCartSession()
-      await syncCartVariant.mutateAsync({
-        variantId: product.sku,
-        totalQuantity: localQuantity,
-        meta: variantMeta,
-      })
-      setShowDepletedModal(false)
-    } catch (error) {
-      setLocalQuantity(quantity)
-      toastManager.add({
-        title: "Error",
-        description: "Gagal memperbarui keranjang. Silakan coba lagi.",
-        type: "error",
-      })
-      console.error("Cart sync failed:", error)
-    }
+  const handlePreorderConfirm = () => {
+    updateLocalCart({
+      variantId: product.sku,
+      totalQuantity: localQuantity,
+      meta: variantMeta,
+    })
+    void ensureCartSession()
+    setShowDepletedModal(false)
   }
 
   return (
@@ -204,7 +191,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
           setLocalQuantity(quantity)
         }}
         onConfirm={handlePreorderConfirm}
-        isPending={syncCartVariant.isPending}
+        isPending={false}
       />
     </>
   )

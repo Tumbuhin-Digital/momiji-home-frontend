@@ -185,9 +185,6 @@ export function useSyncCartVariant() {
       }
       markPendingSync(variantId, totalQuantity)
     },
-    onSettled: () => {
-      return queryClient.invalidateQueries({ queryKey: queryKeys.cart.all() })
-    },
   })
 }
 

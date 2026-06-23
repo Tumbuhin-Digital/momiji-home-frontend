@@ -10,10 +10,9 @@ import { useCartStore } from "@/lib/stores/cart.store"
 
 export function GlobalLoadingOverlay() {
   const isGlobalPending = useCartStore((state) => state.isGlobalPending)
-  const isSyncing = useIsMutating({ mutationKey: ["cart", "syncVariant"] })
   const isFlushing = useIsMutating({ mutationKey: ["cart", "flush"] })
 
-  const isActive = isGlobalPending || isSyncing > 0 || isFlushing > 0
+  const isActive = isGlobalPending || isFlushing > 0
 
   const [progress, setProgress] = useState(0)
   const [visible, setVisible] = useState(false)
