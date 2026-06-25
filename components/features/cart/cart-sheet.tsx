@@ -50,6 +50,12 @@ export function CartSheet() {
 
   const isOpen = useCartStore((state) => state.isOpen)
   const setIsOpen = useCartStore((state) => state.setIsOpen)
+  const markCartDirty = useCartStore((state) => state.markCartDirty)
+  const clearCartDirty = useCartStore((state) => state.clearCartDirty)
+  const cartDirty = useCartStore((state) => state.cartDirty)
+  const requestShippingRefresh = useCartStore(
+    (state) => state.requestShippingRefresh
+  )
 
   const [itemToRemove, setItemToRemove] = useState<{
     variantId: string
@@ -93,12 +99,25 @@ export function CartSheet() {
   const updateVariantLocally = (variantId: string, totalQuantity: number) => {
     const meta = extractVariantMetaFromCart(cartData, variantId)
     if (!meta) return
+    markCartDirty()
     updateLocalCart({ variantId, totalQuantity, meta })
+  }
+
+  const handleSheetOpenChange = (open: boolean) => {
+    if (!open && cartDirty) {
+      requestShippingRefresh()
+      clearCartDirty()
+    }
+    setIsOpen(open)
   }
 
   const handleProceedToCheckout = async () => {
     try {
       await flushPendingCart.mutateAsync()
+      if (cartDirty) {
+        clearCartDirty()
+      }
+      requestShippingRefresh()
       setIsOpen(false)
       router.push("/checkout")
     } catch (error) {
@@ -108,7 +127,7 @@ export function CartSheet() {
 
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <Sheet open={isOpen} onOpenChange={handleSheetOpenChange}>
         <SheetContent
           showCloseButton={false}
           className="flex w-full max-w-91.75 flex-col px-0 sm:w-150.5 sm:max-w-150.5"

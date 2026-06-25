@@ -181,6 +181,12 @@ export default function CheckoutPageClient() {
   const { data: cartData, isLoading: isCartLoading } = useCart()
   const flushPendingCart = useFlushPendingCart()
   const getPendingSync = useCartStore((state) => state.getPendingSync)
+  const shouldRefreshShipping = useCartStore(
+    (state) => state.shouldRefreshShipping
+  )
+  const consumeShippingRefresh = useCartStore(
+    (state) => state.consumeShippingRefresh
+  )
   const queryClient = useQueryClient()
 
   const checkoutSummaryMutation = useCheckoutSummaryMutation()
@@ -297,24 +303,43 @@ export default function CheckoutPageClient() {
   }, [])
 
   useEffect(() => {
-    if (!hasFlushedCart) return
+    if (!hasFlushedCart || !shouldRefreshShipping) return
+
+    if (!consumeShippingRefresh()) return
 
     void queryClient.invalidateQueries({
       queryKey: queryKeys.shipping.methods(),
     })
-  }, [hasFlushedCart, shipReadyItems.length, preOrderItems.length, queryClient])
+  }, [
+    hasFlushedCart,
+    shouldRefreshShipping,
+    consumeShippingRefresh,
+    queryClient,
+  ])
 
   useEffect(() => {
-    if (cartData?.summary) {
-      setSummaryState((prev) => ({
+    if (!cartData?.summary) return
+
+    setSummaryState((prev) => {
+      const shipReadyTotal = cartData.summary.total_ship_ready || "0"
+      const preorderDeposit = cartData.summary.total_deposit || "0"
+      const preorderBalance = cartData.summary.total_balance_due || "0"
+      const shipReadyShipping = parseFloat(prev.shippingCost || "0")
+      const preOrderShipping = parseFloat(prev.shippingPreorder || "0")
+
+      return {
         ...prev,
-        shipReadyTotal: cartData.summary?.total_ship_ready || "0",
-        preorderDeposit: cartData.summary?.total_deposit || "0",
-        totalDueNow: cartData.summary?.total_charged_now || "0",
-        preorderBalance: cartData.summary?.total_balance_due || "0",
-        totalDueLater: cartData.summary?.total_balance_due || "0",
-      }))
-    }
+        shipReadyTotal,
+        preorderDeposit,
+        preorderBalance,
+        totalDueNow: String(
+          parseFloat(shipReadyTotal) +
+            shipReadyShipping +
+            parseFloat(preorderDeposit)
+        ),
+        totalDueLater: String(parseFloat(preorderBalance) + preOrderShipping),
+      }
+    })
   }, [cartData])
 
   useEffect(() => {

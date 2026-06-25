@@ -76,6 +76,24 @@ function buildCartItem(
   return item
 }
 
+function upsertCartItem(
+  items: CartItemDto[],
+  variantId: string,
+  newItem: CartItemDto | null
+): CartItemDto[] {
+  const index = items.findIndex((item) => item.variant_id === variantId)
+
+  if (!newItem || newItem.quantity <= 0) {
+    return items.filter((item) => item.variant_id !== variantId)
+  }
+
+  if (index === -1) {
+    return [...items, newItem]
+  }
+
+  return items.map((item, i) => (i === index ? newItem : item))
+}
+
 function recalculateSummary(
   shipReady: CartItemDto[],
   preOrder: CartItemDto[]
@@ -145,37 +163,27 @@ export function applyVariantToCart(
     (item) => item.variant_id === variantId
   )
 
-  const shipReady = base.ship_ready
-    .filter((item) => item.variant_id !== variantId)
-    .concat(
-      shipReadyQty > 0
-        ? [
-            buildCartItem(
-              variantId,
-              shipReadyQty,
-              "ship_ready",
-              meta,
-              existingShip
-            ),
-          ]
-        : []
-    )
+  const shipReady = upsertCartItem(
+    base.ship_ready,
+    variantId,
+    shipReadyQty > 0
+      ? buildCartItem(
+          variantId,
+          shipReadyQty,
+          "ship_ready",
+          meta,
+          existingShip
+        )
+      : null
+  )
 
-  const preOrder = base.pre_order
-    .filter((item) => item.variant_id !== variantId)
-    .concat(
-      preOrderQty > 0
-        ? [
-            buildCartItem(
-              variantId,
-              preOrderQty,
-              "pre_order",
-              meta,
-              existingPre
-            ),
-          ]
-        : []
-    )
+  const preOrder = upsertCartItem(
+    base.pre_order,
+    variantId,
+    preOrderQty > 0
+      ? buildCartItem(variantId, preOrderQty, "pre_order", meta, existingPre)
+      : null
+  )
 
   return {
     ...base,
