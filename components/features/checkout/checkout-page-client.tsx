@@ -1088,7 +1088,7 @@ export default function CheckoutPageClient() {
                   <div className="space-y-4">
                     <div className="border-b border-black/20 pb-2">
                       <h3 className="text-lg font-medium text-primary">
-                        Ship Ready
+                        ShipReady
                       </h3>
                     </div>
                     {shipReadyItems.map((item) => {
@@ -1186,7 +1186,7 @@ export default function CheckoutPageClient() {
                       <div className="space-y-0.5">
                         <div className="flex justify-between">
                           <span className="text-alternate/60">
-                            Ship Ready Total
+                            ShipReady Total
                           </span>
                           <span className="text-alternate/60">
                             {formatCurrency(

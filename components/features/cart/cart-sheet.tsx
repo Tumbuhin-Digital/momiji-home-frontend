@@ -186,7 +186,7 @@ export function CartSheet() {
               {shipReadyItems.length > 0 && (
                 <div className="flex flex-col gap-4">
                   <h3 className="font-semibold text-header sm:text-lg">
-                    Ship-Ready
+                    ShipReady
                   </h3>
                   <div className="flex flex-col gap-4">
                     {shipReadyItems.map((item) => {
@@ -331,7 +331,7 @@ export function CartSheet() {
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between border-b border-alternate/10 pb-2">
                   <span className="text-sm font-medium text-alternate">
-                    Total Ship Ready
+                    Total ShipReady
                   </span>
                   <span className="font-medium text-alternate">
                     {formatCurrency(

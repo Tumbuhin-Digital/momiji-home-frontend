@@ -40,7 +40,7 @@ export default function HomePage() {
                 size="2xl"
                 className="w-57.5 rounded-full uppercase hover:bg-primary sm:h-17.75!"
               >
-                SHOP SHIP-READY
+                SHOP SHIPREADY
               </Button>
             </Link>
           </div>
