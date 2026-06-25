@@ -20,6 +20,7 @@ import type {
   UpdateReceivedDto,
   UpdateStepDto,
   UpdateTrackingDto,
+  CreateFulfillmentDto,
 } from "@/types/orders/dtos"
 
 export function useAcceptOrder() {
@@ -251,6 +252,38 @@ export function useRequestSecondPayment(orderId: string) {
 
   return useMutation({
     mutationFn: () => ordersService.requestSecondPayment(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.orders.detail(orderId),
+      })
+    },
+  })
+}
+
+export function useCreateFulfillment(orderId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (body: CreateFulfillmentDto) =>
+      ordersService.createFulfillment(orderId, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.orders.detail(orderId),
+      })
+    },
+  })
+}
+
+export function useMarkFulfillmentDelivered(orderId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (fulfillmentId: string) =>
+      ordersService.markFulfillmentDelivered(orderId, fulfillmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })

@@ -56,6 +56,29 @@ export interface OrderLineItem {
   widthCm?: number
   heightCm?: number
   depthCm?: number
+  remainingQuantity?: number
+}
+
+export interface FulfillmentLineItem {
+  lineItemId: string
+  title: string
+  quantity: number
+  imageSrc?: string
+  unitPrice?: number
+}
+
+export interface FulfillmentGroup {
+  id: string
+  displayId: string
+  sequenceNumber: number
+  trackingNumber?: string
+  trackingUrl?: string
+  trackingCompany?: string
+  shipmentStatus?: string
+  status: string
+  fulfilledAt?: string
+  deliveredAt?: string
+  lineItems: FulfillmentLineItem[]
 }
 
 export interface PreorderPackingItem {
@@ -125,6 +148,7 @@ export interface Order {
   type: OrderType
   shippingMethod?: string
   preorderShipment?: PreorderShipment
+  fulfillments?: FulfillmentGroup[]
 }
 
 import type { OrderResponseDto } from "./dtos"
@@ -197,6 +221,7 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
       widthCm: item.width_cm,
       heightCm: item.height_cm,
       depthCm: item.depth_cm,
+      remainingQuantity: item.remaining_quantity,
     })),
     totalBalanceDue: parseFloat(dto.total_balance_due) || 0,
     totalChargedNow: parseFloat(dto.total_charged_now) || 0,
@@ -249,6 +274,25 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
       deliveredAt: null,
     },
     orderDate: dto.order_date || "",
+    fulfillments: (dto.fulfillments ?? []).map((f) => ({
+      id: f.id,
+      displayId: f.display_id,
+      sequenceNumber: f.sequence_number,
+      trackingNumber: f.tracking_number,
+      trackingUrl: f.tracking_url,
+      trackingCompany: f.tracking_company,
+      shipmentStatus: f.shipment_status,
+      status: f.status,
+      fulfilledAt: f.fulfilled_at,
+      deliveredAt: f.delivered_at,
+      lineItems: f.line_items.map((li) => ({
+        lineItemId: li.line_item_id,
+        title: li.title,
+        quantity: li.quantity,
+        imageSrc: li.image_src,
+        unitPrice: li.unit_price ? parseFloat(li.unit_price) : undefined,
+      })),
+    })),
   }
 }
 

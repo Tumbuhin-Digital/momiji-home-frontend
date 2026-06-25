@@ -36,6 +36,7 @@ export interface OrderItemDetailDto {
   width_cm?: number
   height_cm?: number
   depth_cm?: number
+  remaining_quantity?: number
 }
 
 export interface PackingItemDto {
@@ -113,6 +114,42 @@ export interface OrderResponseDto {
   total_ship_ready: string
   shipping_method?: string
   preorder_shipment?: PreorderShipmentDto
+  fulfillments?: FulfillmentDto[]
+}
+
+export interface FulfillmentLineItemDto {
+  line_item_id: string
+  title: string
+  quantity: number
+  image_src?: string
+  unit_price?: string
+}
+
+export interface FulfillmentDto {
+  id: string
+  display_id: string
+  sequence_number: number
+  tracking_number?: string
+  tracking_url?: string
+  tracking_company?: string
+  shipment_status?: string
+  status: string
+  fulfilled_at?: string
+  delivered_at?: string
+  line_items: FulfillmentLineItemDto[]
+}
+
+export interface CreateFulfillmentItemDto {
+  line_item_id: string
+  quantity: number
+}
+
+export interface CreateFulfillmentDto {
+  items: CreateFulfillmentItemDto[]
+  tracking_number: string
+  tracking_company: string
+  tracking_url?: string
+  notify_customer: boolean
 }
 
 export interface CreateOrderInput {

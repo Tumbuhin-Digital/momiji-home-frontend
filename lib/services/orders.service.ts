@@ -8,6 +8,8 @@ import type {
   CalculatePreorderShippingRequest,
   CalculatePreorderShippingResponse,
   CreateOrderInput,
+  CreateFulfillmentDto,
+  FulfillmentDto,
   OrderResponseDto,
   PreorderShipmentDto,
   UpdatePreorderShippingRequest,
@@ -180,6 +182,29 @@ async function requestSecondPayment(orderId: string): Promise<void> {
   await apiClient.post(`/orders/${orderId}/preorder/request-second-payment`)
 }
 
+async function createFulfillment(
+  orderId: string,
+  body: CreateFulfillmentDto
+): Promise<FulfillmentDto> {
+  const response = await apiClient.post<BaseResponse<FulfillmentDto>>(
+    `/orders/${orderId}/fulfillments`,
+    body
+  )
+  if (!response.data) {
+    throw new Error("Failed to create fulfillment")
+  }
+  return response.data
+}
+
+async function markFulfillmentDelivered(
+  orderId: string,
+  fulfillmentId: string
+): Promise<void> {
+  await apiClient.post(
+    `/orders/${orderId}/fulfillments/${fulfillmentId}/delivered`
+  )
+}
+
 export const ordersService = {
   acceptOrder,
   cancelOrder,
@@ -195,4 +220,6 @@ export const ordersService = {
   calculatePreorderShipping,
   updatePreorderShipping,
   requestSecondPayment,
+  createFulfillment,
+  markFulfillmentDelivered,
 }

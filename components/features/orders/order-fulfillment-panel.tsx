@@ -29,10 +29,13 @@ import {
 import { SecondPaymentConfirmationModal } from "@/components/features/orders/second-payment-confirmation-modal"
 import { PreorderCalculateShippingModal } from "@/components/features/orders/preorder-calculate-shipping-modal"
 import { CancelOrderModal } from "@/components/features/orders/cancel-order-modal"
+import { FulfillmentGroupCard } from "@/components/features/orders/fulfillment-group-card"
 import { IconTruckFast } from "@/public/icons/iconsax-truck-fast"
 
 import {
   useCancelOrder,
+  useCreateFulfillment,
+  useMarkFulfillmentDelivered,
   useRequestSecondPayment,
   useUpdateItemReceived,
   useUpdateItemStep,
@@ -43,6 +46,7 @@ import { formatCurrency } from "@/lib/utils"
 
 import type { Order } from "@/types/orders"
 import type { OrderLineItem } from "@/types/orders/entities"
+import type { CreateFulfillmentDto } from "@/types/orders/dtos"
 
 const UpdateReceivedModal = dynamic(
   () =>
@@ -56,6 +60,10 @@ const UpdateStepModal = dynamic(
 const UpdateTrackingModal = dynamic(
   () =>
     import("./update-tracking-modal").then((mod) => mod.UpdateTrackingModal),
+  { ssr: false }
+)
+const FulfillItemsModal = dynamic(
+  () => import("./fulfill-items-modal").then((mod) => mod.FulfillItemsModal),
   { ssr: false }
 )
 
@@ -111,6 +119,10 @@ export function OrderFulfillmentPanel({
     "initial" | "edit"
   >("initial")
   const [showCancelModal, setShowCancelModal] = useState(false)
+  const [showFulfillModal, setShowFulfillModal] = useState(false)
+  const [markingDeliveredId, setMarkingDeliveredId] = useState<string | null>(
+    null
+  )
   const [acceptError, setAcceptError] = useState<string | undefined>(undefined)
 
   const queryClient = useQueryClient()
@@ -119,6 +131,8 @@ export function OrderFulfillmentPanel({
   const updateReceived = useUpdateItemReceived()
   const updateStep = useUpdateItemStep()
   const updateTracking = useUpdateItemTracking()
+  const createFulfillment = useCreateFulfillment(order.id)
+  const markDelivered = useMarkFulfillmentDelivered(order.id)
   const requestSecondPayment = useRequestSecondPayment(order.id)
 
   const items = order.lineItems.filter(
@@ -276,6 +290,50 @@ export function OrderFulfillmentPanel({
 
   const trackingActionStep = isPreOrder ? 4 : 3
 
+  const preOrderFulfillments = (order.fulfillments ?? []).filter((f) =>
+    f.lineItems.some((li) =>
+      items.some((item) => item.productId === li.lineItemId)
+    )
+  )
+
+  const hasUnfulfilledPreOrder = isPreOrder
+    ? items.some((item) => {
+        const remaining = item.remainingQuantity ?? item.quantity
+        const hasTracking = Boolean(
+          item.trackingNumber?.trim() || item.trackingUrl?.trim()
+        )
+        if (remaining <= 0) return false
+        if (hasTracking && remaining >= item.quantity) return false
+        return true
+      })
+    : false
+
+  const handleFulfillConfirm = async (body: CreateFulfillmentDto) => {
+    await createFulfillment.mutateAsync(body)
+    setShowFulfillModal(false)
+    await queryClient.refetchQueries({
+      queryKey: queryKeys.orders.detail(order.id),
+    })
+    setTrackingSuccess(true)
+    setTimeout(() => {
+      setTrackingSuccess(false)
+      onOrderActioned?.()
+    }, 2000)
+  }
+
+  const handleMarkDelivered = async (fulfillmentId: string) => {
+    setMarkingDeliveredId(fulfillmentId)
+    try {
+      await markDelivered.mutateAsync(fulfillmentId)
+      await queryClient.refetchQueries({
+        queryKey: queryKeys.orders.detail(order.id),
+      })
+      onOrderActioned?.()
+    } finally {
+      setMarkingDeliveredId(null)
+    }
+  }
+
   const handleCancel = async (_orderId: string, reason: string) => {
     await cancelOrder.mutateAsync({
       orderId: order.id,
@@ -326,7 +384,7 @@ export function OrderFulfillmentPanel({
 
   const renderItemContent = (item: OrderLineItem) => {
     return (
-      <div className="flex flex-col gap-4 rounded-md bg-white p-3 shadow-none sm:flex-row">
+      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-none sm:flex-row">
         <div className="flex min-w-0 flex-1 gap-4">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-linear-to-b from-white via-white to-black/5">
             {item.imageSrc ? (
@@ -561,55 +619,73 @@ export function OrderFulfillmentPanel({
                   </span>
                 )}
 
-                {currentStep === trackingActionStep && !hasTrackingInfo && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                    onClick={() => {
-                      if (items.length === 1) {
-                        setSelectedTrackingItem(items[0])
-                      } else {
-                        setSelectedTrackingItem({
-                          productId: "",
-                          title: "All Items",
-                        } as any)
-                      }
-                    }}
-                  >
-                    Add Tracking
-                  </Button>
-                )}
-                {currentStep === trackingActionStep && hasTrackingInfo && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
-                    onClick={() => {
-                      if (items.length === 1) {
-                        setSelectedReceivedItem(items[0])
-                      } else {
-                        const totalQuantity = items.reduce(
-                          (sum, item) => sum + item.quantity,
-                          0
-                        )
-                        const totalItemsReceived = items.reduce(
-                          (sum, item) => sum + (item.itemsReceived || 0),
-                          0
-                        )
-                        setSelectedReceivedItem({
-                          productId: "",
-                          title: "All Items",
-                          quantity: totalQuantity,
-                          itemsReceived: totalItemsReceived,
-                        } as any)
-                      }
-                    }}
-                    disabled={updateReceived.isPending}
-                  >
-                    Update Received
-                  </Button>
-                )}
+                {isPreOrder &&
+                  currentStep === trackingActionStep &&
+                  hasUnfulfilledPreOrder && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                      onClick={() => setShowFulfillModal(true)}
+                      disabled={createFulfillment.isPending}
+                    >
+                      Add Tracking
+                    </Button>
+                  )}
+
+                {!isPreOrder &&
+                  currentStep === trackingActionStep &&
+                  !hasTrackingInfo && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                      onClick={() => {
+                        if (items.length === 1) {
+                          setSelectedTrackingItem(items[0])
+                        } else {
+                          setSelectedTrackingItem({
+                            productId: "",
+                            title: "All Items",
+                          } as any)
+                        }
+                      }}
+                    >
+                      Add Tracking
+                    </Button>
+                  )}
+                {!isPreOrder &&
+                  currentStep === trackingActionStep &&
+                  hasTrackingInfo && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                      onClick={() => {
+                        if (items.length === 1) {
+                          setSelectedReceivedItem(items[0])
+                        } else {
+                          const totalQuantity = items.reduce(
+                            (sum, item) => sum + item.quantity,
+                            0
+                          )
+                          const totalItemsReceived = items.reduce(
+                            (sum, item) => sum + (item.itemsReceived || 0),
+                            0
+                          )
+                          setSelectedReceivedItem({
+                            productId: "",
+                            title: "All Items",
+                            quantity: totalQuantity,
+                            itemsReceived: totalItemsReceived,
+                          } as any)
+                        }
+                      }}
+                      disabled={updateReceived.isPending}
+                    >
+                      Update Received
+                    </Button>
+                  )}
               </>
             )}
         </div>
@@ -730,6 +806,19 @@ export function OrderFulfillmentPanel({
             renderAirwayBill(item)
           )
         })()}
+
+        {isPreOrder && preOrderFulfillments.length > 0 && (
+          <div className="mt-4 flex flex-col gap-4">
+            {preOrderFulfillments.map((f) => (
+              <FulfillmentGroupCard
+                key={f.id}
+                fulfillment={f}
+                onMarkDelivered={handleMarkDelivered}
+                isMarkingDelivered={markingDeliveredId === f.id}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <UpdateStepModal
@@ -806,6 +895,16 @@ export function OrderFulfillmentPanel({
         onConfirm={handleTrackingConfirm}
         isConfirming={updateTracking.isPending || updateStep.isPending}
       />
+
+      {isPreOrder && (
+        <FulfillItemsModal
+          items={items}
+          isOpen={showFulfillModal}
+          onClose={() => setShowFulfillModal(false)}
+          onConfirm={handleFulfillConfirm}
+          isConfirming={createFulfillment.isPending}
+        />
+      )}
 
       <PreorderCalculateShippingModal
         key={`calc-ship-${order.id}-${calculateShippingModalKey}`}
