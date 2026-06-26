@@ -70,5 +70,7 @@ export interface CheckoutConfirmResult {
   totalBalanceDue: number
   totalChargedNow: number
   totalPrice: number
+  shipReadyShipping: number
+  preorderShippingEstimate: number
   items: CheckoutConfirmItem[]
 }

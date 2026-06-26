@@ -124,6 +124,8 @@ async function getCheckoutConfirm(
     totalBalanceDue: parseFloat(d.total_balance_due || "0"),
     totalChargedNow: parseFloat(d.total_charged_now || "0"),
     totalPrice: parseFloat(d.total_price || "0"),
+    shipReadyShipping: parseFloat(d.ship_ready_shipping || "0"),
+    preorderShippingEstimate: parseFloat(d.preorder_shipping_estimate || "0"),
     items: (d.items || []).map((item) => ({
       title: item.title,
       amountCharged: parseFloat(item.amount_charged || "0"),

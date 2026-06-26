@@ -103,55 +103,71 @@ export default function OrderConfirmedClient({
     title: string
     amount: number
     isPaid: boolean
+    isShipping?: boolean
   }> = []
 
   const unpaidItems: Array<{
     title: string
     amount: number
     isPaid: boolean
+    isShipping?: boolean
   }> = []
+
+  const hasPreOrderItems = data.items?.some((item) => item.type === "pre_order")
 
   if (data.items) {
     data.items.forEach((item) => {
-      const isShipping =
-        item.type === "shipping" ||
-        item.title.toLowerCase().includes("shipping")
-
-      if (item.amountCharged > 0) {
-        let title = item.title
-        if (isShipping) {
-          if (!title.startsWith("↳")) {
-            title = `↳ ${title}`
-          }
-        } else {
-          title = `${title} ${item.quantity}x pcs`
-        }
+      if (item.type === "ship_ready" && item.amountCharged > 0) {
         paidItems.push({
-          title,
+          title: `${item.title} ${item.quantity}x pcs`,
           amount: item.amountCharged,
           isPaid: true,
         })
       }
+    })
 
-      if (item.balanceDue > 0) {
-        let title = item.title
-        if (isShipping) {
-          if (!title.startsWith("↳")) {
-            title = `↳ ${title}`
-          }
-        } else {
-          const cleanTitle = title
-            .replace(/\[PREORDER\]\s*/i, "")
-            .replace(/\(Deposit \d+%\)/i, "")
-            .trim()
-          title = `Payment Proceed - ${cleanTitle || title}`
-        }
+    data.items.forEach((item) => {
+      if (item.type === "pre_order" && item.amountCharged > 0) {
+        paidItems.push({
+          title: `${item.title} ${item.quantity}x pcs`,
+          amount: item.amountCharged,
+          isPaid: true,
+        })
+      }
+    })
+  }
+
+  if (data.shipReadyShipping > 0) {
+    paidItems.push({
+      title: "Ship Ready Shipping",
+      amount: data.shipReadyShipping,
+      isPaid: true,
+      isShipping: true,
+    })
+  }
+
+  if (data.items) {
+    data.items.forEach((item) => {
+      if (item.type === "pre_order" && item.balanceDue > 0) {
+        const cleanTitle = item.title
+          .replace(/\[PREORDER\]\s*/i, "")
+          .replace(/\(Deposit \d+%\)/i, "")
+          .trim()
         unpaidItems.push({
-          title,
+          title: `Remaining Balance due - ${cleanTitle || item.title}`,
           amount: item.balanceDue,
           isPaid: false,
         })
       }
+    })
+  }
+
+  if (hasPreOrderItems && data.preorderShippingEstimate > 0) {
+    unpaidItems.push({
+      title: "Pre-Order Shipping (Estimation)",
+      amount: data.preorderShippingEstimate,
+      isPaid: false,
+      isShipping: true,
     })
   }
 
@@ -280,9 +296,23 @@ export default function OrderConfirmedClient({
                         key={`paid-${idx}`}
                         className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-0"
                       >
-                        <span className="text-sm text-alternate/60 sm:text-base">
-                          {item.title}
-                        </span>
+                        {item.isShipping ? (
+                          <div className="flex items-center gap-2">
+                            <img
+                              src="/images/icon-arrow.svg"
+                              alt=""
+                              className="size-6 shrink-0"
+                              aria-hidden
+                            />
+                            <span className="text-sm text-alternate/60 sm:text-base">
+                              {item.title}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-alternate/60 sm:text-base">
+                            {item.title}
+                          </span>
+                        )}
                         <div className="flex items-center gap-1.5">
                           <Check
                             className="size-3.5 text-[#34C759] sm:size-4.5"
@@ -304,9 +334,23 @@ export default function OrderConfirmedClient({
                         key={`unpaid-${idx}`}
                         className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-0"
                       >
-                        <span className="text-sm text-alternate/60 sm:text-base">
-                          {item.title}
-                        </span>
+                        {item.isShipping ? (
+                          <div className="flex items-center gap-2">
+                            <img
+                              src="/images/icon-arrow.svg"
+                              alt=""
+                              className="size-6 shrink-0"
+                              aria-hidden
+                            />
+                            <span className="text-sm text-alternate/60 sm:text-base">
+                              {item.title}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-alternate/60 sm:text-base">
+                            {item.title}
+                          </span>
+                        )}
                         <div className="flex items-center gap-1.5">
                           <Clock
                             className="size-3.5 text-[#FF8D28] sm:size-4.5"
@@ -331,9 +375,7 @@ export default function OrderConfirmedClient({
                     />
                   </div>
                   <p className="text-xs text-alternate/60 sm:text-sm">
-                    A Remaining Balance link has been sent to your email. No
-                    account needed, just click the link when you&apos;re ready
-                    to pay the remaining balance.
+                    Payment received. Your invoice has been sent to your email
                   </p>
                 </div>
               )}

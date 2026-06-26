@@ -59,6 +59,8 @@ export interface CheckoutConfirmResponseDto {
   order_date: string
   order_id: string
   order_number: string
+  preorder_shipping_estimate?: string | null
+  ship_ready_shipping?: string | null
   total_balance_due: string | null
   total_charged_now: string | null
   total_price: string
