@@ -139,7 +139,7 @@ export default function OrderConfirmedClient({
 
   if (data.shipReadyShipping > 0) {
     paidItems.push({
-      title: "Ship Ready Shipping",
+      title: "ShipReady Shipping",
       amount: data.shipReadyShipping,
       isPaid: true,
       isShipping: true,
