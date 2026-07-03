@@ -13,6 +13,7 @@ export interface ShippingRatesRequest {
   state?: string
   zip: string
   segment?: "ship_ready" | "pre_order"
+  origin?: "east" | "west"
 }
 
 export interface ValidateAddressRequest {

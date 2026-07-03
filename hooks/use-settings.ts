@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/lib/query/query-keys"
 import { settingsService } from "@/lib/services/settings.service"
 
-import type { UpdateCheckoutNotesInput } from "@/types/settings"
+import type { UpdateCheckoutNotesInput, UpdateWarehouseInput, WarehouseCode } from "@/types/settings"
 
 export function useCheckoutNotes() {
   return useQuery({
@@ -30,6 +30,25 @@ export function useUpdateCheckoutNotes() {
       settingsService.updateSettings(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.settings.all })
+    },
+  })
+}
+
+export function useWarehouses() {
+  return useQuery({
+    queryKey: queryKeys.settings.warehouses(),
+    queryFn: () => settingsService.getWarehouses(),
+  })
+}
+
+export function useUpdateWarehouse(code: WarehouseCode) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (input: UpdateWarehouseInput) =>
+      settingsService.updateWarehouse(code, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.warehouses() })
     },
   })
 }

@@ -11,10 +11,16 @@ import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 
-import { useSettings, useUpdateCheckoutNotes } from "@/hooks/use-settings"
+import { WarehouseCard } from "@/components/features/settings/warehouse-card"
+import {
+  useSettings,
+  useUpdateCheckoutNotes,
+  useWarehouses,
+} from "@/hooks/use-settings"
 
 export default function SettingsClient() {
   const { data, isLoading } = useSettings()
+  const { data: warehouses, isLoading: isWarehousesLoading } = useWarehouses()
   const updateMutation = useUpdateCheckoutNotes()
 
   const [dueNowNote, setDueNowNote] = useState("")
@@ -44,10 +50,21 @@ export default function SettingsClient() {
         dueNowNote: dueNowNote.trim(),
         dueLaterNote: dueLaterNote.trim(),
       })
-    } catch {}
+      toastManager.add({
+        title: "Saved",
+        description: "Checkout notes updated successfully",
+        type: "success",
+      })
+    } catch {
+      toastManager.add({
+        title: "Error",
+        description: "Failed to update checkout notes",
+        type: "error",
+      })
+    }
   }
 
-  if (isLoading) {
+  if (isLoading || isWarehousesLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center p-6">
         <Spinner className="size-8" />
@@ -64,13 +81,22 @@ export default function SettingsClient() {
         <div>
           <h1 className="text-2xl font-medium text-alternate">Settings</h1>
           <p className="text-sm text-alternate/70">
-            Manage checkout shipping descriptions shown to customers.
+            Manage checkout copy and warehouse ship-from addresses.
           </p>
         </div>
       </div>
 
       <Card className="max-w-3xl rounded-xl border-neutral-200 shadow-sm">
         <CardContent className="space-y-6 p-6">
+          <div>
+            <h2 className="text-lg font-medium text-alternate">
+              Checkout Notes
+            </h2>
+            <p className="text-sm text-alternate/70">
+              Shipping descriptions shown to customers on checkout.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="due-now-note" className="text-sm font-medium">
               Due Now note
@@ -121,11 +147,25 @@ export default function SettingsClient() {
                 Saving...
               </>
             ) : (
-              "Save Settings"
+              "Save Checkout Notes"
             )}
           </Button>
         </CardContent>
       </Card>
+
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-lg font-medium text-alternate">Warehouses</h2>
+          <p className="text-sm text-alternate/70">
+            Ship-from addresses for rate calculation. Ship-ready orders always
+            use East Coast.
+          </p>
+        </div>
+
+        {warehouses?.map((warehouse) => (
+          <WarehouseCard key={warehouse.code} warehouse={warehouse} />
+        ))}
+      </div>
     </div>
   )
 }

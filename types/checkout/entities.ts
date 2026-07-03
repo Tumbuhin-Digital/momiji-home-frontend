@@ -37,6 +37,7 @@ export interface CheckoutSummaryInput {
   shipping_method?: string
   zip_code?: string
   country?: string
+  origin?: "east" | "west"
 }
 
 export interface CheckoutCreateInput {
@@ -51,6 +52,7 @@ export interface CheckoutCreateInput {
   shipping_method: string
   state?: string
   zip?: string
+  origin?: "east" | "west"
 }
 
 export interface CheckoutConfirmItem {

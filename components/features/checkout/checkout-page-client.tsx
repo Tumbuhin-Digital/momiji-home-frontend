@@ -43,6 +43,11 @@ import {
 import { Separator } from "@/components/ui/separator"
 
 import { CheckoutSkeleton } from "@/components/features/checkout/checkout-skeleton"
+import {
+  CheckoutShippingSegment,
+  segmentBatchLabel,
+  type WarehouseCode,
+} from "@/components/features/checkout/checkout-shipping-segment"
 import { WaitingPaymentOverlay } from "@/components/features/checkout/waiting-payment-overlay"
 import { allowCheckoutNavigation } from "@/hooks/use-before-unload"
 import { IconBag } from "@/public/icons/icon-bag"
@@ -167,6 +172,7 @@ export default function CheckoutPageClient() {
   const [isParsingAddress, setIsParsingAddress] = useState(false)
   const [parsingProgress, setParsingProgress] = useState(0)
   const [hasFlushedCart, setHasFlushedCart] = useState(false)
+  const [preorderOrigin, setPreorderOrigin] = useState<WarehouseCode>("east")
 
   const [summaryState, setSummaryState] = useState({
     shippingCost: "0",
@@ -240,11 +246,17 @@ export default function CheckoutPageClient() {
     isFetching: isLoadingPreOrderRates,
     isError: isPreOrderRatesError,
   } = useShippingRates(
-    { ...ratesAddressInput, segment: "pre_order" },
+    { ...ratesAddressInput, segment: "pre_order", origin: preorderOrigin },
     {
       enabled: ratesEnabledBase && preOrderItems.length > 0,
     }
   )
+
+  const shipReadyBatchLabel = segmentBatchLabel(
+    shipReadyItems,
+    "Ship Ready Items"
+  )
+  const preOrderBatchLabel = segmentBatchLabel(preOrderItems, "Pre-Order Items")
 
   const isInitialLoading =
     isCartLoading || !hasFlushedCart || flushPendingCart.isPending
@@ -394,6 +406,7 @@ export default function CheckoutPageClient() {
         if (formValues.shippingMethod) {
           payload.shipping_method = formValues.shippingMethod
         }
+        payload.origin = preorderOrigin
 
         const summary = await checkoutSummaryMutation.mutateAsync(payload)
 
@@ -434,6 +447,7 @@ export default function CheckoutPageClient() {
     formValues.country,
     formValues.zipCode,
     preOrderItems.length,
+    preorderOrigin,
   ])
 
   const handleAddressPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -555,6 +569,7 @@ export default function CheckoutPageClient() {
           shipping_method: values.shippingMethod || "",
           state: normalizedState,
           zip: values.zipCode,
+          origin: preOrderItems.length > 0 ? preorderOrigin : undefined,
         })
       initiatedCheckoutReference = checkoutReference
       setCurrentCheckoutUrl(checkoutUrl)
@@ -996,84 +1011,34 @@ export default function CheckoutPageClient() {
                 </div>
               </section>
 
-              {/* Pre-Order Shipping Method */}
+              {shipReadyItems.length > 0 && (
+                <CheckoutShippingSegment
+                  title="Ship Ready Items"
+                  batchLabel={shipReadyBatchLabel}
+                  locked
+                  ratesEnabled={ratesEnabledBase}
+                  isLoading={isLoadingShipReadyRates}
+                  rates={shipReadyRates}
+                />
+              )}
+
               {preOrderItems.length > 0 && (
-                <section className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-2xl font-medium text-alternate">
-                      Pre-Order Shipping Method
-                    </h2>
-                    <PreviewCard>
-                      <PreviewCardTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 rounded-full"
-                          />
-                        }
-                      >
-                        <InfoIcon className="size-4 text-muted-foreground" />
-                      </PreviewCardTrigger>
-                      <PreviewCardPopup>
-                        <div className="flex max-w-xs flex-col gap-2 p-1">
-                          <h4 className="text-sm font-medium">
-                            Pre-Order Shipping Information
-                          </h4>
-                          <p className="text-xs text-pretty text-muted-foreground">
-                            The shipping cost shown is an estimate. You&apos;ll
-                            pay the shipping fee when your pre-order item is
-                            ready to ship
-                          </p>
-                        </div>
-                      </PreviewCardPopup>
-                    </PreviewCard>
-                  </div>
-                  {isLoadingPreOrderRates ? (
-                    <div className="flex h-24 items-center justify-center rounded bg-muted/50">
-                      <Loader2 className="size-6 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : isPreOrderRatesError ? (
-                    <div className="rounded border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">
-                      Failed to load shipping rates. Please check your address
-                      and try again.
-                    </div>
-                  ) : (
-                    <div className="overflow-hidden rounded border bg-white">
-                      {!preOrderRates || preOrderRates.length === 0 ? (
-                        <div className="p-6 text-center text-sm text-slate-500">
-                          Please enter your ZIP Code to see available shipping
-                          rates.
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between p-4">
-                          <div className="flex flex-col gap-1">
-                            <span className="font-medium text-slate-800">
-                              {preOrderRates[0].label}
-                            </span>
-                            <span className="text-sm text-slate-500">
-                              Estimated Delivery:{" "}
-                              {preOrderRates[0].deliveryDays} Days
-                            </span>
-                          </div>
-                          <span className="font-medium text-slate-800">
-                            {preOrderRates[0].cost === "0" ||
-                            preOrderRates[0].cost === "0.00"
-                              ? "Free"
-                              : formatCurrency(
-                                  parseFloat(preOrderRates[0].cost)
-                                )}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {errors.shippingMethod && (
-                    <p className="text-sm text-red-500">
-                      {errors.shippingMethod.message}
-                    </p>
-                  )}
-                </section>
+                <CheckoutShippingSegment
+                  title="Pre-Order Items"
+                  batchLabel={preOrderBatchLabel}
+                  warehouseValue={preorderOrigin}
+                  onWarehouseChange={setPreorderOrigin}
+                  ratesEnabled={ratesEnabledBase}
+                  isLoading={isLoadingPreOrderRates}
+                  isError={isPreOrderRatesError}
+                  rates={preOrderRates}
+                />
+              )}
+
+              {errors.shippingMethod && preOrderItems.length > 0 && (
+                <p className="text-sm text-red-500">
+                  {errors.shippingMethod.message}
+                </p>
               )}
             </div>
           </div>

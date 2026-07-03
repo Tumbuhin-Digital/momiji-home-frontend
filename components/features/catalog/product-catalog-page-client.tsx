@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 
@@ -28,7 +29,8 @@ const ProductCatalogCard = dynamic(
   }
 )
 
-import { useInfiniteCatalogProducts } from "@/hooks"
+import { useFlushPendingCart, useInfiniteCatalogProducts } from "@/hooks"
+import { useCartStore } from "@/lib/stores/cart.store"
 
 import type { ProductCatalogPageClientProps } from "@/types/products"
 
@@ -38,10 +40,33 @@ export function ProductCatalogPageClient({
   bottomNavLink,
   bottomNavText,
 }: ProductCatalogPageClientProps) {
+  const router = useRouter()
+
   const [isInitialized, setIsInitialized] = useState(false)
   const [itemsPerPage, setItemsPerPage] = useState(8)
 
   const observerTarget = useRef<HTMLDivElement>(null)
+
+  const cartDirty = useCartStore((state) => state.cartDirty)
+  const clearCartDirty = useCartStore((state) => state.clearCartDirty)
+  const requestShippingRefresh = useCartStore(
+    (state) => state.requestShippingRefresh
+  )
+
+  const flushPendingCart = useFlushPendingCart()
+
+  const handleProceedToCheckout = async () => {
+    try {
+      await flushPendingCart.mutateAsync()
+      if (cartDirty) {
+        clearCartDirty()
+      }
+      requestShippingRefresh()
+      router.push("/checkout")
+    } catch (error) {
+      console.error("Failed to sync cart before checkout:", error)
+    }
+  }
 
   const fulfillmentType =
     category === "ship-ready"
@@ -110,16 +135,13 @@ export function ProductCatalogPageClient({
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-center pb-2">
-          <Button
-            disabled
-            type="button"
-            size="2xl"
-            className="w-57.5 rounded-full uppercase sm:h-17.75!"
-          >
-            {bottomNavText}
-          </Button>
-        </div>
+        <CatalogBottomNav
+          bottomNavLink={bottomNavLink}
+          bottomNavText={bottomNavText}
+          isCheckoutPending={false}
+          isLoading
+          onProceedToCheckout={() => {}}
+        />
       </div>
     )
   }
@@ -191,16 +213,50 @@ export function ProductCatalogPageClient({
         </div>
       )}
 
-      <div className="flex items-center justify-center pb-2">
-        <Button
-          type="button"
-          size="2xl"
-          className="w-57.5 rounded-full uppercase sm:h-17.75!"
-          render={<Link href={bottomNavLink} />}
-        >
-          {bottomNavText}
-        </Button>
-      </div>
+      <CatalogBottomNav
+        bottomNavLink={bottomNavLink}
+        bottomNavText={bottomNavText}
+        isCheckoutPending={flushPendingCart.isPending}
+        onProceedToCheckout={handleProceedToCheckout}
+      />
+    </div>
+  )
+}
+
+type CatalogBottomNavProps = {
+  bottomNavLink: string
+  bottomNavText: string
+  isCheckoutPending: boolean
+  isLoading?: boolean
+  onProceedToCheckout: () => void
+}
+
+function CatalogBottomNav({
+  bottomNavLink,
+  bottomNavText,
+  isCheckoutPending,
+  isLoading = false,
+  onProceedToCheckout,
+}: CatalogBottomNavProps) {
+  return (
+    <div className="flex flex-col items-center gap-4 pb-10 sm:pb-18">
+      <Button
+        disabled={isLoading}
+        type="button"
+        size="2xl"
+        className="w-57.5 rounded-full uppercase sm:h-17.75!"
+        render={isLoading ? undefined : <Link href={bottomNavLink} />}
+      >
+        {bottomNavText}
+      </Button>
+      <button
+        type="button"
+        disabled={isLoading || isCheckoutPending}
+        onClick={onProceedToCheckout}
+        className="text-sm font-medium text-alternate uppercase underline underline-offset-4 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Proceed to Checkout
+      </button>
     </div>
   )
 }

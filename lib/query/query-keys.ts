@@ -82,6 +82,7 @@ const queryKeys = {
     all: ["settings"] as const,
     checkoutNotes: () => ["settings", "checkout-notes"] as const,
     admin: () => ["settings", "admin"] as const,
+    warehouses: () => ["settings", "warehouses"] as const,
   },
   sync: {
     all: ["sync"] as const,
