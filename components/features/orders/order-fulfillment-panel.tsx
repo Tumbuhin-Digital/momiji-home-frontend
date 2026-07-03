@@ -45,7 +45,7 @@ import { queryKeys } from "@/lib/query/query-keys"
 import { formatCurrency } from "@/lib/utils"
 
 import type { Order } from "@/types/orders"
-import { matchesFulfillmentPanel } from "@/types/orders/entities"
+import { matchesFulfillmentPanel, orderLineDisplayUnitPrice } from "@/types/orders/entities"
 import type { OrderLineItem } from "@/types/orders/entities"
 import type { CreateFulfillmentDto } from "@/types/orders/dtos"
 
@@ -433,7 +433,8 @@ export function OrderFulfillmentPanel({
               </p>
             </div>
             <p className="mt-1 text-sm text-slate-500">
-              {item.quantity} pcs - {formatCurrency(item.unitPrice)} USD
+              {item.quantity} pcs - {formatCurrency(orderLineDisplayUnitPrice(item))}{" "}
+              USD
             </p>
           </div>
         </div>

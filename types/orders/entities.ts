@@ -107,6 +107,14 @@ export function isPreOrderLineItem(item: Pick<OrderLineItem, "type">): boolean {
   return item.type === "pre_order" || item.type === "pre-order"
 }
 
+export function orderLineDisplayUnitPrice(item: OrderLineItem): number {
+  const qty = item.quantity || 1
+  if (isShipReadyLineItem(item) && item.finalAmount != null && item.finalAmount > 0) {
+    return item.finalAmount / qty
+  }
+  return item.unitPrice
+}
+
 export function matchesFulfillmentPanel(
   item: Pick<OrderLineItem, "type">,
   panel: "ship-ready" | "pre-order",
