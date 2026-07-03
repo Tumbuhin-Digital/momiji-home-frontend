@@ -21,7 +21,11 @@ import { useOrderById } from "@/hooks/use-orders"
 import { queryKeys } from "@/lib/query/query-keys"
 import { formatCurrency } from "@/lib/utils"
 
-import type { Order } from "@/types/orders"
+import {
+  isPreOrderLineItem,
+  isShipReadyLineItem,
+  type Order,
+} from "@/types/orders"
 
 interface ManageOrderModalProps {
   order: Order
@@ -73,14 +77,12 @@ export function ManageOrderModal({
 
   const shipReadyItems = currentOrder.lineItems.filter(
     (item) =>
-      item.type === "ship_ready" ||
-      item.type === "ship-ready" ||
+      isShipReadyLineItem(item) ||
       (!item.type && currentOrder.type === "ready")
   )
   const preOrderItems = currentOrder.lineItems.filter(
     (item) =>
-      item.type === "pre_order" ||
-      item.type === "pre-order" ||
+      isPreOrderLineItem(item) ||
       (!item.type && currentOrder.type === "pre-order")
   )
 

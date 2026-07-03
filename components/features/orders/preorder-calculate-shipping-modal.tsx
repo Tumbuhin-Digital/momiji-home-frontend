@@ -22,6 +22,7 @@ import {
   useUpdatePreorderShipping,
 } from "@/hooks/use-orders"
 import { formatCurrency } from "@/lib/utils"
+import { warehouseLabel } from "@/lib/warehouse"
 
 import type { PreorderCalculateShippingModalProps } from "@/types/orders"
 import type {
@@ -105,6 +106,7 @@ export function PreorderCalculateShippingModal({
   )
 
   const shipment = order.preorderShipment
+  const warehouseOrigin = shipment?.warehouseOrigin ?? "east"
   const checkoutEstimate = shipment?.estimatedShipping
   const [finalPrice, setFinalPrice] = useState<string>(() =>
     initialFinalPrice(order.preorderShipment)
@@ -381,6 +383,13 @@ export function PreorderCalculateShippingModal({
               rate with your packing plan. Labels are purchased manually via
               Unishippers — enter the final shipping price below.
             </p>
+
+            <div className="mb-4 flex justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+              <span className="text-slate-600">Warehouse origin</span>
+              <span className="font-medium text-slate-900">
+                {warehouseLabel(warehouseOrigin)}
+              </span>
+            </div>
 
             <Button
               type="button"

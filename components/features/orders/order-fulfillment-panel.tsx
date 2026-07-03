@@ -45,6 +45,7 @@ import { queryKeys } from "@/lib/query/query-keys"
 import { formatCurrency } from "@/lib/utils"
 
 import type { Order } from "@/types/orders"
+import { matchesFulfillmentPanel } from "@/types/orders/entities"
 import type { OrderLineItem } from "@/types/orders/entities"
 import type { CreateFulfillmentDto } from "@/types/orders/dtos"
 
@@ -135,8 +136,8 @@ export function OrderFulfillmentPanel({
   const markDelivered = useMarkFulfillmentDelivered(order.id)
   const requestSecondPayment = useRequestSecondPayment(order.id)
 
-  const items = order.lineItems.filter(
-    (item) => item.type === type || (!item.type && order.type === type)
+  const items = order.lineItems.filter((item) =>
+    matchesFulfillmentPanel(item, type, order.type)
   )
 
   const isPreOrder = type === "pre-order"

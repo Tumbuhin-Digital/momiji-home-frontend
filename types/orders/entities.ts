@@ -95,7 +95,33 @@ export interface PreorderShipment {
   totalBoxes: number
   totalWeightLb?: number
   invoiceSentAt?: string
+  warehouseOrigin?: "east" | "west"
   packing?: PreorderPackingItem[]
+}
+
+export function isShipReadyLineItem(item: Pick<OrderLineItem, "type">): boolean {
+  return item.type === "ship_ready" || item.type === "ship-ready"
+}
+
+export function isPreOrderLineItem(item: Pick<OrderLineItem, "type">): boolean {
+  return item.type === "pre_order" || item.type === "pre-order"
+}
+
+export function matchesFulfillmentPanel(
+  item: Pick<OrderLineItem, "type">,
+  panel: "ship-ready" | "pre-order",
+  orderType?: OrderType
+): boolean {
+  if (panel === "ship-ready") {
+    return (
+      isShipReadyLineItem(item) ||
+      (!item.type && orderType === "ready")
+    )
+  }
+  return (
+    isPreOrderLineItem(item) ||
+    (!item.type && orderType === "pre-order")
+  )
 }
 
 export interface Order {
@@ -151,16 +177,53 @@ export interface Order {
   fulfillments?: FulfillmentGroup[]
 }
 
-import type { OrderResponseDto } from "./dtos"
+import type { OrderResponseDto, OrderItemDetailDto } from "./dtos"
+
+function mapLineItemDto(
+  item: OrderItemDetailDto,
+  bucketType: "ship-ready" | "pre-order",
+  currency: CurrencyCode
+): OrderLineItem {
+  return {
+    productId: item.id,
+    shopifyProductId: item.variant_id,
+    title: item.title,
+    sku: item.sku || item.variant_id || "",
+    quantity: item.quantity,
+    unitPrice: parseFloat(item.unit_price) || 0,
+    currency,
+    fulfillmentStep: item.fulfillment_step,
+    itemsReceived: item.items_received,
+    itemStatus: item.item_status,
+    imageSrc: item.image_src,
+    trackingCompany: item.tracking_company,
+    trackingLastEvent: item.tracking_last_event,
+    trackingNumber: item.tracking_number,
+    trackingUrl: item.tracking_url,
+    type: bucketType,
+    dpAmount: parseFloat(item.dp_amount) || undefined,
+    balanceDue: parseFloat(item.balance_due) || undefined,
+    finalAmount: parseFloat(item.final_amount) || undefined,
+    weightKg: item.weight_kg,
+    widthCm: item.width_cm,
+    heightCm: item.height_cm,
+    depthCm: item.depth_cm,
+    remainingQuantity: item.remaining_quantity,
+  }
+}
 
 export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
-  const allItems = [
-    ...(dto.line_items?.ship_ready ?? []),
-    ...(dto.line_items?.pre_order ?? []),
-  ]
+  const currency = (dto.currency as CurrencyCode) ?? "USD"
+  const shipReadyItems = (dto.line_items?.ship_ready ?? []).map((item) =>
+    mapLineItemDto(item, "ship-ready", currency)
+  )
+  const preOrderItems = (dto.line_items?.pre_order ?? []).map((item) =>
+    mapLineItemDto(item, "pre-order", currency)
+  )
+  const allItems = [...shipReadyItems, ...preOrderItems]
 
-  const hasShipReady = (dto.line_items?.ship_ready ?? []).length > 0
-  const hasPreOrder = (dto.line_items?.pre_order ?? []).length > 0
+  const hasShipReady = shipReadyItems.length > 0
+  const hasPreOrder = preOrderItems.length > 0
   const type: OrderType =
     hasShipReady && hasPreOrder ? "mixed" : hasPreOrder ? "pre-order" : "ready"
 
@@ -192,37 +255,7 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
           zip: dto.shipping_address.zip,
         }
       : null,
-    lineItems: allItems.map((item) => ({
-      productId: item.id,
-      shopifyProductId: item.variant_id,
-      title: item.title,
-      sku: item.sku || item.variant_id || "",
-      quantity: item.quantity,
-      unitPrice: parseFloat(item.unit_price) || 0,
-      currency: (dto.currency as CurrencyCode) ?? "USD",
-      fulfillmentStep: item.fulfillment_step,
-      itemsReceived: item.items_received,
-      itemStatus: item.item_status,
-      imageSrc: item.image_src,
-      trackingCompany: item.tracking_company,
-      trackingLastEvent: item.tracking_last_event,
-      trackingNumber: item.tracking_number,
-      trackingUrl: item.tracking_url,
-      type:
-        item.type === "ship_ready"
-          ? "ship-ready"
-          : item.type === "pre_order"
-            ? "pre-order"
-            : item.type,
-      dpAmount: parseFloat(item.dp_amount) || undefined,
-      balanceDue: parseFloat(item.balance_due) || undefined,
-      finalAmount: parseFloat(item.final_amount) || undefined,
-      weightKg: item.weight_kg,
-      widthCm: item.width_cm,
-      heightCm: item.height_cm,
-      depthCm: item.depth_cm,
-      remainingQuantity: item.remaining_quantity,
-    })),
+    lineItems: allItems,
     totalBalanceDue: parseFloat(dto.total_balance_due) || 0,
     totalChargedNow: parseFloat(dto.total_charged_now) || 0,
     totalDepositPaid: parseFloat(dto.total_deposit_paid) || 0,
@@ -246,6 +279,7 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
             ? parseFloat(dto.preorder_shipment.total_weight_lb)
             : undefined,
           invoiceSentAt: dto.preorder_shipment.invoice_sent_at,
+          warehouseOrigin: dto.preorder_shipment.warehouse_origin,
           packing: dto.preorder_shipment.packing?.map((p) => ({
             lineItemId: p.line_item_id,
             boxCount: p.box_count,

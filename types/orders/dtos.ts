@@ -53,6 +53,7 @@ export interface PreorderShipmentDto {
   total_boxes: number
   total_weight_lb?: string
   invoice_sent_at?: string
+  warehouse_origin?: "east" | "west"
   packing?: PackingItemDto[]
 }
 
