@@ -197,7 +197,7 @@ export function CheckoutShippingSegment({
 
   return (
     <section className="space-y-4">
-      <h2 className="text-2xl font-medium text-alternate">{title}</h2>
+      <h2 className="mb-2 text-xl font-medium text-alternate">{title}</h2>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(220px,280px)_1fr]">
         <WarehouseDisplay
           warehouseLabel={locked ? "East Coast 3PL" : warehouseLabel}
