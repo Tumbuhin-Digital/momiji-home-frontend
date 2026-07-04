@@ -13,10 +13,13 @@ const nextConfig = {
     ],
   },
   async rewrites() {
+    const target = process.env.API_PROXY_TARGET
+    if (!target) return []
+
     return [
       {
         source: "/api/v1/:path*",
-        destination: "https://api-momiji.cobatesting.my.id/api/v1/:path*",
+        destination: `${target}/api/v1/:path*`,
       },
     ]
   },
