@@ -6,6 +6,10 @@ export interface VariantDto {
   retail_price: string
   title: string
   ws_price: string
+  weight_kg?: number
+  width_cm?: number
+  height_cm?: number
+  length_cm?: number
 }
 
 export interface ProductImageDto {

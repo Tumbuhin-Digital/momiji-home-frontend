@@ -67,6 +67,10 @@ export function mapProductListItemToDomain(dto: ProductDto): Product[] {
       },
       retailPrice: retailPriceNum,
       updatedAt: new Date().toISOString(),
+      weightKg: variant.weight_kg,
+      widthCm: variant.width_cm,
+      heightCm: variant.height_cm,
+      depthCm: variant.length_cm,
     }
   })
 }

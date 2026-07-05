@@ -62,6 +62,7 @@ const DynamicImageCarousel = dynamic(
 )
 
 import { useProducts, useUpdateProductStatus } from "@/hooks"
+import { formatVariantSpecs } from "@/lib/units"
 import { formatCurrency, formatLastSynced } from "@/lib/utils"
 
 import type { Product, ProductImage } from "@/types/products"
@@ -353,6 +354,9 @@ export default function ProductsPageClient() {
                       const singleVariant = !hasVariants
                         ? group.variants[0]
                         : null
+                      const singleVariantSpecs = singleVariant
+                        ? formatVariantSpecs(singleVariant)
+                        : null
 
                       return (
                         <Fragment key={group.shopifyProductId}>
@@ -390,6 +394,11 @@ export default function ProductsPageClient() {
                                   <span className="font-medium text-slate-800">
                                     {group.title}
                                   </span>
+                                  {singleVariantSpecs && (
+                                    <span className="text-xs text-slate-400">
+                                      {singleVariantSpecs}
+                                    </span>
+                                  )}
                                   {hasVariants && (
                                     <span className="text-xs text-slate-400">
                                       {group.variants.length} variants
@@ -541,14 +550,22 @@ export default function ProductsPageClient() {
                             group.variants.map((variant) => {
                               const variantName =
                                 variant.title.split(" - ")[1] || variant.title
+                              const variantSpecs = formatVariantSpecs(variant)
                               return (
                                 <tr key={variant.id}>
                                   <td className="px-6 py-4 pl-12">
                                     <div className="flex items-center gap-3">
-                                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                      <span className="text-sm text-slate-600">
-                                        {variantName}
-                                      </span>
+                                      <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                                      <div className="flex min-w-0 flex-col">
+                                        <span className="text-sm text-slate-600">
+                                          {variantName}
+                                        </span>
+                                        {variantSpecs && (
+                                          <span className="text-xs text-slate-400">
+                                            {variantSpecs}
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 text-slate-600">

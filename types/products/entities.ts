@@ -43,4 +43,8 @@ export interface Product {
   status: string
   title: string
   updatedAt: string
+  weightKg?: number
+  widthCm?: number
+  heightCm?: number
+  depthCm?: number
 }

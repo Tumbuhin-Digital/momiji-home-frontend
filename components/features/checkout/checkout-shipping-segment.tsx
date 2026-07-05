@@ -52,7 +52,7 @@ function WarehouseDisplay({
   if (locked) {
     return (
       <div
-        className="flex h-17.5 w-full items-center justify-between rounded border border-black/20 bg-white px-4 py-2"
+        className="flex h-17.5 min-w-0 w-full items-center justify-between rounded border border-black/20 bg-white px-4 py-2"
         aria-label="Ship-from warehouse (East Coast, locked)"
       >
         <div className="flex min-w-0 flex-col items-start gap-0.5">
@@ -86,7 +86,7 @@ function WarehouseDisplay({
       <SelectPrimitive.Trigger
         className={cn(
           selectTriggerVariants(),
-          "h-17.5! w-full rounded border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal shadow-none not-data-disabled:not-focus-visible:not-aria-invalid:not-data-pressed:before:shadow-none [[data-disabled],:focus-visible,[aria-invalid],[data-pressed]]:shadow-none"
+          "h-17.5! min-w-0 w-full rounded border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal shadow-none not-data-disabled:not-focus-visible:not-aria-invalid:not-data-pressed:before:shadow-none [[data-disabled],:focus-visible,[aria-invalid],[data-pressed]]:shadow-none"
         )}
       >
         <div className="flex w-full items-center justify-between gap-2">
@@ -131,7 +131,7 @@ function RatesPanel({
 >) {
   if (!ratesEnabled) {
     return (
-      <div className="flex h-17.5 w-full items-center justify-center rounded border border-black/20 bg-white px-4 py-2 text-center text-sm text-[#737373]">
+      <div className="flex h-17.5 min-w-0 flex-1 items-center rounded border border-black/20 bg-white px-3 py-2 text-left text-xs leading-snug text-[#737373] sm:px-4 sm:text-sm lg:flex-none lg:justify-center lg:text-center">
         Please enter your delivery address to see available shipping rates.
       </div>
     )
@@ -139,7 +139,7 @@ function RatesPanel({
 
   if (isLoading) {
     return (
-      <div className="flex h-17.5 w-full items-center justify-center rounded border border-black/20 bg-white px-4 py-2">
+      <div className="flex h-17.5 min-w-0 flex-1 items-center justify-center rounded border border-black/20 bg-white px-4 py-2 lg:flex-none">
         <Loader2 className="size-6 animate-spin text-muted-foreground" />
       </div>
     )
@@ -147,7 +147,7 @@ function RatesPanel({
 
   if (isError) {
     return (
-      <div className="flex h-17.5 w-full items-center justify-center rounded border border-red-200 bg-red-50 px-4 py-2 text-center text-sm text-red-600">
+      <div className="flex h-17.5 min-w-0 flex-1 items-center rounded border border-red-200 bg-red-50 px-3 py-2 text-left text-xs leading-snug text-red-600 sm:px-4 sm:text-sm lg:flex-none lg:justify-center lg:text-center">
         Failed to load shipping rates. Please check your address and try again.
       </div>
     )
@@ -156,14 +156,14 @@ function RatesPanel({
   const rate = rates?.[0]
   if (!rate) {
     return (
-      <div className="flex h-17.5 w-full items-center justify-center rounded border border-black/20 bg-white px-4 py-2 text-center text-sm text-[#737373]">
+      <div className="flex h-17.5 min-w-0 flex-1 items-center rounded border border-black/20 bg-white px-3 py-2 text-left text-xs leading-snug text-[#737373] sm:px-4 sm:text-sm lg:flex-none lg:justify-center lg:text-center">
         Please enter your delivery address to see available shipping rates.
       </div>
     )
   }
 
   return (
-    <div className="flex h-17.5 w-full items-center justify-between rounded border border-black/20 bg-white px-4 py-2">
+    <div className="flex h-17.5 min-w-0 flex-1 items-center justify-between rounded border border-black/20 bg-white px-4 py-2 lg:flex-none">
       <div className="flex flex-col gap-1">
         <span className="font-medium text-slate-800">{rate.label}</span>
         {rate.deliveryDays ? (
@@ -198,14 +198,16 @@ export function CheckoutShippingSegment({
   return (
     <section className="space-y-4">
       <h2 className="mb-2 text-base font-normal text-alternate">{title}</h2>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(220px,280px)_1fr]">
-        <WarehouseDisplay
-          warehouseLabel={locked ? "East Coast 3PL" : warehouseLabel}
-          batchLabel={batchLabel}
-          locked={locked}
-          value={warehouseValue}
-          onChange={onWarehouseChange}
-        />
+      <div className="flex flex-row items-stretch gap-2 lg:grid lg:grid-cols-[minmax(220px,280px)_1fr] lg:gap-4">
+        <div className="min-w-0 w-full flex-1 lg:contents">
+          <WarehouseDisplay
+            warehouseLabel={locked ? "East Coast 3PL" : warehouseLabel}
+            batchLabel={batchLabel}
+            locked={locked}
+            value={warehouseValue}
+            onChange={onWarehouseChange}
+          />
+        </div>
         <RatesPanel
           ratesEnabled={ratesEnabled}
           isLoading={isLoading}
