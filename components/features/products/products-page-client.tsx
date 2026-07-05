@@ -74,7 +74,7 @@ function effectivePrice(product: Product) {
 
 const searchParser = parseAsString.withDefault("")
 const filterParser = parseAsString.withDefault("all")
-const sortParser = parseAsString.withDefault("")
+const sortParser = parseAsString.withDefault("name_asc")
 const pageParser = parseAsInteger.withDefault(1)
 
 export default function ProductsPageClient() {
@@ -105,14 +105,15 @@ export default function ProductsPageClient() {
         : filter === "pre-order"
           ? "pre_order"
           : undefined,
-    sort: sort || undefined,
+    sort: sort || "name_asc",
     page,
     limit: 10,
   })
 
   const totalPages = productsQuery.data?.totalPages ?? 1
 
-  const isFilterActive = search !== "" || filter !== "all" || sort !== ""
+  const isFilterActive =
+    search !== "" || filter !== "all" || sort !== "name_asc"
 
   const rows = useMemo(() => {
     const list = productsQuery.data?.data ?? []
@@ -234,7 +235,7 @@ export default function ProductsPageClient() {
                   <DropdownMenuCheckboxItem
                     checked={sort === "name_asc"}
                     onCheckedChange={() => {
-                      setSort(sort === "name_asc" ? "" : "name_asc")
+                      setSort(sort === "name_asc" ? "created_at" : "name_asc")
                       setPage(1)
                     }}
                   >
@@ -261,7 +262,7 @@ export default function ProductsPageClient() {
                   <DropdownMenuCheckboxItem
                     checked={sort === "stock_asc"}
                     onCheckedChange={() => {
-                      setSort(sort === "stock_asc" ? "" : "stock_asc")
+                      setSort(sort === "stock_asc" ? "name_asc" : "stock_asc")
                       setPage(1)
                     }}
                   >
@@ -270,7 +271,7 @@ export default function ProductsPageClient() {
                   <DropdownMenuCheckboxItem
                     checked={sort === "stock_desc"}
                     onCheckedChange={() => {
-                      setSort(sort === "stock_desc" ? "" : "stock_desc")
+                      setSort(sort === "stock_desc" ? "name_asc" : "stock_desc")
                       setPage(1)
                     }}
                   >
@@ -285,7 +286,7 @@ export default function ProductsPageClient() {
                   onClick={() => {
                     setSearch(null)
                     setFilter("all")
-                    setSort(null)
+                    setSort("name_asc")
                     setPage(1)
                   }}
                   className="size-11! gap-2 rounded-sm border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-600"
