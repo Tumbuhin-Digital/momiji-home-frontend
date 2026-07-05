@@ -1,12 +1,12 @@
 const KG_TO_LB = 2.20462
-const CM_TO_IN = 0.393701
+const CM_PER_IN = 2.54
 
 export function kgToLb(kg: number): number {
   return kg * KG_TO_LB
 }
 
 export function cmToIn(cm: number): number {
-  return Math.round(cm * CM_TO_IN * 100) / 100
+  return Math.round((cm / CM_PER_IN) * 100) / 100
 }
 
 type VariantSpecsInput = {
