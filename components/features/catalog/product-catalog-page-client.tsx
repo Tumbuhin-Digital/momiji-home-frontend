@@ -124,7 +124,7 @@ export function ProductCatalogPageClient({
     return (
       <div className="flex flex-col items-center justify-center gap-6 xl:gap-8">
         <header className="px-4 pt-10 pb-6 text-center sm:px-10">
-          <h1 className="text-[32px] font-normal tracking-widest text-header sm:text-5xl xl:text-6xl">
+          <h1 className="text-[32px] font-normal text-header sm:text-5xl xl:text-6xl">
             {title}
           </h1>
         </header>
@@ -149,7 +149,7 @@ export function ProductCatalogPageClient({
   return (
     <div className="flex flex-col items-center justify-center gap-6 xl:gap-8">
       <header className="px-4 pt-10 pb-6 text-center sm:px-10">
-        <h1 className="text-[32px] font-normal tracking-widest text-header sm:text-5xl xl:text-6xl">
+        <h1 className="text-[32px] font-normal text-header sm:text-5xl xl:text-6xl">
           {title}
         </h1>
       </header>
