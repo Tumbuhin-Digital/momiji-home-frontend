@@ -117,8 +117,8 @@ export function DimensionsCsvModal({
                 Variant Dimensions
               </DialogTitle>
               <DialogDescription className="text-[15px] leading-relaxed">
-                Manage product dimensions in bulk using CSV format. Values are
-                in pounds (lb) and inches (in).
+                Import width, height, and depth in inches via CSV. Weight is
+                synced automatically from Shopify.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -133,8 +133,7 @@ export function DimensionsCsvModal({
               1. Download Template
             </div>
             <p className="mb-4 text-xs text-slate-500">
-              Get the latest template to populate your variant dimensions (lb
-              and in).
+              Get the latest template to populate variant dimensions (inches).
             </p>
             <Button
               variant="outline"
