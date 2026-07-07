@@ -14,7 +14,7 @@ export default function HomePage() {
     <div className="flex flex-col items-center justify-center gap-2.5">
       <div className="flex flex-col items-center justify-center gap-8 py-20">
         <div className="flex flex-col gap-3.75 text-center">
-          <h1 className="text-[32px] font-medium tracking-tight text-header sm:text-6xl">
+          <h1 className="text-[32px] font-normal tracking-tight text-header sm:text-6xl">
             B2B Order Form
           </h1>
           <p className="text-alternate sm:text-xl">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { Settings } from "lucide-react"
 import { toastManager } from "@/components/ui/toast"
@@ -26,26 +26,25 @@ export default function SettingsClient() {
   const { data: warehouses, isLoading: isWarehousesLoading } = useWarehouses()
   const updateMutation = useUpdateCheckoutNotes()
 
-  const [dueNowNote, setDueNowNote] = useState("")
-  const [dueLaterNote, setDueLaterNote] = useState("")
-  const [storeClosed, setStoreClosed] = useState(false)
-  const [storeClosedMessage, setStoreClosedMessage] = useState("")
+  const [draft, setDraft] = useState<{
+    dueNowNote: string
+    dueLaterNote: string
+    storeClosed: boolean
+    storeClosedMessage: string
+  } | null>(null)
 
-  useEffect(() => {
-    if (data) {
-      setDueNowNote(data.dueNowNote)
-      setDueLaterNote(data.dueLaterNote)
-      setStoreClosed(data.storeClosed)
-      setStoreClosedMessage(
-        data.storeClosedMessage || defaultStoreClosedMessage
-      )
-    }
-  }, [data, defaultStoreClosedMessage])
+  const currentDueNowNote = draft?.dueNowNote ?? data?.dueNowNote ?? ""
+  const currentDueLaterNote = draft?.dueLaterNote ?? data?.dueLaterNote ?? ""
+  const currentStoreClosed = draft?.storeClosed ?? data?.storeClosed ?? false
+  const currentStoreClosedMessage =
+    draft?.storeClosedMessage ??
+    data?.storeClosedMessage ??
+    defaultStoreClosedMessage
 
   const isPending = updateMutation.isPending
 
   const handleSave = async () => {
-    if (!dueNowNote.trim() || !dueLaterNote.trim()) {
+    if (!currentDueNowNote.trim() || !currentDueLaterNote.trim()) {
       toastManager.add({
         title: "Error",
         description: "Both checkout notes are required",
@@ -56,10 +55,10 @@ export default function SettingsClient() {
 
     try {
       await updateMutation.mutateAsync({
-        dueNowNote: dueNowNote.trim(),
-        dueLaterNote: dueLaterNote.trim(),
-        storeClosed,
-        storeClosedMessage: storeClosedMessage.trim(),
+        dueNowNote: currentDueNowNote.trim(),
+        dueLaterNote: currentDueLaterNote.trim(),
+        storeClosed: currentStoreClosed,
+        storeClosedMessage: currentStoreClosedMessage.trim(),
       })
       toastManager.add({
         title: "Saved",
@@ -76,7 +75,7 @@ export default function SettingsClient() {
   }
 
   const handleSaveStoreStatus = async () => {
-    if (storeClosed && !storeClosedMessage.trim()) {
+    if (currentStoreClosed && !currentStoreClosedMessage.trim()) {
       toastManager.add({
         title: "Error",
         description: "Store closed message is required when store is closed",
@@ -85,7 +84,7 @@ export default function SettingsClient() {
       return
     }
 
-    if (!dueNowNote.trim() || !dueLaterNote.trim()) {
+    if (!currentDueNowNote.trim() || !currentDueLaterNote.trim()) {
       toastManager.add({
         title: "Error",
         description: "Both checkout notes are required",
@@ -96,10 +95,10 @@ export default function SettingsClient() {
 
     try {
       await updateMutation.mutateAsync({
-        dueNowNote: dueNowNote.trim(),
-        dueLaterNote: dueLaterNote.trim(),
-        storeClosed,
-        storeClosedMessage: storeClosedMessage.trim(),
+        dueNowNote: currentDueNowNote.trim(),
+        dueLaterNote: currentDueLaterNote.trim(),
+        storeClosed: currentStoreClosed,
+        storeClosedMessage: currentStoreClosedMessage.trim(),
       })
       toastManager.add({
         title: "Saved",
@@ -157,8 +156,15 @@ export default function SettingsClient() {
             </div>
             <Switch
               id="store-closed"
-              checked={storeClosed}
-              onCheckedChange={setStoreClosed}
+              checked={currentStoreClosed}
+              onCheckedChange={(value) =>
+                setDraft({
+                  dueNowNote: currentDueNowNote,
+                  dueLaterNote: currentDueLaterNote,
+                  storeClosed: value,
+                  storeClosedMessage: currentStoreClosedMessage,
+                })
+              }
               disabled={isPending}
             />
           </div>
@@ -172,8 +178,15 @@ export default function SettingsClient() {
             </Label>
             <Textarea
               id="store-closed-message"
-              value={storeClosedMessage}
-              onChange={(e) => setStoreClosedMessage(e.target.value)}
+              value={currentStoreClosedMessage}
+              onChange={(e) =>
+                setDraft({
+                  dueNowNote: currentDueNowNote,
+                  dueLaterNote: currentDueLaterNote,
+                  storeClosed: currentStoreClosed,
+                  storeClosedMessage: e.target.value,
+                })
+              }
               disabled={isPending}
               rows={3}
               placeholder={defaultStoreClosedMessage}
@@ -220,8 +233,15 @@ export default function SettingsClient() {
             </Label>
             <Textarea
               id="due-now-note"
-              value={dueNowNote}
-              onChange={(e) => setDueNowNote(e.target.value)}
+              value={currentDueNowNote}
+              onChange={(e) =>
+                setDraft({
+                  dueNowNote: e.target.value,
+                  dueLaterNote: currentDueLaterNote,
+                  storeClosed: currentStoreClosed,
+                  storeClosedMessage: currentStoreClosedMessage,
+                })
+              }
               disabled={isPending}
               rows={3}
               placeholder="Shipping description for items due now"
@@ -238,8 +258,15 @@ export default function SettingsClient() {
             </Label>
             <Textarea
               id="due-later-note"
-              value={dueLaterNote}
-              onChange={(e) => setDueLaterNote(e.target.value)}
+              value={currentDueLaterNote}
+              onChange={(e) =>
+                setDraft({
+                  dueNowNote: currentDueNowNote,
+                  dueLaterNote: e.target.value,
+                  storeClosed: currentStoreClosed,
+                  storeClosedMessage: currentStoreClosedMessage,
+                })
+              }
               disabled={isPending}
               rows={3}
               placeholder="Shipping description for pre-order items due later"

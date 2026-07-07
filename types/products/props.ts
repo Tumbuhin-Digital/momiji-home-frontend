@@ -15,7 +15,8 @@ export interface InventoryDepletedModalProps {
 export interface ProductCatalogPageClientProps {
   bottomNavLink: string
   bottomNavText: string
-  category: "ship-ready" | "pre-order"
+  category?: "ship-ready" | "pre-order"
+  search?: string
   title: string
 }
 

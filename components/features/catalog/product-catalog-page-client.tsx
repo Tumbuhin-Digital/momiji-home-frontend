@@ -36,6 +36,7 @@ import type { ProductCatalogPageClientProps } from "@/types/products"
 
 export function ProductCatalogPageClient({
   category,
+  search,
   title,
   bottomNavLink,
   bottomNavText,
@@ -75,11 +76,14 @@ export function ProductCatalogPageClient({
         ? "pre_order"
         : undefined
 
+  const normalizedSearch = search?.trim() ?? ""
+
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
     useInfiniteCatalogProducts(
       {
         fulfillment_type: fulfillmentType,
         limit: itemsPerPage,
+        search: normalizedSearch || undefined,
       },
       {
         enabled: isInitialized,
@@ -165,11 +169,12 @@ export function ProductCatalogPageClient({
             </div>
             <EmptyHeader className="max-w-none space-y-3 pb-6">
               <EmptyTitle className="text-3xl font-bold tracking-tight text-header sm:text-4xl md:text-5xl">
-                No Products Found
+                {normalizedSearch ? "No Search Results" : "No Products Found"}
               </EmptyTitle>
               <EmptyDescription className="text-base text-muted-foreground sm:text-lg">
-                It looks like we don&apos;t have any products in this category
-                right now. Please check back later or explore other categories.
+                {normalizedSearch
+                  ? `No products found for "${normalizedSearch}". Try another keyword.`
+                  : "It looks like we don&apos;t have any products in this category right now. Please check back later or explore other categories."}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
