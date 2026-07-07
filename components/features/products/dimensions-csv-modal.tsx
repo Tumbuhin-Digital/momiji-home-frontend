@@ -117,7 +117,7 @@ export function DimensionsCsvModal({
                 Variant Dimensions
               </DialogTitle>
               <DialogDescription className="text-[15px] leading-relaxed">
-                Import width, height, and depth in inches via CSV. Weight is
+                Import length, width, and height in inches via CSV. Weight is
                 synced automatically from Shopify.
               </DialogDescription>
             </DialogHeader>

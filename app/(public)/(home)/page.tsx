@@ -30,7 +30,7 @@ export default function HomePage() {
         </div>
       </div>
       <div className="flex w-full flex-col items-center justify-center gap-8 pb-8 sm:flex-row sm:pb-0">
-        <div className="group relative block h-70 w-full overflow-hidden transition-all duration-300 ease-out active:opacity-80 lg:h-82.5 lg:w-151">
+        <div className="group relative block h-70 w-full overflow-hidden transition-all duration-300 ease-out active:opacity-80 lg:h-96 lg:w-151">
           <div className="absolute inset-0 bg-[url('/images/assets/bg-shipready.webp')] bg-cover bg-bottom transition-transform duration-1000 group-hover:scale-105" />
           <div className="absolute inset-0 bg-black/20" />
           <div className="absolute inset-0 flex flex-col items-center justify-start pt-6 text-center">
@@ -45,7 +45,7 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-        <div className="group relative block h-70 w-full overflow-hidden transition-all duration-300 ease-out active:opacity-80 lg:h-82.5 lg:w-151">
+        <div className="group relative block h-70 w-full overflow-hidden transition-all duration-300 ease-out active:opacity-80 lg:h-96 lg:w-151">
           <div className="absolute inset-0 bg-[url('/images/assets/bg-preorder.webp')] bg-cover bg-center transition-transform duration-1000 group-hover:scale-105" />
           <div className="absolute inset-0 bg-black/20" />
           <div className="absolute inset-0 flex flex-col items-center justify-start pt-6 text-center">

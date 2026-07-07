@@ -34,7 +34,7 @@ export function formatVariantSpecs(product: VariantSpecsInput): string | null {
 
   if (hasDimensions) {
     parts.push(
-      `${cmToIn(widthCm).toFixed(2)} × ${cmToIn(heightCm).toFixed(2)} × ${cmToIn(depthCm).toFixed(2)} in (W×H×D)`
+      `${cmToIn(depthCm).toFixed(2)} × ${cmToIn(widthCm).toFixed(2)} × ${cmToIn(heightCm).toFixed(2)} in (L×W×H)`
     )
   }
 
