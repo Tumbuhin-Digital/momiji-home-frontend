@@ -1,5 +1,5 @@
 export interface VariantDto {
-  fulfillment_type: "ship_ready" | "pre_order"
+  fulfillment_type: "ship_ready" | "pre_order" | "inactive"
   id: string
   image_src: string
   inventory_quantity?: number
@@ -41,7 +41,7 @@ import type { CurrencyCode } from "@/types/core"
 
 export interface ProductQueryParams {
   category?: ProductCategory | "all"
-  fulfillment_type?: "ship_ready" | "pre_order"
+  fulfillment_type?: "ship_ready" | "pre_order" | "inactive"
   limit?: number
   page?: number
   search?: string

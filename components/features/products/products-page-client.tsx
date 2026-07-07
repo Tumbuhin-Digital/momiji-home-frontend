@@ -104,6 +104,8 @@ export default function ProductsPageClient() {
         ? "ship_ready"
         : filter === "pre-order"
           ? "pre_order"
+          : filter === "inactive"
+            ? "inactive"
           : undefined,
     sort: sort || "name_asc",
     page,
@@ -258,6 +260,15 @@ export default function ProductsPageClient() {
                     }}
                   >
                     Pre-Order
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={filter === "inactive"}
+                    onCheckedChange={() => {
+                      setFilter(filter === "inactive" ? "all" : "inactive")
+                      setPage(1)
+                    }}
+                  >
+                    Inactive
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={sort === "stock_asc"}
