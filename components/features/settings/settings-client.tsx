@@ -36,7 +36,9 @@ export default function SettingsClient() {
       setDueNowNote(data.dueNowNote)
       setDueLaterNote(data.dueLaterNote)
       setStoreClosed(data.storeClosed)
-      setStoreClosedMessage(data.storeClosedMessage || defaultStoreClosedMessage)
+      setStoreClosedMessage(
+        data.storeClosedMessage || defaultStoreClosedMessage
+      )
     }
   }, [data, defaultStoreClosedMessage])
 
@@ -147,10 +149,10 @@ export default function SettingsClient() {
           <div className="flex items-center justify-between rounded-lg border border-neutral-200 p-4">
             <div>
               <Label htmlFor="store-closed" className="text-sm font-medium">
-                Toko Tutup
+                Store Closed
               </Label>
               <p className="text-xs text-alternate/60">
-                Saat aktif, tombol checkout akan dinonaktifkan.
+                When active, the checkout button will be disabled.
               </p>
             </div>
             <Switch
@@ -162,7 +164,10 @@ export default function SettingsClient() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="store-closed-message" className="text-sm font-medium">
+            <Label
+              htmlFor="store-closed-message"
+              className="text-sm font-medium"
+            >
               Store closed message
             </Label>
             <Textarea
@@ -175,7 +180,7 @@ export default function SettingsClient() {
               className="resize-y text-sm"
             />
             <p className="text-xs text-alternate/60">
-              Ditampilkan di halaman checkout saat toko tutup.
+              Displayed on the checkout page when the store is closed.
             </p>
           </div>
 
