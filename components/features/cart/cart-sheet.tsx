@@ -53,6 +53,7 @@ export function CartSheet() {
   const markCartDirty = useCartStore((state) => state.markCartDirty)
   const clearCartDirty = useCartStore((state) => state.clearCartDirty)
   const cartDirty = useCartStore((state) => state.cartDirty)
+  const getPendingSync = useCartStore((state) => state.getPendingSync)
   const requestShippingRefresh = useCartStore(
     (state) => state.requestShippingRefresh
   )
@@ -103,10 +104,21 @@ export function CartSheet() {
     updateLocalCart({ variantId, totalQuantity, meta })
   }
 
-  const handleSheetOpenChange = (open: boolean) => {
-    if (!open && cartDirty) {
-      requestShippingRefresh()
-      clearCartDirty()
+  const handleSheetOpenChange = async (open: boolean) => {
+    if (!open) {
+      const pending = getPendingSync()
+      if (Object.keys(pending).length > 0) {
+        try {
+          await flushPendingCart.mutateAsync()
+        } catch (error) {
+          console.error("Failed to sync cart:", error)
+        }
+      }
+
+      if (cartDirty) {
+        requestShippingRefresh()
+        clearCartDirty()
+      }
     }
     setIsOpen(open)
   }
@@ -382,14 +394,22 @@ export function CartSheet() {
       <RemoveItemModal
         isOpen={!!itemToRemove}
         onClose={() => setItemToRemove(null)}
-        onConfirm={() => {
-          if (itemToRemove) {
-            updateVariantLocally(itemToRemove.variantId, itemToRemove.newTotal)
-            setItemToRemove(null)
+        onConfirm={async () => {
+          if (!itemToRemove) return
+
+          updateVariantLocally(itemToRemove.variantId, itemToRemove.newTotal)
+          setItemToRemove(null)
+
+          try {
+            await flushPendingCart.mutateAsync()
+            clearCartDirty()
+            requestShippingRefresh()
+          } catch (error) {
+            console.error("Failed to remove cart item:", error)
           }
         }}
         productName={itemToRemove?.title || ""}
-        isPending={false}
+        isPending={flushPendingCart.isPending}
       />
 
       {depletedProduct && (
