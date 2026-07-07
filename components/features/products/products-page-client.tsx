@@ -40,6 +40,7 @@ import {
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -77,6 +78,31 @@ const filterParser = parseAsString.withDefault("all")
 const sortParser = parseAsString.withDefault("name_asc")
 const pageParser = parseAsInteger.withDefault(1)
 
+function buildPaginationWindow(currentPage: number, totalPages: number) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1)
+  }
+
+  const pages = new Set<number>([1, totalPages, currentPage - 1, currentPage, currentPage + 1])
+  const sortedPages = Array.from(pages)
+    .filter((p) => p >= 1 && p <= totalPages)
+    .sort((a, b) => a - b)
+
+  const result: Array<number | "ellipsis"> = []
+  for (let i = 0; i < sortedPages.length; i++) {
+    const page = sortedPages[i]
+    const previous = sortedPages[i - 1]
+
+    if (i > 0 && previous !== undefined && page - previous > 1) {
+      result.push("ellipsis")
+    }
+
+    result.push(page)
+  }
+
+  return result
+}
+
 export default function ProductsPageClient() {
   const [search, setSearch] = useQueryState("search", searchParser)
   const [filter, setFilter] = useQueryState("filter", filterParser)
@@ -106,13 +132,17 @@ export default function ProductsPageClient() {
           ? "pre_order"
           : filter === "inactive"
             ? "inactive"
-          : undefined,
+            : undefined,
     sort: sort || "name_asc",
     page,
     limit: 10,
   })
 
   const totalPages = productsQuery.data?.totalPages ?? 1
+  const paginationItems = useMemo(
+    () => buildPaginationWindow(page, totalPages),
+    [page, totalPages]
+  )
 
   const isFilterActive =
     search !== "" || filter !== "all" || sort !== "name_asc"
@@ -671,18 +701,22 @@ export default function ProductsPageClient() {
                     />
                   </PaginationItem>
 
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (p) => (
-                      <PaginationItem key={p}>
+                  {paginationItems.map((item, index) =>
+                    item === "ellipsis" ? (
+                      <PaginationItem key={`ellipsis-${index}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={item}>
                         <PaginationLink
                           onClick={(e) => {
                             e.preventDefault()
-                            setPage(p)
+                            setPage(item)
                           }}
-                          isActive={page === p}
+                          isActive={page === item}
                           className="cursor-pointer"
                         >
-                          {p}
+                          {item}
                         </PaginationLink>
                       </PaginationItem>
                     )
