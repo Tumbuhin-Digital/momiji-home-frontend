@@ -18,6 +18,8 @@ function mapCheckoutNotes(dto: CheckoutNotesDto): CheckoutNotes {
   return {
     dueNowNote: dto.due_now_note,
     dueLaterNote: dto.due_later_note,
+    storeClosed: dto.store_closed,
+    storeClosedMessage: dto.store_closed_message,
   }
 }
 
@@ -25,6 +27,8 @@ function mapUpdateInput(input: UpdateCheckoutNotesInput): UpdateCheckoutNotesDto
   return {
     due_now_note: input.dueNowNote,
     due_later_note: input.dueLaterNote,
+    store_closed: input.storeClosed,
+    store_closed_message: input.storeClosedMessage,
   }
 }
 

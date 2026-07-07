@@ -281,8 +281,13 @@ export default function CheckoutPageClient() {
     ((shipReadyItems.length > 0 && isLoadingShipReadyRates) ||
       (preOrderItems.length > 0 && isLoadingPreOrderRates))
 
+  const isStoreClosed = checkoutNotes?.storeClosed ?? false
+  const storeClosedMessage =
+    checkoutNotes?.storeClosedMessage?.trim() ||
+    "Store is currently closed. Checkout is temporarily unavailable."
+
   const isCheckoutDisabled =
-    createCheckoutMutation.isPending || isShippingNotReady
+    createCheckoutMutation.isPending || isShippingNotReady || isStoreClosed
 
   useEffect(() => {
     if (!isUS || !formValues.state) return
@@ -508,6 +513,15 @@ export default function CheckoutPageClient() {
   }
 
   const onSubmit = async (values: CheckoutFormValues) => {
+    if (isStoreClosed) {
+      toastManager.add({
+        title: "Checkout unavailable",
+        description: storeClosedMessage,
+        type: "warning",
+      })
+      return
+    }
+
     if (preOrderItems.length > 0 && !values.shippingMethod) {
       setError("shippingMethod", {
         type: "manual",
@@ -582,15 +596,20 @@ export default function CheckoutPageClient() {
       if (!redirectCheckoutPaymentWindow(paymentWindow, checkoutUrl)) {
         window.location.assign(checkoutUrl)
       }
-    } catch (err) {
+    } catch (err: any) {
       paymentWindow?.close()
       if (initiatedCheckoutReference) {
         await releaseCheckoutLocks(initiatedCheckoutReference)
       }
       console.error("Checkout failed:", err)
+      const maybeStoreClosedCode = err?.response?.data?.code
+      const maybeStoreClosedMessage = err?.response?.data?.message
       toastManager.add({
         title: "Error",
-        description: "Failed to initiate checkout. Please try again.",
+        description:
+          maybeStoreClosedCode === "store_closed"
+            ? maybeStoreClosedMessage || storeClosedMessage
+            : "Failed to initiate checkout. Please try again.",
         type: "error",
       })
     }
@@ -1294,6 +1313,11 @@ export default function CheckoutPageClient() {
                     )}
 
                   <div className="space-y-4">
+                    {isStoreClosed && (
+                      <p className="text-sm text-destructive">
+                        {storeClosedMessage}
+                      </p>
+                    )}
                     <Button
                       type="submit"
                       size="2xl"
@@ -1313,6 +1337,8 @@ export default function CheckoutPageClient() {
                           </span>
                         ) : isShippingNotReady ? (
                           "Complete address for shipping"
+                        ) : isStoreClosed ? (
+                          "Checkout unavailable"
                         ) : (
                           "Checkout"
                         )}

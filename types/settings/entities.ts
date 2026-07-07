@@ -1,11 +1,15 @@
 export interface CheckoutNotes {
   dueNowNote: string
   dueLaterNote: string
+  storeClosed: boolean
+  storeClosedMessage: string
 }
 
 export interface UpdateCheckoutNotesInput {
   dueNowNote: string
   dueLaterNote: string
+  storeClosed: boolean
+  storeClosedMessage: string
 }
 
 export type WarehouseCode = "east" | "west"
