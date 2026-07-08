@@ -157,7 +157,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
           )}
         </div>
         <div className="flex flex-1 flex-col justify-center gap-1.5 sm:gap-2">
-          {(!isShipReady || isBackendPreOrder || isConvertedToPreorder) && (
+          {product.category === "pre-order" && (
             <Badge className="h-5.5! w-fit rounded p-1 text-xs font-normal! uppercase">
               Pre-Order
             </Badge>

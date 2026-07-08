@@ -20,6 +20,7 @@ import type {
   UpdateVariantBatchLabelRequest,
   UpdateProductStatusRequest,
   UpdateVariantPriceRequest,
+  UpdateVariantStatusRequest,
 } from "@/types/products"
 
 export function useDownloadDimensionsTemplate() {
@@ -185,6 +186,18 @@ export function useUpdateVariantPrice() {
     }) => productsService.updateVariantPrice(variantId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+    },
+  })
+}
+
+export function useUpdateVariantStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: UpdateVariantStatusRequest) =>
+      productsService.updateVariantStatus(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalog.all })
     },
   })
 }

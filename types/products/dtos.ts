@@ -41,7 +41,7 @@ import type { CurrencyCode } from "@/types/core"
 
 export interface ProductQueryParams {
   category?: ProductCategory | "all"
-  fulfillment_type?: "ship_ready" | "pre_order" | "inactive"
+  fulfillment_type?: "ship_ready" | "pre_order" | "inactive" | "mixed"
   limit?: number
   page?: number
   search?: string
@@ -81,4 +81,9 @@ export interface UpdateProductStatusRequest {
 
 export interface UpdateVariantPriceRequest {
   ws_price?: number
+}
+
+export interface UpdateVariantStatusRequest {
+  fulfillment_type: "ship_ready" | "pre_order" | "inactive"
+  variant_id: string
 }

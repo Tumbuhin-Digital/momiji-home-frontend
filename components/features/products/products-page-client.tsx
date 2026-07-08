@@ -62,11 +62,24 @@ const DynamicImageCarousel = dynamic(
   }
 )
 
-import { useProducts, useUpdateProductStatus } from "@/hooks"
+import { useProducts, useUpdateProductStatus, useUpdateVariantStatus } from "@/hooks"
 import { formatVariantSpecs } from "@/lib/units"
 import { formatCurrency, formatLastSynced } from "@/lib/utils"
 
-import type { Product, ProductImage } from "@/types/products"
+import type { Product, ProductCategory, ProductImage } from "@/types/products"
+
+function statusDotClass(category: ProductCategory | "mixed") {
+  if (category === "ship-ready") return "bg-[#29CE2D]"
+  if (category === "pre-order") return "bg-[#FF8D28]"
+  return "bg-[#FF383C]"
+}
+
+function statusLabel(category: ProductCategory | "mixed") {
+  if (category === "pre-order") return "Pre-Order"
+  if (category === "inactive") return "Inactive"
+  if (category === "mixed") return "Mixed"
+  return category.replace("-", " ")
+}
 
 function effectivePrice(product: Product) {
   const usdMarket = product.pricing.markets["USD"]
@@ -122,6 +135,7 @@ export default function ProductsPageClient() {
   >(null)
 
   const updateProductStatusMutation = useUpdateProductStatus()
+  const updateVariantStatusMutation = useUpdateVariantStatus()
 
   const productsQuery = useProducts({
     search,
@@ -132,7 +146,9 @@ export default function ProductsPageClient() {
           ? "pre_order"
           : filter === "inactive"
             ? "inactive"
-            : undefined,
+            : filter === "mixed"
+              ? "mixed"
+              : undefined,
     sort: sort || "name_asc",
     page,
     limit: 10,
@@ -299,6 +315,15 @@ export default function ProductsPageClient() {
                     }}
                   >
                     Inactive
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={filter === "mixed"}
+                    onCheckedChange={() => {
+                      setFilter(filter === "mixed" ? "all" : "mixed")
+                      setPage(1)
+                    }}
+                  >
+                    Mixed
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={sort === "stock_asc"}
@@ -468,100 +493,109 @@ export default function ProductsPageClient() {
                               {totalStock}
                             </td>
                             <td className="px-6 py-4">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    disabled={
-                                      updateProductStatusMutation.isPending
-                                    }
-                                    className="h-10! w-40 justify-between border-black/20 bg-white px-3 text-left text-slate-700 hover:bg-white hover:text-slate-700 disabled:opacity-50"
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <div
-                                        className={`size-2.5 rounded-full ${
-                                          groupCategory === "ship-ready"
-                                            ? "bg-[#29CE2D]"
-                                            : groupCategory === "pre-order"
-                                              ? "bg-[#FF8D28]"
-                                              : "bg-[#FF383C]"
-                                        }`}
-                                      />
-                                      <span className="capitalize">
-                                        {groupCategory === "pre-order"
-                                          ? "Pre-Order"
-                                          : groupCategory === "inactive"
-                                            ? "Inactive"
-                                            : groupCategory.replace("-", " ")}
-                                      </span>
-                                    </div>
-                                    <ChevronDown className="size-4 text-slate-400" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  align="start"
-                                  className="w-40 rounded-xl bg-white shadow-lg"
+                              {groupCategory === "mixed" ? (
+                                <Button
+                                  variant="outline"
+                                  disabled
+                                  className="h-10! w-40 justify-between border-black/20 bg-white px-3 text-left text-slate-700 opacity-100 disabled:opacity-100"
                                 >
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      const totalStock = group.variants.reduce(
-                                        (acc, variant) =>
-                                          acc + variant.inventory.quantity,
-                                        0
-                                      )
-                                      if (totalStock === 0) {
-                                        setPendingShipReadyTarget(
-                                          group.variants[0].originalId
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={`size-2.5 rounded-full ${statusDotClass(groupCategory)}`}
+                                    />
+                                    <span className="capitalize">
+                                      {statusLabel(groupCategory)}
+                                    </span>
+                                  </div>
+                                </Button>
+                              ) : (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      disabled={
+                                        updateProductStatusMutation.isPending
+                                      }
+                                      className="h-10! w-40 justify-between border-black/20 bg-white px-3 text-left text-slate-700 hover:bg-white hover:text-slate-700 disabled:opacity-50"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div
+                                          className={`size-2.5 rounded-full ${statusDotClass(groupCategory)}`}
+                                        />
+                                        <span className="capitalize">
+                                          {statusLabel(groupCategory)}
+                                        </span>
+                                      </div>
+                                      <ChevronDown className="size-4 text-slate-400" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent
+                                    align="start"
+                                    className="w-40 rounded-xl bg-white shadow-lg"
+                                  >
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        const totalStock = group.variants.reduce(
+                                          (acc, variant) =>
+                                            acc + variant.inventory.quantity,
+                                          0
                                         )
-                                        setConfirmShipReadyOpen(true)
-                                      } else {
+                                        if (totalStock === 0) {
+                                          setPendingShipReadyTarget(
+                                            group.variants[0].originalId
+                                          )
+                                          setConfirmShipReadyOpen(true)
+                                        } else {
+                                          updateProductStatusMutation.mutate({
+                                            productId:
+                                              group.variants[0].originalId,
+                                            input: {
+                                              fulfillment_type: "ship_ready",
+                                            },
+                                          })
+                                        }
+                                      }}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div className="size-2.5 rounded-full bg-[#29CE2D]" />
+                                        Ship Ready
+                                      </div>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
                                         updateProductStatusMutation.mutate({
                                           productId:
                                             group.variants[0].originalId,
                                           input: {
-                                            fulfillment_type: "ship_ready",
+                                            fulfillment_type: "pre_order",
                                           },
                                         })
                                       }
-                                    }}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <div className="size-2.5 rounded-full bg-[#29CE2D]" />
-                                      Ship Ready
-                                    </div>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      updateProductStatusMutation.mutate({
-                                        productId: group.variants[0].originalId,
-                                        input: {
-                                          fulfillment_type: "pre_order",
-                                        },
-                                      })
-                                    }
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <div className="size-2.5 rounded-full bg-[#FF8D28]" />
-                                      Pre-Order
-                                    </div>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      updateProductStatusMutation.mutate({
-                                        productId: group.variants[0].originalId,
-                                        input: {
-                                          fulfillment_type: "inactive",
-                                        },
-                                      })
-                                    }
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <div className="size-2.5 rounded-full bg-[#FF383C]" />
-                                      Inactive
-                                    </div>
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div className="size-2.5 rounded-full bg-[#FF8D28]" />
+                                        Pre-Order
+                                      </div>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        updateProductStatusMutation.mutate({
+                                          productId:
+                                            group.variants[0].originalId,
+                                          input: {
+                                            fulfillment_type: "inactive",
+                                          },
+                                        })
+                                      }
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div className="size-2.5 rounded-full bg-[#FF383C]" />
+                                        Inactive
+                                      </div>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
                             </td>
                             <td className="px-6 py-4 font-medium text-slate-600/60">
                               {rppRange}
@@ -614,22 +648,78 @@ export default function ProductsPageClient() {
                                     {variant.inventory.quantity}
                                   </td>
                                   <td className="px-6 py-4">
-                                    <div className="flex h-10 w-40 items-center justify-start gap-2 rounded border border-black/20 bg-white px-3 font-medium text-slate-700 hover:bg-white hover:text-slate-700">
-                                      <div
-                                        className={`size-2 rounded-full ${
-                                          variant.category === "ship-ready"
-                                            ? "bg-[#29CE2D]"
-                                            : variant.category === "pre-order"
-                                              ? "bg-[#FF8D28]"
-                                              : "bg-[#FF383C]"
-                                        }`}
-                                      />
-                                      <span className="capitalize">
-                                        {variant.category === "pre-order"
-                                          ? "Pre-Order"
-                                          : variant.category.replace("-", " ")}
-                                      </span>
-                                    </div>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          disabled={
+                                            updateVariantStatusMutation.isPending
+                                          }
+                                          className="h-10! w-40 justify-between border-black/20 bg-white px-3 text-left text-slate-700 hover:bg-white hover:text-slate-700 disabled:opacity-50"
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <div
+                                              className={`size-2 rounded-full ${statusDotClass(variant.category)}`}
+                                            />
+                                            <span className="capitalize">
+                                              {statusLabel(variant.category)}
+                                            </span>
+                                          </div>
+                                          <ChevronDown className="size-4 text-slate-400" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent
+                                        align="start"
+                                        className="w-40 rounded-xl bg-white shadow-lg"
+                                      >
+                                        <DropdownMenuItem
+                                          onClick={() => {
+                                            if (variant.inventory.quantity === 0) {
+                                              setConfirmShipReadyOpen(true)
+                                            } else {
+                                              updateVariantStatusMutation.mutate(
+                                                {
+                                                  variant_id: variant.sku,
+                                                  fulfillment_type:
+                                                    "ship_ready",
+                                                }
+                                              )
+                                            }
+                                          }}
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <div className="size-2.5 rounded-full bg-[#29CE2D]" />
+                                            Ship Ready
+                                          </div>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            updateVariantStatusMutation.mutate({
+                                              variant_id: variant.sku,
+                                              fulfillment_type: "pre_order",
+                                            })
+                                          }
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <div className="size-2.5 rounded-full bg-[#FF8D28]" />
+                                            Pre-Order
+                                          </div>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            updateVariantStatusMutation.mutate({
+                                              variant_id: variant.sku,
+                                              fulfillment_type: "inactive",
+                                            })
+                                          }
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <div className="size-2.5 rounded-full bg-[#FF383C]" />
+                                            Inactive
+                                          </div>
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
                                   </td>
                                   <td className="px-6 py-4 font-medium text-slate-600/60">
                                     {formatCurrency(variant.retailPrice ?? 0)}{" "}

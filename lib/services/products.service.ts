@@ -12,6 +12,7 @@ import type {
   UpdateProductStatusRequest,
   UpdateVariantBatchLabelRequest,
   UpdateVariantPriceRequest,
+  UpdateVariantStatusRequest,
 } from "@/types/products"
 
 async function getProducts(
@@ -43,8 +44,19 @@ async function getCatalogProducts(
   if (response.data) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rawItems = (response.data as any).products ?? response.data.data ?? []
+    const mapped = rawItems.flatMap(mapProductListItemToDomain)
+    const filtered = mapped.filter(
+      (p: Product) =>
+        !params.fulfillment_type ||
+        (params.fulfillment_type === "ship_ready" &&
+          p.category === "ship-ready") ||
+        (params.fulfillment_type === "pre_order" &&
+          p.category === "pre-order") ||
+        (params.fulfillment_type === "inactive" &&
+          p.category === "inactive")
+    )
     return {
-      data: rawItems.flatMap(mapProductListItemToDomain),
+      data: filtered,
       limit: response.data.limit,
       page: response.data.page,
       total: response.data.total,
@@ -95,6 +107,12 @@ async function updateVariantPrice(
   })
 }
 
+async function updateVariantStatus(
+  input: UpdateVariantStatusRequest
+): Promise<void> {
+  await apiClient.patch<BaseResponse<void>>(`/products/variant/status`, input)
+}
+
 async function getProductVariants(productId: string): Promise<Product[]> {
   const response = await apiClient.get<BaseResponse<ProductDto[]>>(
     `/products/${productId}/variants`
@@ -126,4 +144,5 @@ export const productsService = {
   updateProductBatch,
   updateProductStatus,
   updateVariantPrice,
+  updateVariantStatus,
 }
