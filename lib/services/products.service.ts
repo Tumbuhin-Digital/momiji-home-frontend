@@ -11,6 +11,7 @@ import type {
   ProductQueryParams,
   UpdateProductStatusRequest,
   UpdateVariantBatchLabelRequest,
+  UpdateVariantCustomTextRequest,
   UpdateVariantPriceRequest,
   UpdateVariantStatusRequest,
 } from "@/types/products"
@@ -107,6 +108,15 @@ async function updateVariantPrice(
   })
 }
 
+async function updateVariantCustomText(
+  input: UpdateVariantCustomTextRequest
+): Promise<void> {
+  await apiClient.patch<BaseResponse<void>>(
+    "/products/variant/batch-label",
+    input
+  )
+}
+
 async function updateVariantStatus(
   input: UpdateVariantStatusRequest
 ): Promise<void> {
@@ -143,6 +153,7 @@ export const productsService = {
   importDimensions,
   updateProductBatch,
   updateProductStatus,
+  updateVariantCustomText,
   updateVariantPrice,
   updateVariantStatus,
 }

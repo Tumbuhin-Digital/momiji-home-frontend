@@ -16,12 +16,14 @@ function QueryProvider({ children }: { children: React.ReactNode }) {
     () =>
       new QueryClient({
         queryCache: new QueryCache({
-          onError: (error) => {
+          onError: (error, query) => {
+            if (query.meta?.suppressErrorToast) return
             handleApiError(error)
           },
         }),
         mutationCache: new MutationCache({
-          onError: (error) => {
+          onError: (error, _variables, _context, mutation) => {
+            if (mutation.meta?.suppressErrorToast) return
             handleApiError(error)
           },
         }),

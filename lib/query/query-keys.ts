@@ -66,6 +66,11 @@ const queryKeys = {
       ["preorders", "list", params] as const,
     detail: (id: string) => ["preorders", "detail", id] as const,
   },
+  preorderCustomTexts: {
+    all: ["preorder-custom-texts"] as const,
+    list: (search?: string) =>
+      ["preorder-custom-texts", "list", search?.trim() ?? ""] as const,
+  },
   products: {
     all: ["products"] as const,
     list: (params: ProductQueryParams = {}) =>

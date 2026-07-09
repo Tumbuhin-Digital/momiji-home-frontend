@@ -18,6 +18,7 @@ import type {
   ProductQueryParams,
   UpdatePricingInput,
   UpdateVariantBatchLabelRequest,
+  UpdateVariantCustomTextRequest,
   UpdateProductStatusRequest,
   UpdateVariantPriceRequest,
   UpdateVariantStatusRequest,
@@ -186,6 +187,22 @@ export function useUpdateVariantPrice() {
     }) => productsService.updateVariantPrice(variantId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+    },
+  })
+}
+
+export function useUpdateVariantCustomText() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: UpdateVariantCustomTextRequest) =>
+      productsService.updateVariantCustomText(input),
+    meta: { suppressErrorToast: true },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalog.all })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.preorderCustomTexts.all,
+      })
     },
   })
 }

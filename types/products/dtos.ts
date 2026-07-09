@@ -10,6 +10,7 @@ export interface VariantDto {
   width_cm?: number
   height_cm?: number
   length_cm?: number
+  preorder_batch_label?: string | null
 }
 
 export interface ProductImageDto {
@@ -73,6 +74,11 @@ export interface UpdatePricingInput {
 export interface UpdateVariantBatchLabelRequest {
   expected_ship_date?: string
   preorder_batch_label: string
+}
+
+export interface UpdateVariantCustomTextRequest {
+  preorder_batch_label: string
+  variant_id: string
 }
 
 export interface UpdateProductStatusRequest {

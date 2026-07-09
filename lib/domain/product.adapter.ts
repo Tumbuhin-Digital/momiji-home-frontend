@@ -71,6 +71,7 @@ export function mapProductListItemToDomain(dto: ProductDto): Product[] {
       widthCm: variant.width_cm,
       heightCm: variant.height_cm,
       depthCm: variant.length_cm,
+      preorderCustomText: variant.preorder_batch_label || undefined,
     }
   })
 }

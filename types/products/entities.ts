@@ -47,4 +47,5 @@ export interface Product {
   widthCm?: number
   heightCm?: number
   depthCm?: number
+  preorderCustomText?: string
 }

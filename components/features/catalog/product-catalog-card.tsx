@@ -159,7 +159,9 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         <div className="flex flex-1 flex-col justify-center gap-1.5 sm:gap-2">
           {product.category === "pre-order" && (
             <Badge className="h-5.5! w-fit rounded p-1 text-xs font-normal! uppercase">
-              Pre-Order
+              {product.preorderCustomText
+                ? `PRE-ORDER ${product.preorderCustomText}`
+                : "PRE-ORDER"}
             </Badge>
           )}
           <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">

@@ -51,6 +51,7 @@ import dynamic from "next/dynamic"
 
 import { DimensionsCsvModal } from "@/components/features/products/dimensions-csv-modal"
 import { EditPriceModal } from "@/components/features/products/edit-price-modal"
+import { PreorderCustomTextCombobox } from "@/components/features/products/preorder-custom-text-combobox"
 import { ProductTableSkeleton } from "@/components/features/products/product-table-skeleton"
 import { StockWarningModal } from "@/components/features/products/stock-warning-modal"
 
@@ -371,6 +372,7 @@ export default function ProductsPageClient() {
                     <th className="px-6 py-4 font-medium">Product</th>
                     <th className="px-6 py-4 font-medium">Stock (Shopify)</th>
                     <th className="px-6 py-4 font-medium">Status</th>
+                    <th className="px-6 py-4 font-medium">Custom Text</th>
                     <th className="px-6 py-4 font-medium">RPP Price</th>
                     <th className="px-6 py-4 font-medium">WS$ Price</th>
                     <th className="px-6 py-4 font-medium">Action</th>
@@ -597,6 +599,16 @@ export default function ProductsPageClient() {
                                 </DropdownMenu>
                               )}
                             </td>
+                            <td className="px-6 py-4">
+                              {singleVariant?.category === "pre-order" ? (
+                                <PreorderCustomTextCombobox
+                                  variantId={singleVariant.sku}
+                                  value={singleVariant.preorderCustomText}
+                                />
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
                             <td className="px-6 py-4 font-medium text-slate-600/60">
                               {rppRange}
                             </td>
@@ -721,6 +733,16 @@ export default function ProductsPageClient() {
                                       </DropdownMenuContent>
                                     </DropdownMenu>
                                   </td>
+                                  <td className="px-6 py-4">
+                                    {variant.category === "pre-order" ? (
+                                      <PreorderCustomTextCombobox
+                                        variantId={variant.sku}
+                                        value={variant.preorderCustomText}
+                                      />
+                                    ) : (
+                                      <span className="text-slate-400">—</span>
+                                    )}
+                                  </td>
                                   <td className="px-6 py-4 font-medium text-slate-600/60">
                                     {formatCurrency(variant.retailPrice ?? 0)}{" "}
                                     USD
@@ -751,7 +773,7 @@ export default function ProductsPageClient() {
 
                   {rows.length === 0 && !productsQuery.isLoading && (
                     <tr>
-                      <td colSpan={6} className="p-0">
+                      <td colSpan={7} className="p-0">
                         <div className="flex h-[calc(100vh-360px)] items-center justify-center">
                           <Empty className="gap-4 border-none">
                             <EmptyMedia variant="icon" className="mb-0">
