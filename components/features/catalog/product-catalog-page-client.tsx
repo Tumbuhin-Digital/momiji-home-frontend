@@ -84,6 +84,7 @@ export function ProductCatalogPageClient({
         fulfillment_type: fulfillmentType,
         limit: itemsPerPage,
         search: normalizedSearch || undefined,
+        sort: "name_asc",
       },
       {
         enabled: isInitialized,

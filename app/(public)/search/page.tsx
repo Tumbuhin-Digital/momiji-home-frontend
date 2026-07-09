@@ -18,7 +18,7 @@ export default async function SearchPage({
     typeof rawSearch === "string"
       ? rawSearch
       : Array.isArray(rawSearch)
-        ? rawSearch[0] ?? ""
+        ? (rawSearch[0] ?? "")
         : ""
 
   return (
