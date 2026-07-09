@@ -122,7 +122,7 @@ async function paidSettlement(
 }
 
 async function exportPreorders(
-  params: { batch_label?: string; status?: string } = {}
+  params: PreorderQueryParams = {}
 ): Promise<Blob> {
   return await apiClient.get<Blob>("/preorders/export", {
     params,

@@ -9,8 +9,10 @@ import {
   RotateCcw,
   Search,
 } from "lucide-react"
+import { DateRange } from "react-day-picker"
 
 import { Button } from "@/components/ui/button"
+import { DatePickerWithRange } from "@/components/ui/date-range-picker"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -48,7 +50,7 @@ import { SettlementPreOrderModal } from "@/components/features/preorders/settlem
 import { useExportPreorders, usePreorders } from "@/hooks/use-preorders"
 import { formatLastSynced } from "@/lib/utils"
 
-import { parseAsInteger, useQueryState } from "nuqs"
+import { parseAsInteger, parseAsString, useQueryState } from "nuqs"
 
 import type { SettlementStatus } from "@/types/preorders"
 
@@ -63,8 +65,22 @@ const SETTLEMENT_STATUS_LABEL: Record<SettlementStatus, string> = {
 
 const pageParser = parseAsInteger.withDefault(1)
 
+function toISODate(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, "0")
+  const d = String(date.getDate()).padStart(2, "0")
+  return `${y}-${m}-${d}`
+}
+
+function parseISODate(value: string): Date {
+  const [y, m, d] = value.split("-").map(Number)
+  return new Date(y, m - 1, d)
+}
+
 export function PreorderListClient() {
   const [page, setPage] = useQueryState("page", pageParser)
+  const [startDate, setStartDate] = useQueryState("start_date", parseAsString)
+  const [endDate, setEndDate] = useQueryState("end_date", parseAsString)
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState<SortOption | null>(null)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
@@ -80,10 +96,24 @@ export function PreorderListClient() {
   })
 
   const limit = 10
+
+  const dateRange: DateRange | undefined = startDate
+    ? {
+        from: parseISODate(startDate),
+        to: endDate ? parseISODate(endDate) : undefined,
+      }
+    : undefined
+
+  const dateParams =
+    startDate && endDate
+      ? { start_date: startDate, end_date: endDate }
+      : {}
+
   const { data: queryData, isLoading } = usePreorders({
     page,
     limit,
     status: statusFilter === "all" ? undefined : statusFilter,
+    ...dateParams,
   })
 
   const groups = queryData?.data
@@ -113,7 +143,10 @@ export function PreorderListClient() {
 
   const handleExport = async () => {
     try {
-      const blob = await exportMutation.mutateAsync({})
+      const blob = await exportMutation.mutateAsync({
+        status: statusFilter === "all" ? undefined : statusFilter,
+        ...dateParams,
+      })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
@@ -141,7 +174,26 @@ export function PreorderListClient() {
     setSortBy((prev) => (prev === option ? null : option))
   }
 
-  const hasActiveFilter = !!(searchQuery || sortBy || statusFilter !== "all")
+  const handleDateChange = (range: DateRange | undefined) => {
+    if (!range?.from) {
+      setStartDate(null)
+      setEndDate(null)
+      setPage(1)
+      return
+    }
+
+    setStartDate(toISODate(range.from))
+    setEndDate(range.to ? toISODate(range.to) : null)
+    setPage(1)
+  }
+
+  const hasDateRange = !!(startDate && endDate)
+  const hasActiveFilter = !!(
+    searchQuery ||
+    sortBy ||
+    statusFilter !== "all" ||
+    hasDateRange
+  )
   const isFilterActive = sortBy !== null || statusFilter !== "all"
 
   return (
@@ -156,20 +208,28 @@ export function PreorderListClient() {
             {formatLastSynced(new Date())} · {total} pre-orders in total
           </p>
         </div>
-        <Button
-          type="button"
-          size="xl"
-          className="h-13! w-full sm:w-fit"
-          onClick={handleExport}
-          disabled={exportMutation.isPending}
-        >
-          {exportMutation.isPending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <CloudDownload className="size-4" />
-          )}
-          Download Excel
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <DatePickerWithRange
+            date={dateRange}
+            onDateChange={handleDateChange}
+            className="w-full sm:w-auto"
+            buttonClassName="h-11! w-full justify-start rounded-sm border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-600 shadow-none ring-0 hover:bg-white sm:w-fit"
+          />
+          <Button
+            type="button"
+            size="xl"
+            className="h-13! w-full sm:w-fit"
+            onClick={handleExport}
+            disabled={exportMutation.isPending}
+          >
+            {exportMutation.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <CloudDownload className="size-4" />
+            )}
+            Download Excel
+          </Button>
+        </div>
       </div>
 
       {/* Search + Filter */}
@@ -268,6 +328,8 @@ export function PreorderListClient() {
                 setSearchQuery("")
                 setSortBy(null)
                 setStatusFilter("all")
+                setStartDate(null)
+                setEndDate(null)
                 setPage(1)
               }}
               className="size-11! rounded-sm border-neutral-300 bg-white text-neutral-600"

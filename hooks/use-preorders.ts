@@ -7,7 +7,7 @@ import type { PreorderQueryParams } from "@/types/preorders"
 
 export function useExportPreorders() {
   return useMutation({
-    mutationFn: (params: { batch_label?: string; status?: string } = {}) =>
+    mutationFn: (params: PreorderQueryParams = {}) =>
       preorderService.exportPreorders(params),
   })
 }

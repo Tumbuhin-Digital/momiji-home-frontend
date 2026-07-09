@@ -17,11 +17,13 @@ import {
 import { cn } from "@/lib/utils"
 
 interface DatePickerWithRangeProps extends React.HTMLAttributes<HTMLDivElement> {
+  buttonClassName?: string
   date: DateRange | undefined
   onDateChange: (date: DateRange | undefined) => void
 }
 
 export function DatePickerWithRange({
+  buttonClassName,
   className,
   date,
   onDateChange,
@@ -36,7 +38,8 @@ export function DatePickerWithRange({
               variant={"outline"}
               className={cn(
                 "h-10 w-full justify-start rounded-2xl border-none bg-muted/50 text-left font-medium ring-1 ring-foreground/5 sm:w-75",
-                !date && "text-muted-foreground"
+                !date && "text-muted-foreground",
+                buttonClassName
               )}
             />
           }

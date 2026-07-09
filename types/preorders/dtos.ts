@@ -33,7 +33,9 @@ export interface PreorderGroupResponseDto {
 
 export interface PreorderQueryParams {
   batch_label?: string
+  end_date?: string
   limit?: number
   page?: number
+  start_date?: string
   status?: SettlementStatus
 }
