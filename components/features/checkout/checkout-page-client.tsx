@@ -69,6 +69,7 @@ import { useShippingRates, useValidateAddress } from "@/hooks/use-shipping"
 import { useCheckoutNotes } from "@/hooks/use-settings"
 import { checkoutService } from "@/lib/services/checkout.service"
 import { writePreparingCheckoutDocument } from "@/lib/checkout/preparing-checkout-document"
+import { parseAddressPaste } from "@/lib/checkout/address-paste"
 import { queryKeys } from "@/lib/query/query-keys"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
@@ -459,57 +460,41 @@ export default function CheckoutPageClient() {
     const text = e.clipboardData.getData("text")
     if (!text) return
 
-    const parts = text.split(",").map((p) => p.trim())
-    if (parts.length >= 3) {
-      e.preventDefault()
-      setIsParsingAddress(true)
-      setParsingProgress(0)
+    const parsed = parseAddressPaste(text)
+    if (!parsed) return
 
-      const interval = setInterval(() => {
-        setParsingProgress((prev) => {
-          if (prev >= 85) return prev
-          const increment = Math.random() * 12 + 3
-          return Math.min(85, Math.round(prev + increment))
-        })
-      }, 100)
+    e.preventDefault()
+    setIsParsingAddress(true)
+    setParsingProgress(0)
+
+    const interval = setInterval(() => {
+      setParsingProgress((prev) => {
+        if (prev >= 85) return prev
+        const increment = Math.random() * 12 + 3
+        return Math.min(85, Math.round(prev + increment))
+      })
+    }, 100)
+
+    setTimeout(() => {
+      clearInterval(interval)
+      setParsingProgress(100)
 
       setTimeout(() => {
-        clearInterval(interval)
-        setParsingProgress(100)
+        setValue("address", parsed.address, { shouldValidate: true })
+        setValue("city", parsed.city, { shouldValidate: true })
+        setValue("state", parsed.state, { shouldValidate: true })
+        setValue("zipCode", parsed.zipCode, { shouldValidate: true })
+        setValue("country", parsed.country, { shouldValidate: true })
 
-        setTimeout(() => {
-          const address = parts[0]
-          const city = parts[1]
-          const stateZip = parts[2]
-          let country = parts[3] || "United States"
-          if (country.toLowerCase() === "amerika serikat") {
-            country = "United States"
-          }
-
-          const stateZipParts = stateZip.split(" ")
-          let state = stateZipParts[0]
-          const zip = stateZipParts.slice(1).join(" ")
-
-          if (state) {
-            state = toUSStateAbbr(state)
-          }
-
-          setValue("address", address, { shouldValidate: true })
-          setValue("city", city, { shouldValidate: true })
-          setValue("state", state, { shouldValidate: true })
-          setValue("zipCode", zip, { shouldValidate: true })
-          setValue("country", country, { shouldValidate: true })
-
-          setIsParsingAddress(false)
-          setParsingProgress(0)
-          toastManager.add({
-            title: "Success",
-            description: "Address auto-filled successfully!",
-            type: "success",
-          })
-        }, 300)
-      }, 500)
-    }
+        setIsParsingAddress(false)
+        setParsingProgress(0)
+        toastManager.add({
+          title: "Success",
+          description: "Address auto-filled successfully!",
+          type: "success",
+        })
+      }, 300)
+    }, 500)
   }
 
   const onSubmit = async (values: CheckoutFormValues) => {

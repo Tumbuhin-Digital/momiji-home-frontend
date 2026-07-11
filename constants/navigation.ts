@@ -1,4 +1,4 @@
-import { Settings } from "lucide-react"
+import { Settings, FilePlus2 } from "lucide-react"
 import { IconlyActivity } from "@/public/icons/iconly-activity"
 import { IconlyBag } from "@/public/icons/iconly-bag"
 import { IconlyCategory } from "@/public/icons/iconly-category"
@@ -20,6 +20,11 @@ export const NAV_ITEMS = [
     title: "Manage Order",
     href: "/order-management",
     icon: IconShoppingCart,
+  },
+  {
+    title: "Manual Order",
+    href: "/manual-order",
+    icon: FilePlus2,
   },
   {
     title: "Pre-Order List",

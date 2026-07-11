@@ -7,6 +7,7 @@ const ADMIN_ROUTES = [
   "/dashboard",
   "/products",
   "/order-management",
+  "/manual-order",
   "/pre-order-list",
   "/sales-report",
   "/settings",

@@ -14,6 +14,10 @@ export interface ShippingRatesRequest {
   zip: string
   segment?: "ship_ready" | "pre_order"
   origin?: "east" | "west"
+  line_items?: Array<{
+    variant_id: string
+    quantity: number
+  }>
 }
 
 export interface ValidateAddressRequest {
