@@ -748,12 +748,24 @@ export function ManualOrderPageClient() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-alternate/60">+ Shipping</span>
+                  <span className="text-alternate/60">+ Shipping (carrier)</span>
                   <span className="text-alternate/60">
                     {shipReadyRatesQuery.isLoading ? (
                       <Loader2 className="inline size-4 animate-spin" />
                     ) : (
-                      formatCurrency(summary.shippingCost)
+                      formatCurrency(shipReadyRates?.[0]?.baseCost ?? "0")
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-alternate/60">
+                    + Shipping buffer (10%)
+                  </span>
+                  <span className="text-alternate/60">
+                    {shipReadyRatesQuery.isLoading ? (
+                      <Loader2 className="inline size-4 animate-spin" />
+                    ) : (
+                      formatCurrency(shipReadyRates?.[0]?.bufferAmount ?? "0")
                     )}
                   </span>
                 </div>
@@ -791,10 +803,26 @@ export function ManualOrderPageClient() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-alternate/60">
-                      + Shipping (Pre-Order)
+                      + Shipping (carrier)
                     </span>
                     <span className="text-alternate/60">
-                      {formatCurrency(summary.shippingPreorder)}
+                      {preOrderRatesQuery.isLoading ? (
+                        <Loader2 className="inline size-4 animate-spin" />
+                      ) : (
+                        formatCurrency(preOrderRates?.[0]?.baseCost ?? "0")
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-alternate/60">
+                      + Shipping buffer (10%)
+                    </span>
+                    <span className="text-alternate/60">
+                      {preOrderRatesQuery.isLoading ? (
+                        <Loader2 className="inline size-4 animate-spin" />
+                      ) : (
+                        formatCurrency(preOrderRates?.[0]?.bufferAmount ?? "0")
+                      )}
                     </span>
                   </div>
                 </div>

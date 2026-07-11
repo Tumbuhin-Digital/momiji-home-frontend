@@ -10,6 +10,8 @@ import type {
 
 function mapShippingRateDtoToDomain(dto: ShippingRateDto): ShippingRate {
   return {
+    baseCost: dto.base_cost ?? "0",
+    bufferAmount: dto.buffer_amount ?? "0",
     cost: dto.cost,
     currency: dto.currency,
     deliveryDays: dto.delivery_days,

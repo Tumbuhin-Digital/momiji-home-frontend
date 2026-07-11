@@ -1,4 +1,6 @@
 export interface ShippingRateDto {
+  base_cost: string
+  buffer_amount: string
   cost: string
   currency: string
   delivery_days: number
