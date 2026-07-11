@@ -9,6 +9,7 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel"
+import { withShopifyWidth } from "@/lib/shopify-image"
 import { cn } from "@/lib/utils"
 import Autoplay from "embla-carousel-autoplay"
 
@@ -18,10 +19,14 @@ interface ImageCarouselProps {
   className?: string
   imageClassName?: string
   sizes?: string
+  /** Shopify CDN pixel width. Defaults to 96 (admin thumb ×2). */
+  width?: number
   autoplayDelay?: number
   playOnHover?: boolean
   isHovered?: boolean
 }
+
+const DEFAULT_WIDTH = 96
 
 const defaultImageClassName =
   "relative block aspect-square h-auto max-w-full object-cover align-middle transition-opacity duration-200"
@@ -32,15 +37,22 @@ function HoverFadeImageCarousel({
   className = "h-full w-full",
   imageClassName,
   sizes,
+  width,
   autoplayDelay = 1000,
   isHovered = false,
 }: Required<Pick<ImageCarouselProps, "images" | "altText">> &
   Pick<
     ImageCarouselProps,
-    "className" | "imageClassName" | "sizes" | "autoplayDelay" | "isHovered"
+    | "className"
+    | "imageClassName"
+    | "sizes"
+    | "width"
+    | "autoplayDelay"
+    | "isHovered"
   >) {
   const [activeIndex, setActiveIndex] = useState(0)
   const displayedIndex = isHovered ? activeIndex : 0
+  const resolvedWidth = width ?? DEFAULT_WIDTH
 
   useEffect(() => {
     if (!isHovered || images.length <= 1) return
@@ -61,7 +73,7 @@ function HoverFadeImageCarousel({
       {images.map((img, idx) => (
         <Image
           key={idx}
-          src={img.src}
+          src={withShopifyWidth(img.src, resolvedWidth)}
           alt={img.alt || altText}
           fill
           className={cn(
@@ -70,7 +82,7 @@ function HoverFadeImageCarousel({
             idx === displayedIndex ? "opacity-100" : "opacity-0"
           )}
           sizes={sizes}
-          unoptimized={!sizes}
+          unoptimized
           loading="lazy"
         />
       ))}
@@ -84,9 +96,14 @@ function AutoplayImageCarousel({
   className = "h-full w-full",
   imageClassName,
   sizes,
+  width,
   autoplayDelay = 5000,
 }: Required<Pick<ImageCarouselProps, "images" | "altText">> &
-  Pick<ImageCarouselProps, "className" | "imageClassName" | "sizes" | "autoplayDelay">) {
+  Pick<
+    ImageCarouselProps,
+    "className" | "imageClassName" | "sizes" | "width" | "autoplayDelay"
+  >) {
+  const resolvedWidth = width ?? DEFAULT_WIDTH
   const plugins = useMemo(
     () => [
       Autoplay({
@@ -110,12 +127,12 @@ function AutoplayImageCarousel({
         {images.map((img, idx) => (
           <CarouselItem key={idx} className="relative h-full w-full pl-0">
             <Image
-              src={img.src}
+              src={withShopifyWidth(img.src, resolvedWidth)}
               alt={img.alt || altText}
               fill
               className={resolvedImageClassName}
               sizes={sizes}
-              unoptimized={!sizes}
+              unoptimized
               loading="lazy"
             />
           </CarouselItem>
@@ -131,6 +148,7 @@ export default function ImageCarousel({
   className = "h-full w-full",
   imageClassName,
   sizes,
+  width,
   autoplayDelay,
   playOnHover = false,
   isHovered = false,
@@ -144,6 +162,7 @@ export default function ImageCarousel({
         className={className}
         imageClassName={imageClassName}
         sizes={sizes}
+        width={width}
         autoplayDelay={autoplayDelay ?? 1000}
         isHovered={isHovered}
       />
@@ -157,6 +176,7 @@ export default function ImageCarousel({
       className={className}
       imageClassName={imageClassName}
       sizes={sizes}
+      width={width}
       autoplayDelay={autoplayDelay ?? 5000}
     />
   )

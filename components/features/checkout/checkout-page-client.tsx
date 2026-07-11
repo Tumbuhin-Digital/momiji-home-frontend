@@ -71,6 +71,7 @@ import { checkoutService } from "@/lib/services/checkout.service"
 import { writePreparingCheckoutDocument } from "@/lib/checkout/preparing-checkout-document"
 import { parseAddressPaste } from "@/lib/checkout/address-paste"
 import { queryKeys } from "@/lib/query/query-keys"
+import { withShopifyWidth } from "@/lib/shopify-image"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
 
@@ -1066,11 +1067,12 @@ export default function CheckoutPageClient() {
                           <div className="relative size-16 shrink-0 overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5">
                             {item.image_src ? (
                               <Image
-                                src={item.image_src}
+                                src={withShopifyWidth(item.image_src, 128)}
                                 alt={item.title}
                                 fill
                                 className="relative block aspect-square h-auto max-w-full rounded border align-middle transition-opacity duration-200"
                                 sizes="64px"
+                                unoptimized
                               />
                             ) : (
                               <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border bg-linear-to-b from-white via-white to-black/5">
@@ -1112,11 +1114,12 @@ export default function CheckoutPageClient() {
                           <div className="relative size-16 shrink-0 overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5">
                             {item.image_src ? (
                               <Image
-                                src={item.image_src}
+                                src={withShopifyWidth(item.image_src, 128)}
                                 alt={item.title}
                                 fill
                                 className="relative block aspect-square h-auto max-w-full rounded border align-middle transition-opacity duration-200"
                                 sizes="64px"
+                                unoptimized
                               />
                             ) : (
                               <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border bg-linear-to-b from-white via-white to-black/5">

@@ -22,6 +22,7 @@ const DynamicImageCarousel = dynamic(
 
 import { useCart, useLocalCartVariantUpdate } from "@/hooks"
 import { ensureCartSession } from "@/lib/cart/ensure-cart-session"
+import { withShopifyWidth } from "@/lib/shopify-image"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
 
@@ -135,17 +136,19 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
               images={product.images}
               altText={product.title}
               sizes="108px"
+              width={256}
               playOnHover
               isHovered={isCardHovered}
               autoplayDelay={1000}
             />
           ) : product.imageUrl ? (
             <Image
-              src={product.imageUrl}
+              src={withShopifyWidth(product.imageUrl, 256)}
               alt={product.title}
               fill
               className="relative block aspect-square h-auto max-w-full object-cover align-middle transition-opacity duration-200"
               sizes="108px"
+              unoptimized
             />
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center">

@@ -5,6 +5,7 @@ import { Boxes } from "lucide-react"
 
 import { QuantitySelector } from "@/components/global/quantity-selector"
 
+import { withShopifyWidth } from "@/lib/shopify-image"
 import { cn } from "@/lib/utils"
 
 import type { CartItemDto } from "@/types/cart"
@@ -88,11 +89,12 @@ export function CartSheetItemRow({
       <div className="relative aspect-square w-20 shrink-0 overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5 sm:w-24">
         {displayImage ? (
           <Image
-            src={displayImage}
+            src={withShopifyWidth(displayImage, 192)}
             alt={displayTitle}
             fill
             className="relative block aspect-square h-auto max-w-full rounded border align-middle transition-opacity duration-200"
             sizes="96px"
+            unoptimized
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border">

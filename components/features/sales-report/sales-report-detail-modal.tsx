@@ -33,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { StatusBadge } from "@/components/global/status-badge"
 
 import { useOrderById } from "@/hooks/use-orders"
+import { withShopifyWidth } from "@/lib/shopify-image"
 import { formatCurrency } from "@/lib/utils"
 
 import type { OrderLineItem, SalesReportDetailModalProps } from "@/types/orders"
@@ -381,10 +382,11 @@ function LineItemCard({ item }: { item: OrderLineItem }) {
       <div className="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5 ring-1 ring-neutral-200">
         {item.imageSrc ? (
           <Image
-            src={item.imageSrc}
+            src={withShopifyWidth(item.imageSrc, 112)}
             alt={item.title}
             fill
             className="object-contain mix-blend-multiply"
+            unoptimized
           />
         ) : (
           <Boxes className="size-5 text-neutral-300" />

@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dialog"
 import { Spinner } from "@/components/ui/spinner"
 
+import { withShopifyWidth } from "@/lib/shopify-image"
+
 import type { InventoryDepletedModalProps } from "@/types/products"
 
 export function InventoryDepletedModal({
@@ -33,10 +35,11 @@ export function InventoryDepletedModal({
           <div className="relative mx-auto flex size-32 shrink-0 items-center justify-center overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5 sm:size-40">
             {product?.imageUrl ? (
               <Image
-                src={product.imageUrl}
+                src={withShopifyWidth(product.imageUrl, 320)}
                 alt={product?.title || "Product Image"}
                 fill
                 className="object-contain mix-blend-multiply"
+                unoptimized
               />
             ) : (
               <Boxes className="size-8 text-slate-300" />
