@@ -244,7 +244,7 @@ export default function ProductsPageClient() {
             className="h-13! w-full sm:w-fit"
           >
             <Upload className="size-4" />
-            Upload Dimension
+            Upload Packaging
           </Button>
         </div>
 

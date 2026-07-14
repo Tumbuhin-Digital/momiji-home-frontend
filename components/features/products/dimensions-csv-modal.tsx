@@ -52,7 +52,7 @@ export function DimensionsCsvModal({
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = "dimensions_template.csv"
+      a.download = "variant-packaging-template.csv"
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -114,11 +114,12 @@ export function DimensionsCsvModal({
           <div className="w-full">
             <DialogHeader className="p-0 text-center">
               <DialogTitle className="tracking-wide sm:text-[22px]">
-                Variant Dimensions
+                Variant Packaging
               </DialogTitle>
               <DialogDescription className="text-[15px] leading-relaxed">
-                Import length, width, and height in inches via CSV. Weight is
-                synced automatically from Shopify.
+                Import weight in pounds (lb) and length, width, height in inches
+                via CSV. Variants with missing weight (0 lb) are listed first in
+                the template.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -133,7 +134,8 @@ export function DimensionsCsvModal({
               1. Download Template
             </div>
             <p className="mb-4 text-xs text-slate-500">
-              Get the latest template to populate variant dimensions (inches).
+              Get the latest template to populate weight (lb) and dimensions
+              (inches). Zero-weight variants appear first.
             </p>
             <Button
               variant="outline"
