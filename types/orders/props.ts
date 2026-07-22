@@ -1,4 +1,9 @@
-import type { Order, OrderLineItem } from "./entities"
+import type {
+  Order,
+  OrderFulfillmentSegment,
+  OrderLineItem,
+  PreorderShipment,
+} from "./entities"
 
 export interface CancelOrderModalProps {
   order: Order
@@ -6,15 +11,6 @@ export interface CancelOrderModalProps {
   onClose: () => void
   onConfirm: (orderId: string, reason: string) => Promise<void>
   isConfirming: boolean
-}
-
-export interface SecondPaymentConfirmationModalProps {
-  order: Order
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: (orderId: string) => Promise<void>
-  isConfirming: boolean
-  error?: string
 }
 
 export interface PreorderCalculateShippingModalProps {
@@ -25,6 +21,20 @@ export interface PreorderCalculateShippingModalProps {
   mode?: "initial" | "edit"
   onSaved?: () => void
   onShippingConfigured?: () => void
+  batchId?: string | null
+  shipment?: PreorderShipment
+}
+
+export interface SecondPaymentConfirmationModalProps {
+  order: Order
+  segment?: OrderFulfillmentSegment | null
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: (orderId: string, batchId?: string | null) => Promise<void>
+  isConfirming: boolean
+  error?: string
+  shippingTotal?: number
+  groupBalanceDue?: number
 }
 
 export interface CustomerOrderCardProps {

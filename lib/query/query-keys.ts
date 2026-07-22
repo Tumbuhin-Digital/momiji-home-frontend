@@ -71,6 +71,10 @@ const queryKeys = {
     list: (search?: string) =>
       ["preorder-custom-texts", "list", search?.trim() ?? ""] as const,
   },
+  batches: {
+    byVariant: (variantId: string) =>
+      ["batches", "variant", variantId] as const,
+  },
   products: {
     all: ["products"] as const,
     list: (params: ProductQueryParams = {}) =>

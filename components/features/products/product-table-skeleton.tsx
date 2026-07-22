@@ -28,6 +28,9 @@ export function ProductTableSkeleton() {
               <Skeleton className="h-10 w-52 rounded" />
             </td>
             <td className="px-6 py-4">
+              <Skeleton className="h-6 w-20 rounded-full" />
+            </td>
+            <td className="px-6 py-4">
               <Skeleton className="h-4 w-32" />
             </td>
             <td className="px-6 py-4">

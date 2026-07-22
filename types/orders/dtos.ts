@@ -41,11 +41,14 @@ export interface OrderItemDetailDto {
 
 export interface PackingItemDto {
   line_item_id: string
+  quantity?: number
   box_count: number
   is_nested: boolean
 }
 
 export interface PreorderShipmentDto {
+  id?: string
+  batch_id?: string | null
   estimated_shipping?: string
   final_shipping_price?: string
   shipping_notes?: string
@@ -53,27 +56,94 @@ export interface PreorderShipmentDto {
   total_boxes: number
   total_weight_lb?: string
   invoice_sent_at?: string
+  invoice_url?: string
+  invoice_paid_at?: string
+  shopify_draft_order_id?: string
   warehouse_origin?: "east" | "west"
   packing?: PackingItemDto[]
 }
 
 export interface CalculatePreorderShippingRequest {
+  batch_id?: string | null
   packing: PackingItemDto[]
 }
 
 export interface CalculatePreorderShippingResponse {
   estimated_shipping: string
+  base_cost?: string
+  buffer_amount?: string
   total_boxes: number
   total_weight_lb: string
   packing: PackingItemDto[]
   service_code: string
   currency: string
+  batch_id?: string | null
 }
 
 export interface UpdatePreorderShippingRequest {
+  batch_id?: string | null
   final_shipping_price: number
   shipping_notes?: string
   packing?: PackingItemDto[]
+}
+
+export type FulfillmentSegmentKindDto =
+  | "ship_ready"
+  | "preorder_unbatched"
+  | "preorder_batch"
+
+export interface OrderLineSliceDto {
+  line_item_id: string
+  variant_id: string
+  type: string
+  quantity: number
+  remaining_quantity?: number
+  item_status: string
+  fulfillment_step: number
+  title: string
+  unit_price?: string
+  amount_charged?: string
+  balance_due?: string
+  dp_amount?: string
+  final_amount?: string
+  image_src?: string
+  sku?: string
+  weight_kg?: number
+  width_cm?: number
+  height_cm?: number
+  depth_cm?: number
+  tracking_number?: string
+  tracking_url?: string
+  tracking_company?: string
+  tracking_last_event?: string
+}
+
+export interface OrderFulfillmentSegmentDto {
+  key: string
+  kind: FulfillmentSegmentKindDto
+  title: string
+  batch_id?: string | null
+  batch_name?: string
+  line_slices: OrderLineSliceDto[]
+  shipment?: PreorderShipmentDto | null
+  fulfillments?: FulfillmentDto[]
+  can_request_second_payment?: boolean
+  second_payment_status?: string
+  group_balance_due?: string | null
+  group_shipping?: string | null
+}
+
+export interface RequestSecondPaymentRequest {
+  batch_id?: string | null
+}
+
+export interface SecondPaymentSummaryDto {
+  total_balance_due: string
+  shipping_total: string
+  can_request: boolean
+  status: "pending" | "ready" | "invoiced" | "paid" | string
+  configured_groups: number
+  total_groups: number
 }
 
 export interface OrderResponseDto {
@@ -115,6 +185,8 @@ export interface OrderResponseDto {
   total_ship_ready: string
   shipping_method?: string
   preorder_shipment?: PreorderShipmentDto
+  fulfillment_groups?: OrderFulfillmentSegmentDto[]
+  second_payment?: SecondPaymentSummaryDto
   fulfillments?: FulfillmentDto[]
 }
 

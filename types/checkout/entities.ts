@@ -1,3 +1,5 @@
+import type { BatchDepletion } from "@/types/batches"
+
 export interface CheckoutItem {
   balanceDue: string
   depositAmount: string
@@ -41,6 +43,7 @@ export interface CheckoutSummaryInput {
 }
 
 export interface CheckoutCreateInput {
+  accept_batch_depletion?: boolean
   address1?: string
   address_id?: number
   city?: string
@@ -53,6 +56,13 @@ export interface CheckoutCreateInput {
   state?: string
   zip?: string
   origin?: "east" | "west"
+}
+
+export interface CheckoutCreateResult {
+  batchDepletion?: BatchDepletion | null
+  checkoutReference: string
+  checkoutUrl: string
+  expiresAt: string | null
 }
 
 export interface CheckoutConfirmItem {
@@ -74,5 +84,7 @@ export interface CheckoutConfirmResult {
   totalPrice: number
   shipReadyShipping: number
   preorderShippingEstimate: number
+  hasLtl: boolean
+  allLtl: boolean
   items: CheckoutConfirmItem[]
 }

@@ -178,8 +178,14 @@ async function updatePreorderShipping(
   return response.data
 }
 
-async function requestSecondPayment(orderId: string): Promise<void> {
-  await apiClient.post(`/orders/${orderId}/preorder/request-second-payment`)
+async function requestSecondPayment(
+  orderId: string,
+  body?: { batch_id?: string | null }
+): Promise<void> {
+  await apiClient.post(
+    `/orders/${orderId}/preorder/request-second-payment`,
+    body ?? {}
+  )
 }
 
 async function createFulfillment(

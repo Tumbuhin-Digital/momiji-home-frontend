@@ -123,6 +123,8 @@ export function useUpdateCartItem() {
 }
 
 export interface SyncCartVariantInput {
+  acceptBatchDepletion?: boolean
+  validateBatch?: boolean
   variantId: string
   totalQuantity: number
   meta?: VariantCartMeta
@@ -158,8 +160,16 @@ export function useSyncCartVariant() {
 
   return useMutation({
     mutationKey: ["cart", "syncVariant"],
-    mutationFn: ({ variantId, totalQuantity }: SyncCartVariantInput) =>
-      cartService.updateVariantQuantity(variantId, totalQuantity),
+    mutationFn: ({
+      variantId,
+      totalQuantity,
+      acceptBatchDepletion,
+      validateBatch,
+    }: SyncCartVariantInput) =>
+      cartService.updateVariantQuantity(variantId, totalQuantity, {
+        accept_batch_depletion: acceptBatchDepletion,
+        validate_batch: validateBatch,
+      }),
     onMutate: async ({ variantId, totalQuantity, meta }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.cart.cart() })
 
@@ -201,7 +211,10 @@ export function useFlushPendingCart() {
 
   return useMutation({
     mutationKey: ["cart", "flush"],
-    mutationFn: async () => {
+    mutationFn: async (input?: {
+      acceptBatchDepletion?: boolean
+      validateBatch?: boolean
+    }) => {
       const pending = getPendingSync()
       const entries = Object.entries(pending)
 
@@ -209,11 +222,12 @@ export function useFlushPendingCart() {
 
       setIsGlobalPending(true)
       try {
-        await Promise.all(
-          entries.map(([variantId, totalQuantity]) =>
-            cartService.updateVariantQuantity(variantId, totalQuantity)
-          )
-        )
+        for (const [variantId, totalQuantity] of entries) {
+          await cartService.updateVariantQuantity(variantId, totalQuantity, {
+            accept_batch_depletion: input?.acceptBatchDepletion,
+            validate_batch: input?.validateBatch ?? true,
+          })
+        }
         clearPendingSync()
       } finally {
         setIsGlobalPending(false)

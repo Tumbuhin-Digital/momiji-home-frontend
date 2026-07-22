@@ -9,6 +9,19 @@ export interface ProductImage {
   src: string
 }
 
+export interface ProductBatchSummary {
+  activeBatchId?: string | null
+  activeBatchName?: string | null
+  activeBatchRemaining?: number | null
+  activeCount: number
+  hasBatches: boolean
+  maxBatchOrderableQty?: number | null
+  nextBatchName?: string | null
+  nextBatchRemaining?: number | null
+  queuedCount: number
+  totalCount: number
+}
+
 export interface Product {
   category: ProductCategory
   description: string
@@ -48,4 +61,6 @@ export interface Product {
   heightCm?: number
   depthCm?: number
   preorderCustomText?: string
+  batchSummary?: ProductBatchSummary
+  isLtl?: boolean
 }

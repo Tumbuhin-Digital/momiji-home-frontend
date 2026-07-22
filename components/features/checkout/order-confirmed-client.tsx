@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 
 import { useClearCart } from "@/hooks"
 import { useCheckoutConfirm } from "@/hooks/use-checkout"
+import { LTL_SHIPPING_MESSAGE } from "@/components/features/checkout/checkout-shipping-segment"
 import { useCartStore } from "@/lib/stores/cart.store"
 
 function formatCurrency(value: number) {
@@ -111,9 +112,12 @@ export default function OrderConfirmedClient({
     amount: number
     isPaid: boolean
     isShipping?: boolean
+    isLtlManual?: boolean
   }> = []
 
   const hasPreOrderItems = data.items?.some((item) => item.type === "pre_order")
+  const hasLtl = data.hasLtl
+  const allLtl = data.allLtl
 
   if (data.items) {
     data.items.forEach((item) => {
@@ -137,7 +141,7 @@ export default function OrderConfirmedClient({
     })
   }
 
-  if (data.shipReadyShipping > 0) {
+  if (data.shipReadyShipping > 0 && !allLtl) {
     paidItems.push({
       title: "ShipReady Shipping",
       amount: data.shipReadyShipping,
@@ -162,12 +166,27 @@ export default function OrderConfirmedClient({
     })
   }
 
-  if (hasPreOrderItems && data.preorderShippingEstimate > 0) {
+  // Auto estimate only for non-LTL (or mixed) carts — never for all-LTL orders.
+  if (
+    hasPreOrderItems &&
+    data.preorderShippingEstimate > 0 &&
+    !allLtl
+  ) {
     unpaidItems.push({
       title: "Pre-Order Shipping (Estimation)",
       amount: data.preorderShippingEstimate,
       isPaid: false,
       isShipping: true,
+    })
+  }
+
+  if (hasLtl) {
+    unpaidItems.push({
+      title: "LTL Shipping",
+      amount: 0,
+      isPaid: false,
+      isShipping: true,
+      isLtlManual: true,
     })
   }
 
@@ -335,29 +354,38 @@ export default function OrderConfirmedClient({
                         className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-0"
                       >
                         {item.isShipping ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex min-w-0 flex-1 items-start gap-2">
                             <img
                               src="/images/icon-arrow.svg"
                               alt=""
-                              className="size-6 shrink-0"
+                              className="mt-0.5 size-6 shrink-0"
                               aria-hidden
                             />
-                            <span className="text-sm text-alternate/60 sm:text-base">
-                              {item.title}
-                            </span>
+                            <div className="flex min-w-0 flex-col gap-0.5">
+                              <span className="text-sm text-alternate/60 sm:text-base">
+                                {item.title}
+                              </span>
+                              {item.isLtlManual ? (
+                                <span className="text-xs leading-snug text-alternate/50 sm:text-sm">
+                                  {LTL_SHIPPING_MESSAGE}
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
                         ) : (
                           <span className="text-sm text-alternate/60 sm:text-base">
                             {item.title}
                           </span>
                         )}
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex shrink-0 items-center gap-1.5">
                           <Clock
                             className="size-3.5 text-[#FF8D28] sm:size-4.5"
                             strokeWidth={1.5}
                           />
                           <span className="text-sm font-medium text-[#FF8D28] sm:text-base">
-                            {formatCurrency(item.amount)}
+                            {item.isLtlManual
+                              ? "TBD"
+                              : formatCurrency(item.amount)}
                           </span>
                         </div>
                       </div>

@@ -20,23 +20,44 @@ import type { SecondPaymentConfirmationModalProps } from "@/types/orders"
 
 export function SecondPaymentConfirmationModal({
   order,
+  segment,
   isOpen,
   onClose,
   onConfirm,
   isConfirming,
   error,
+  shippingTotal,
+  groupBalanceDue,
 }: SecondPaymentConfirmationModalProps) {
-  const preOrderItems = order.lineItems.filter(
-    (item) => item.type === "pre-order" || item.type === "pre_order"
-  )
+  const items = segment?.lineItems?.length
+    ? segment.lineItems
+    : order.lineItems.filter(
+        (item) => item.type === "pre-order" || item.type === "pre_order"
+      )
 
   const remainingBalance =
-    order.totalBalanceDue ||
-    order.preOrderInfo?.remainingAmount ||
-    order.totalPrice - (order.totalDepositPaid || 0)
+    groupBalanceDue ??
+    segment?.groupBalanceDue ??
+    (order.totalBalanceDue ||
+      order.preOrderInfo?.remainingAmount ||
+      order.totalPrice - (order.totalDepositPaid || 0))
 
-  const shippingAmount = order.preorderShipment?.finalShippingPrice ?? 0
+  const shippingAmount =
+    shippingTotal ??
+    segment?.groupShipping ??
+    segment?.shipment?.finalShippingPrice ??
+    order.secondPayment?.shippingTotal ??
+    order.preorderShipment?.finalShippingPrice ??
+    0
   const totalDue = remainingBalance + shippingAmount
+
+  const groupLabel =
+    segment?.kind === "preorder_batch" && segment.batchName
+      ? segment.batchName
+      : segment?.title || "Pre-Order"
+
+  const shippingNotes =
+    segment?.shipment?.shippingNotes || order.preorderShipment?.shippingNotes
 
   return (
     <Dialog
@@ -58,7 +79,8 @@ export function SecondPaymentConfirmationModal({
                 <span className="font-bold text-slate-800">
                   {order.customer?.name || "Customer"}
                 </span>{" "}
-                for the remaining balance and shipping.
+                for <strong>{groupLabel}</strong> remaining balance and
+                shipping.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -71,9 +93,9 @@ export function SecondPaymentConfirmationModal({
               Items
             </p>
             <div className="max-h-50 divide-y divide-neutral-100 overflow-y-auto rounded border border-neutral-200 bg-neutral-50">
-              {preOrderItems.map((item, idx) => (
+              {items.map((item, idx) => (
                 <div
-                  key={idx}
+                  key={item.productId || idx}
                   className="flex items-center justify-between px-4 py-2.5 text-sm"
                 >
                   <span className="truncate font-medium text-neutral-700">
@@ -116,19 +138,19 @@ export function SecondPaymentConfirmationModal({
             </span>
           </div>
 
-          {order.preorderShipment?.shippingNotes && (
+          {shippingNotes && (
             <p className="text-xs text-slate-600">
               <span className="font-medium">Shipping notes:</span>{" "}
-              {order.preorderShipment.shippingNotes}
+              {shippingNotes}
             </p>
           )}
 
           <div className="flex items-start gap-2.5 rounded border border-[#FF850D] bg-[#FF850D1A] p-3.5 text-xs leading-normal text-[#FF850D]">
             <AlertCircle className="mt-0.5 size-4 shrink-0 text-[#FF850D]" />
             <span>
-              This will send a Shopify invoice for the remaining balance plus
-              shipping. Confirm only when packing and final shipping price are
-              correct.
+              This will send a Shopify invoice for this group&apos;s remaining
+              balance plus shipping. Other groups can be invoiced separately
+              once their shipping is configured.
             </span>
           </div>
 
@@ -161,7 +183,7 @@ export function SecondPaymentConfirmationModal({
             type="button"
             size="lg"
             className="w-full font-medium"
-            onClick={() => onConfirm(order.id)}
+            onClick={() => onConfirm(order.id, segment?.batchId ?? null)}
             disabled={isConfirming}
           >
             {isConfirming ? (

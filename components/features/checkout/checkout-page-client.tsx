@@ -16,6 +16,7 @@ import { z } from "zod"
 import type { CheckoutSummaryInput } from "@/types/checkout/entities"
 
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Empty,
@@ -43,8 +44,10 @@ import {
 import { Separator } from "@/components/ui/separator"
 
 import { CheckoutSkeleton } from "@/components/features/checkout/checkout-skeleton"
+import { InventoryDepletedModal } from "@/components/features/catalog/inventory-depleted-modal"
 import {
   CheckoutShippingSegment,
+  LTL_SHIPPING_MESSAGE,
   segmentBatchLabel,
   type WarehouseCode,
 } from "@/components/features/checkout/checkout-shipping-segment"
@@ -70,6 +73,11 @@ import { useCheckoutNotes } from "@/hooks/use-settings"
 import { checkoutService } from "@/lib/services/checkout.service"
 import { writePreparingCheckoutDocument } from "@/lib/checkout/preparing-checkout-document"
 import { parseAddressPaste } from "@/lib/checkout/address-paste"
+import { extractBatchDepletionFromError } from "@/lib/domain/batch.adapter"
+import {
+  BATCH_DEPLETED_TITLE,
+  buildBatchDepletionDescription,
+} from "@/lib/cart/batch-quota"
 import { queryKeys } from "@/lib/query/query-keys"
 import { withShopifyWidth } from "@/lib/shopify-image"
 import { useCartStore } from "@/lib/stores/cart.store"
@@ -175,6 +183,12 @@ export default function CheckoutPageClient() {
   const [parsingProgress, setParsingProgress] = useState(0)
   const [hasFlushedCart, setHasFlushedCart] = useState(false)
   const [preorderOrigin, setPreorderOrigin] = useState<WarehouseCode>("east")
+  const [checkoutBatchDepletion, setCheckoutBatchDepletion] = useState<
+    import("@/types/batches").BatchDepletion | null
+  >(null)
+  const [pendingCheckoutValues, setPendingCheckoutValues] =
+    useState<CheckoutFormValues | null>(null)
+  const [pendingCheckoutFlush, setPendingCheckoutFlush] = useState(false)
 
   const [summaryState, setSummaryState] = useState({
     shippingCost: "0",
@@ -189,6 +203,12 @@ export default function CheckoutPageClient() {
   const { data: cartData, isLoading: isCartLoading } = useCart()
   const flushPendingCart = useFlushPendingCart()
   const getPendingSync = useCartStore((state) => state.getPendingSync)
+  const hasAcceptedBatchDepletion = useCartStore(
+    (state) => state.hasAcceptedBatchDepletion
+  )
+  const markAcceptedBatchDepletion = useCartStore(
+    (state) => state.markAcceptedBatchDepletion
+  )
   const shouldRefreshShipping = useCartStore(
     (state) => state.shouldRefreshShipping
   )
@@ -239,7 +259,10 @@ export default function CheckoutPageClient() {
     useShippingRates(
       { ...ratesAddressInput, segment: "ship_ready" },
       {
-        enabled: ratesEnabledBase && shipReadyItems.length > 0,
+        enabled:
+          ratesEnabledBase &&
+          shipReadyItems.length > 0 &&
+          shipReadyItems.some((item) => !item.is_ltl),
       }
     )
 
@@ -250,7 +273,10 @@ export default function CheckoutPageClient() {
   } = useShippingRates(
     { ...ratesAddressInput, segment: "pre_order", origin: preorderOrigin },
     {
-      enabled: ratesEnabledBase && preOrderItems.length > 0,
+      enabled:
+        ratesEnabledBase &&
+        preOrderItems.length > 0 &&
+        preOrderItems.some((item) => !item.is_ltl),
     }
   )
 
@@ -260,15 +286,25 @@ export default function CheckoutPageClient() {
   )
   const preOrderBatchLabel = segmentBatchLabel(preOrderItems, "Pre-Order Items")
 
+  const shipReadyHasLtl = shipReadyItems.some((item) => item.is_ltl)
+  const shipReadyAllLtl =
+    shipReadyItems.length > 0 && shipReadyItems.every((item) => item.is_ltl)
+  const shipReadyHasNonLtl = shipReadyItems.some((item) => !item.is_ltl)
+
+  const preOrderHasLtl = preOrderItems.some((item) => item.is_ltl)
+  const preOrderAllLtl =
+    preOrderItems.length > 0 && preOrderItems.every((item) => item.is_ltl)
+  const preOrderHasNonLtl = preOrderItems.some((item) => !item.is_ltl)
+
   const isInitialLoading =
     isCartLoading || !hasFlushedCart || flushPendingCart.isPending
 
   const isShipReadyShippingPending =
-    shipReadyItems.length > 0 &&
+    shipReadyHasNonLtl &&
     (!ratesEnabledBase || isLoadingShipReadyRates || !shipReadyRates?.[0])
 
   const isPreOrderShippingPending =
-    preOrderItems.length > 0 &&
+    preOrderHasNonLtl &&
     (!ratesEnabledBase ||
       isLoadingPreOrderRates ||
       isPreOrderRatesError ||
@@ -280,8 +316,8 @@ export default function CheckoutPageClient() {
 
   const isCalculatingShipping =
     ratesEnabledBase &&
-    ((shipReadyItems.length > 0 && isLoadingShipReadyRates) ||
-      (preOrderItems.length > 0 && isLoadingPreOrderRates))
+    ((shipReadyHasNonLtl && isLoadingShipReadyRates) ||
+      (preOrderHasNonLtl && isLoadingPreOrderRates))
 
   const isStoreClosed = checkoutNotes?.storeClosed ?? false
   const storeClosedMessage =
@@ -307,9 +343,22 @@ export default function CheckoutPageClient() {
       return
     }
 
+    const alreadyAccepted = Object.keys(pending).some((variantId) =>
+      useCartStore.getState().hasAcceptedBatchDepletion(variantId)
+    )
+
     flushPendingCart
-      .mutateAsync()
+      .mutateAsync({
+        acceptBatchDepletion: alreadyAccepted,
+        validateBatch: true,
+      })
       .catch((error) => {
+        const batchDepletion = extractBatchDepletionFromError(error)
+        if (batchDepletion) {
+          setCheckoutBatchDepletion(batchDepletion)
+          setPendingCheckoutFlush(true)
+          return
+        }
         console.error("Failed to sync cart on checkout:", error)
         toastManager.add({
           title: "Error",
@@ -508,7 +557,7 @@ export default function CheckoutPageClient() {
       return
     }
 
-    if (preOrderItems.length > 0 && !values.shippingMethod) {
+    if (preOrderHasNonLtl && !values.shippingMethod) {
       setError("shippingMethod", {
         type: "manual",
         message: "Shipping method is required for pre-order items",
@@ -555,9 +604,14 @@ export default function CheckoutPageClient() {
 
     let initiatedCheckoutReference = ""
 
+    const alreadyAcceptedBatchDepletion = preOrderItems.some((item) =>
+      hasAcceptedBatchDepletion(item.variant_id)
+    )
+
     try {
       const { checkoutUrl, checkoutReference, expiresAt } =
         await createCheckoutMutation.mutateAsync({
+          accept_batch_depletion: alreadyAcceptedBatchDepletion,
           address1: values.address,
           address_id: 0,
           city: values.city,
@@ -588,6 +642,12 @@ export default function CheckoutPageClient() {
         await releaseCheckoutLocks(initiatedCheckoutReference)
       }
       console.error("Checkout failed:", err)
+      const batchDepletion = extractBatchDepletionFromError(err)
+      if (batchDepletion) {
+        setCheckoutBatchDepletion(batchDepletion)
+        setPendingCheckoutValues(values)
+        return
+      }
       const maybeStoreClosedCode = err?.response?.data?.code
       const maybeStoreClosedMessage = err?.response?.data?.message
       toastManager.add({
@@ -596,6 +656,100 @@ export default function CheckoutPageClient() {
           maybeStoreClosedCode === "store_closed"
             ? maybeStoreClosedMessage || storeClosedMessage
             : "Failed to initiate checkout. Please try again.",
+        type: "error",
+      })
+    }
+  }
+
+  const continueCheckoutAfterBatchDepletion = async () => {
+    if (pendingCheckoutFlush) {
+      try {
+        if (checkoutBatchDepletion?.variantId) {
+          markAcceptedBatchDepletion(checkoutBatchDepletion.variantId)
+        }
+        await flushPendingCart.mutateAsync({
+          acceptBatchDepletion: true,
+          validateBatch: true,
+        })
+        setCheckoutBatchDepletion(null)
+        setPendingCheckoutFlush(false)
+      } catch (error) {
+        console.error("Failed to sync cart after batch depletion:", error)
+        toastManager.add({
+          title: "Error",
+          description: "Gagal menyinkronkan keranjang. Silakan coba lagi.",
+          type: "error",
+        })
+      }
+      return
+    }
+
+    if (!pendingCheckoutValues) return
+
+    if (checkoutBatchDepletion?.variantId) {
+      markAcceptedBatchDepletion(checkoutBatchDepletion.variantId)
+    }
+
+    const paymentWindow = openCheckoutPaymentWindow()
+    try {
+      const normalizedPendingState = getNormalizedState(
+        pendingCheckoutValues.country,
+        pendingCheckoutValues.state
+      )
+      const { checkoutUrl, checkoutReference, expiresAt } =
+        await createCheckoutMutation.mutateAsync({
+          accept_batch_depletion: true,
+          address1: pendingCheckoutValues.address,
+          address_id: 0,
+          city: pendingCheckoutValues.city,
+          country: pendingCheckoutValues.country,
+          email: pendingCheckoutValues.email,
+          first_name: pendingCheckoutValues.firstName,
+          last_name: pendingCheckoutValues.lastName,
+          phone: pendingCheckoutValues.phone,
+          shipping_method: pendingCheckoutValues.shippingMethod || "",
+          state: normalizedPendingState,
+          zip: pendingCheckoutValues.zipCode,
+          origin: preOrderItems.length > 0 ? preorderOrigin : undefined,
+        })
+      setCurrentCheckoutUrl(checkoutUrl)
+      setCheckoutReference(checkoutReference)
+      setIsWaitingForPayment(true)
+      setPaymentExpiresAt(
+        expiresAt ? new Date(expiresAt).getTime() : Date.now() + 15 * 60 * 1000
+      )
+      setCheckoutBatchDepletion(null)
+      setPendingCheckoutValues(null)
+
+      if (!redirectCheckoutPaymentWindow(paymentWindow, checkoutUrl)) {
+        window.location.assign(checkoutUrl)
+      }
+    } catch (error) {
+      paymentWindow?.close()
+      console.error("Failed to continue checkout:", error)
+      const batchDepletion = extractBatchDepletionFromError(error)
+      if (batchDepletion) {
+        setCheckoutBatchDepletion(batchDepletion)
+        return
+      }
+      const err = error as {
+        payload?: { error?: { code?: string; message?: string }; message?: string }
+        response?: { data?: { error?: { code?: string; message?: string }; message?: string } }
+      }
+      const code =
+        err?.payload?.error?.code ?? err?.response?.data?.error?.code
+      const message =
+        err?.payload?.error?.message ??
+        err?.payload?.message ??
+        err?.response?.data?.error?.message ??
+        err?.response?.data?.message
+      toastManager.add({
+        title: "Error",
+        description:
+          code === "batch_out_of_stock"
+            ? message ||
+              "Not enough pre-order batch quota available. Please reduce quantity and try again."
+            : message || "Failed to continue checkout. Please try again.",
         type: "error",
       })
     }
@@ -1024,6 +1178,8 @@ export default function CheckoutPageClient() {
                   ratesEnabled={ratesEnabledBase}
                   isLoading={isLoadingShipReadyRates}
                   rates={shipReadyRates}
+                  hasLtl={shipReadyHasLtl}
+                  allLtl={shipReadyAllLtl}
                 />
               )}
 
@@ -1037,10 +1193,12 @@ export default function CheckoutPageClient() {
                   isLoading={isLoadingPreOrderRates}
                   isError={isPreOrderRatesError}
                   rates={preOrderRates}
+                  hasLtl={preOrderHasLtl}
+                  allLtl={preOrderAllLtl}
                 />
               )}
 
-              {errors.shippingMethod && preOrderItems.length > 0 && (
+              {errors.shippingMethod && preOrderHasNonLtl && (
                 <p className="text-sm text-red-500">
                   {errors.shippingMethod.message}
                 </p>
@@ -1086,13 +1244,23 @@ export default function CheckoutPageClient() {
                               </div>
                             )}
                           </div>
-                          <div className="flex min-w-0 flex-1 flex-col">
+                          <div className="flex min-w-0 flex-1 flex-col gap-1">
+                            {item.is_ltl ? (
+                              <Badge className="h-5 w-fit rounded px-1 text-[10px] font-normal! uppercase">
+                                LTL
+                              </Badge>
+                            ) : null}
                             <p className="truncate text-base font-medium">
                               {item.title}
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {item.quantity}x (pcs)
                             </p>
+                            {item.is_ltl ? (
+                              <p className="text-xs leading-snug text-muted-foreground">
+                                {LTL_SHIPPING_MESSAGE}
+                              </p>
+                            ) : null}
                           </div>
                         </div>
                       )
@@ -1133,13 +1301,23 @@ export default function CheckoutPageClient() {
                               </div>
                             )}
                           </div>
-                          <div className="flex min-w-0 flex-1 flex-col">
+                          <div className="flex min-w-0 flex-1 flex-col gap-1">
+                            {item.is_ltl ? (
+                              <Badge className="h-5 w-fit rounded px-1 text-[10px] font-normal! uppercase">
+                                LTL
+                              </Badge>
+                            ) : null}
                             <p className="truncate text-base font-medium">
                               {item.title}
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {item.quantity}x (pcs)
                             </p>
+                            {item.is_ltl ? (
+                              <p className="text-xs leading-snug text-muted-foreground">
+                                {LTL_SHIPPING_MESSAGE}
+                              </p>
+                            ) : null}
                           </div>
                         </div>
                       )
@@ -1168,8 +1346,12 @@ export default function CheckoutPageClient() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-alternate/60">+ Shipping</span>
-                          <span className="text-alternate/60">
-                            {isLoadingShipReadyRates ? (
+                          <span className="text-alternate/60 text-right">
+                            {shipReadyAllLtl ? (
+                              <span className="italic">
+                                Calculated by our team
+                              </span>
+                            ) : isLoadingShipReadyRates ? (
                               <Loader2 className="inline size-4 animate-spin" />
                             ) : shipReadyRates?.[0] ? (
                               formatCurrency(parseFloat(shipReadyRates[0].cost))
@@ -1180,6 +1362,11 @@ export default function CheckoutPageClient() {
                             )}
                           </span>
                         </div>
+                        {shipReadyHasLtl && !shipReadyAllLtl ? (
+                          <p className="text-xs text-alternate/50">
+                            LTL shipping calculated by our team
+                          </p>
+                        ) : null}
                         {preOrderItems.length > 0 && (
                           <div className="flex justify-between">
                             <span className="text-alternate/60">
@@ -1227,12 +1414,25 @@ export default function CheckoutPageClient() {
                             <span className="text-alternate/60">
                               + Shipping (Pre-Order)
                             </span>
-                            <span className="text-alternate/60">
-                              {formatCurrency(
-                                parseFloat(summaryState.shippingPreorder || "0")
+                            <span className="text-alternate/60 text-right">
+                              {preOrderAllLtl ? (
+                                <span className="italic">
+                                  Calculated by our team
+                                </span>
+                              ) : (
+                                formatCurrency(
+                                  parseFloat(
+                                    summaryState.shippingPreorder || "0"
+                                  )
+                                )
                               )}
                             </span>
                           </div>
+                          {preOrderHasLtl && !preOrderAllLtl ? (
+                            <p className="text-xs text-alternate/50">
+                              LTL shipping calculated by our team
+                            </p>
+                          ) : null}
                         </div>
                         <Separator className="my-2 bg-black/20" />
                         <div className="flex justify-between text-alternate">
@@ -1382,6 +1582,24 @@ export default function CheckoutPageClient() {
               // Best-effort release; locks still expire via backend TTL.
             }
           }}
+        />
+        <InventoryDepletedModal
+          isOpen={!!checkoutBatchDepletion}
+          imageUrl={checkoutBatchDepletion?.imageUrl}
+          productTitle={checkoutBatchDepletion?.productTitle}
+          title={BATCH_DEPLETED_TITLE}
+          description={
+            checkoutBatchDepletion
+              ? buildBatchDepletionDescription(checkoutBatchDepletion)
+              : null
+          }
+          isPending={createCheckoutMutation.isPending}
+          onClose={() => {
+            setCheckoutBatchDepletion(null)
+            setPendingCheckoutValues(null)
+            setPendingCheckoutFlush(false)
+          }}
+          onConfirm={continueCheckoutAfterBatchDepletion}
         />
       </div>
     </>

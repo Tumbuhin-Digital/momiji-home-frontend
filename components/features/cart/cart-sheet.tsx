@@ -27,7 +27,11 @@ import {
 
 import { CartSheetItemRow } from "@/components/features/cart/cart-sheet-item-row"
 import { RemoveItemModal } from "@/components/features/cart/remove-item-modal"
-import { InventoryDepletedModal } from "@/components/features/catalog/inventory-depleted-modal"
+import {
+  InventoryDepletedModal,
+  SHIP_READY_DEPLETED_TITLE,
+  shipReadyDepletedDescription,
+} from "@/components/features/catalog/inventory-depleted-modal"
 import { IconBag } from "@/public/icons/icon-bag"
 
 import {
@@ -35,7 +39,12 @@ import {
   useFlushPendingCart,
   useLocalCartVariantUpdate,
 } from "@/hooks"
+import {
+  BATCH_DEPLETED_TITLE,
+  buildBatchDepletionDescription,
+} from "@/lib/cart/batch-quota"
 import { extractVariantMetaFromCart } from "@/lib/cart/optimistic-cart"
+import { extractBatchDepletionFromError } from "@/lib/domain/batch.adapter"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
 
@@ -79,6 +88,12 @@ export function CartSheet() {
   const [blinkingMessage, setBlinkingMessage] = useState<
     "add" | "reduce" | null
   >(null)
+  const [batchDepletion, setBatchDepletion] = useState<
+    import("@/types/batches").BatchDepletion | null
+  >(null)
+  const [pendingFlushAction, setPendingFlushAction] = useState<
+    "close-sheet" | "checkout" | null
+  >(null)
 
   const { data: cartData } = useCart()
   const updateLocalCart = useLocalCartVariantUpdate()
@@ -97,8 +112,18 @@ export function CartSheet() {
   const allItemsLength = shipReadyItems.length + preOrderItems.length
   const isPending = flushPendingCart.isPending
 
-  const updateVariantLocally = (variantId: string, totalQuantity: number) => {
-    const meta = extractVariantMetaFromCart(cartData, variantId)
+  const updateVariantLocally = (
+    variantId: string,
+    totalQuantity: number,
+    metaOverrides?: Partial<
+      import("@/lib/cart/optimistic-cart").VariantCartMeta
+    >
+  ) => {
+    const meta = extractVariantMetaFromCart(
+      cartData,
+      variantId,
+      metaOverrides
+    )
     if (!meta) return
     markCartDirty()
     updateLocalCart({ variantId, totalQuantity, meta })
@@ -109,9 +134,15 @@ export function CartSheet() {
       const pending = getPendingSync()
       if (Object.keys(pending).length > 0) {
         try {
-          await flushPendingCart.mutateAsync()
+          await flushPendingCart.mutateAsync(undefined)
         } catch (error) {
-          console.error("Failed to sync cart:", error)
+          const depletion = extractBatchDepletionFromError(error)
+          if (depletion) {
+            setBatchDepletion(depletion)
+            setPendingFlushAction("close-sheet")
+          } else {
+            console.error("Failed to sync cart:", error)
+          }
         }
       }
 
@@ -124,8 +155,16 @@ export function CartSheet() {
   }
 
   const handleProceedToCheckout = async () => {
+    const pending = getPendingSync()
+    const alreadyAccepted = Object.keys(pending).some((variantId) =>
+      useCartStore.getState().hasAcceptedBatchDepletion(variantId)
+    )
+
     try {
-      await flushPendingCart.mutateAsync()
+      await flushPendingCart.mutateAsync({
+        acceptBatchDepletion: alreadyAccepted,
+        validateBatch: true,
+      })
       if (cartDirty) {
         clearCartDirty()
       }
@@ -133,7 +172,13 @@ export function CartSheet() {
       setIsOpen(false)
       router.push("/checkout")
     } catch (error) {
-      console.error("Failed to sync cart before checkout:", error)
+      const depletion = extractBatchDepletionFromError(error)
+      if (depletion) {
+        setBatchDepletion(depletion)
+        setPendingFlushAction("checkout")
+      } else {
+        console.error("Failed to sync cart before checkout:", error)
+      }
     }
   }
 
@@ -317,7 +362,11 @@ export function CartSheet() {
                               )?.quantity || 0
                             updateVariantLocally(
                               item.variant_id,
-                              currentShipReadyQty + q
+                              currentShipReadyQty + q,
+                              {
+                                // Keep pure pre-order rows from being re-split by Shopify inventory.
+                                isForcedPreOrder: currentShipReadyQty === 0,
+                              }
                             )
                           }}
                           disableIncrease={isPending}
@@ -401,7 +450,7 @@ export function CartSheet() {
           setItemToRemove(null)
 
           try {
-            await flushPendingCart.mutateAsync()
+            await flushPendingCart.mutateAsync(undefined)
             clearCartDirty()
             requestShippingRefresh()
           } catch (error) {
@@ -415,7 +464,10 @@ export function CartSheet() {
       {depletedProduct && (
         <InventoryDepletedModal
           isOpen={!!depletedProduct}
-          product={depletedProduct}
+          imageUrl={depletedProduct.imageUrl}
+          productTitle={depletedProduct.title}
+          title={SHIP_READY_DEPLETED_TITLE}
+          description={shipReadyDepletedDescription()}
           onClose={() => {
             setDepletedProduct(null)
             if (revertQuantity) revertQuantity()
@@ -452,6 +504,55 @@ export function CartSheet() {
           isPending={false}
         />
       )}
+
+      <InventoryDepletedModal
+        isOpen={!!batchDepletion}
+        imageUrl={batchDepletion?.imageUrl}
+        productTitle={batchDepletion?.productTitle}
+        title={BATCH_DEPLETED_TITLE}
+        description={
+          batchDepletion
+            ? buildBatchDepletionDescription(batchDepletion)
+            : null
+        }
+        isPending={flushPendingCart.isPending}
+        onClose={() => {
+          setBatchDepletion(null)
+          setPendingFlushAction(null)
+        }}
+        onConfirm={async () => {
+          try {
+            if (batchDepletion?.variantId) {
+              useCartStore
+                .getState()
+                .markAcceptedBatchDepletion(batchDepletion.variantId)
+            }
+            await flushPendingCart.mutateAsync({
+              acceptBatchDepletion: true,
+              validateBatch: true,
+            })
+            const action = pendingFlushAction
+            setBatchDepletion(null)
+            setPendingFlushAction(null)
+            if (action === "checkout") {
+              if (cartDirty) {
+                clearCartDirty()
+              }
+              requestShippingRefresh()
+              setIsOpen(false)
+              router.push("/checkout")
+            } else if (action === "close-sheet") {
+              if (cartDirty) {
+                requestShippingRefresh()
+                clearCartDirty()
+              }
+              setIsOpen(false)
+            }
+          } catch (error) {
+            console.error("Failed to confirm batch depletion:", error)
+          }
+        }}
+      />
     </>
   )
 }

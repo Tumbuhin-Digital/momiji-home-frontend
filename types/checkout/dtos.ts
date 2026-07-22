@@ -1,3 +1,5 @@
+import type { BatchDepletion } from "@/types/batches"
+
 export interface CheckoutItemDto {
   balance_due: string
   deposit_amount: string
@@ -33,6 +35,7 @@ export interface CheckoutSummaryDto {
 }
 
 export interface CheckoutCreateResponseDto {
+  batch_depletion?: BatchDepletion | null
   checkout_reference?: string
   checkout_url: string
   expires_at?: string
@@ -55,6 +58,8 @@ export interface CheckoutConfirmResponseDto {
   currency: string
   customer_email: string
   financial_status: string
+  has_ltl?: boolean
+  all_ltl?: boolean
   items: CheckoutConfirmItemDto[]
   order_date: string
   order_id: string

@@ -6,6 +6,7 @@ import type { CartStore } from "@/types/cart"
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
+      acceptedBatchDepletion: {},
       cartDirty: false,
       expiresAt: null,
       isGlobalPending: false,
@@ -14,6 +15,15 @@ export const useCartStore = create<CartStore>()(
       pendingSync: {},
       sessionId: null,
       shouldRefreshShipping: false,
+      clearAcceptedBatchDepletion: (variantId) =>
+        set((state) => {
+          if (!variantId) {
+            return { acceptedBatchDepletion: {} }
+          }
+          const next = { ...state.acceptedBatchDepletion }
+          delete next[variantId]
+          return { acceptedBatchDepletion: next }
+        }),
       clearCartDirty: () => set({ cartDirty: false }),
       clearPendingSync: (variantId) =>
         set((state) => {
@@ -25,6 +35,15 @@ export const useCartStore = create<CartStore>()(
           return { pendingSync: next }
         }),
       getPendingSync: () => get().pendingSync,
+      hasAcceptedBatchDepletion: (variantId) =>
+        !!get().acceptedBatchDepletion[variantId],
+      markAcceptedBatchDepletion: (variantId) =>
+        set((state) => ({
+          acceptedBatchDepletion: {
+            ...state.acceptedBatchDepletion,
+            [variantId]: true,
+          },
+        })),
       markCartDirty: () => set({ cartDirty: true }),
       markPendingSync: (variantId, totalQuantity) =>
         set((state) => ({
@@ -53,6 +72,7 @@ export const useCartStore = create<CartStore>()(
     {
       name: "momiji-cart-session",
       partialize: (state) => ({
+        acceptedBatchDepletion: state.acceptedBatchDepletion,
         expiresAt: state.expiresAt,
         market: state.market,
         sessionId: state.sessionId,

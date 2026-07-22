@@ -22,6 +22,7 @@ import type {
   UpdateProductStatusRequest,
   UpdateVariantPriceRequest,
   UpdateVariantStatusRequest,
+  UpdateVariantLtlRequest,
 } from "@/types/products"
 
 export function useDownloadDimensionsTemplate() {
@@ -212,6 +213,18 @@ export function useUpdateVariantStatus() {
   return useMutation({
     mutationFn: (input: UpdateVariantStatusRequest) =>
       productsService.updateVariantStatus(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalog.all })
+    },
+  })
+}
+
+export function useUpdateVariantLtl() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: UpdateVariantLtlRequest) =>
+      productsService.updateVariantLtl(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.catalog.all })

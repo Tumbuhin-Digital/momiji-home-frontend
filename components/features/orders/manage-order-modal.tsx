@@ -21,16 +21,50 @@ import { useOrderById } from "@/hooks/use-orders"
 import { queryKeys } from "@/lib/query/query-keys"
 import { formatCurrency } from "@/lib/utils"
 
+import type { Order, OrderFulfillmentSegment } from "@/types/orders"
 import {
   isPreOrderLineItem,
   isShipReadyLineItem,
-  type Order,
 } from "@/types/orders"
 
 interface ManageOrderModalProps {
   order: Order
   isOpen: boolean
   onClose: () => void
+}
+
+function fallbackSegments(order: Order): OrderFulfillmentSegment[] {
+  const shipReadyItems = order.lineItems.filter(
+    (item) =>
+      isShipReadyLineItem(item) ||
+      (!item.type && order.type === "ready")
+  )
+  const preOrderItems = order.lineItems.filter(
+    (item) =>
+      isPreOrderLineItem(item) ||
+      (!item.type && order.type === "pre-order")
+  )
+  const segments: OrderFulfillmentSegment[] = []
+  if (shipReadyItems.length > 0) {
+    segments.push({
+      key: "ship_ready",
+      kind: "ship_ready",
+      title: "Ship Ready",
+      lineItems: shipReadyItems,
+      fulfillments: [],
+    })
+  }
+  if (preOrderItems.length > 0) {
+    segments.push({
+      key: "preorder_unbatched",
+      kind: "preorder_unbatched",
+      title: "Pre-Order",
+      lineItems: preOrderItems,
+      shipment: order.preorderShipment,
+      fulfillments: order.fulfillments ?? [],
+    })
+  }
+  return segments
 }
 
 export function ManageOrderModal({
@@ -75,21 +109,20 @@ export function ManageOrderModal({
     0
   )
 
-  const shipReadyItems = currentOrder.lineItems.filter(
-    (item) =>
-      isShipReadyLineItem(item) ||
-      (!item.type && currentOrder.type === "ready")
-  )
-  const preOrderItems = currentOrder.lineItems.filter(
-    (item) =>
-      isPreOrderLineItem(item) ||
-      (!item.type && currentOrder.type === "pre-order")
+  const segments =
+    currentOrder.fulfillmentSegments &&
+    currentOrder.fulfillmentSegments.length > 0
+      ? currentOrder.fulfillmentSegments
+      : fallbackSegments(currentOrder)
+
+  const hasPreorderSegments = segments.some(
+    (s) => s.kind === "preorder_batch" || s.kind === "preorder_unbatched"
   )
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="flex max-h-[90vh] w-[95vw] max-w-6xl flex-col gap-6 overflow-y-auto rounded-2xl border-none p-8 shadow-xl"
+        className="flex max-h-[90vh] w-[95vw] max-w-7xl flex-col gap-6 overflow-y-auto rounded-2xl border-none p-8 shadow-xl"
         showCloseButton={false}
       >
         <DialogHeader className="flex shrink-0 flex-row items-start justify-between gap-4 p-0">
@@ -101,17 +134,39 @@ export function ManageOrderModal({
               {totalItems} items - {formatCurrency(currentOrder.totalPrice)} USD
             </span>
           </div>
-          <Button
-            type="button"
-            onClick={onClose}
-            size="icon"
-            variant="ghost"
-            className="shrink-0 rounded bg-[#F1F2F6] hover:bg-[#E1E2E6]"
-          >
-            <XIcon className="size-5 text-[#7F8C8D]" />
-            <span className="sr-only">Close</span>
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              onClick={onClose}
+              size="icon"
+              variant="ghost"
+              className="rounded bg-[#F1F2F6] hover:bg-[#E1E2E6]"
+            >
+              <XIcon className="size-5 text-[#7F8C8D]" />
+              <span className="sr-only">Close</span>
+            </Button>
+          </div>
         </DialogHeader>
+
+        {hasPreorderSegments && currentOrder.secondPayment && (
+          <div className="rounded-lg border border-[#EBEBEB] bg-[#F8F9FA] px-4 py-3 text-sm text-[#4A4A4A]">
+            Shipping configured for{" "}
+            <span className="font-semibold">
+              {currentOrder.secondPayment.configuredGroups}/
+              {currentOrder.secondPayment.totalGroups}
+            </span>{" "}
+            pre-order groups
+            {currentOrder.secondPayment.shippingTotal > 0 && (
+              <>
+                {" "}
+                · shipping total{" "}
+                <span className="font-semibold">
+                  {formatCurrency(currentOrder.secondPayment.shippingTotal)} USD
+                </span>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col gap-4 rounded-xl border border-[#EBEBEB] bg-[#F4F1ED] p-6">
           <p className="text-sm font-semibold text-[#4A4A4A]">
@@ -177,28 +232,18 @@ export function ManageOrderModal({
 
         <div
           className={`grid gap-6 ${
-            shipReadyItems.length > 0 && preOrderItems.length > 0
-              ? "grid-cols-1 lg:grid-cols-2"
-              : "grid-cols-1"
+            segments.length > 1 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
           }`}
         >
-          {shipReadyItems.length > 0 && (
+          {segments.map((segment) => (
             <OrderFulfillmentPanel
+              key={segment.key}
               order={currentOrder}
-              type="ship-ready"
+              segment={segment}
               isLoading={isLoading}
               onOrderActioned={handleOrderActioned}
             />
-          )}
-
-          {preOrderItems.length > 0 && (
-            <OrderFulfillmentPanel
-              order={currentOrder}
-              type="pre-order"
-              isLoading={isLoading}
-              onOrderActioned={handleOrderActioned}
-            />
-          )}
+          ))}
         </div>
       </DialogContent>
     </Dialog>

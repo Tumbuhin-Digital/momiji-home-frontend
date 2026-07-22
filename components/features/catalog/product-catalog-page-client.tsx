@@ -16,6 +16,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 
+import { InventoryDepletedModal } from "@/components/features/catalog/inventory-depleted-modal"
 import { ProductCatalogCardSkeleton } from "@/components/features/catalog/product-catalog-card-skeleton"
 
 const ProductCatalogCard = dynamic(
@@ -30,8 +31,14 @@ const ProductCatalogCard = dynamic(
 )
 
 import { useFlushPendingCart, useInfiniteCatalogProducts } from "@/hooks"
+import {
+  BATCH_DEPLETED_TITLE,
+  buildBatchDepletionDescription,
+} from "@/lib/cart/batch-quota"
+import { extractBatchDepletionFromError } from "@/lib/domain/batch.adapter"
 import { useCartStore } from "@/lib/stores/cart.store"
 
+import type { BatchDepletion } from "@/types/batches"
 import type { ProductCatalogPageClientProps } from "@/types/products"
 
 export function ProductCatalogPageClient({
@@ -45,6 +52,10 @@ export function ProductCatalogPageClient({
 
   const [isInitialized, setIsInitialized] = useState(false)
   const [itemsPerPage, setItemsPerPage] = useState(8)
+  const [batchDepletion, setBatchDepletion] = useState<BatchDepletion | null>(
+    null
+  )
+  const [pendingCheckout, setPendingCheckout] = useState(false)
 
   const observerTarget = useRef<HTMLDivElement>(null)
 
@@ -55,16 +66,38 @@ export function ProductCatalogPageClient({
   )
 
   const flushPendingCart = useFlushPendingCart()
+  const hasAcceptedBatchDepletion = useCartStore(
+    (state) => state.hasAcceptedBatchDepletion
+  )
+  const getPendingSync = useCartStore((state) => state.getPendingSync)
 
-  const handleProceedToCheckout = async () => {
+  const handleProceedToCheckout = async (acceptBatchDepletion = false) => {
+    const pending = getPendingSync()
+    const alreadyAccepted =
+      acceptBatchDepletion ||
+      Object.keys(pending).some((variantId) =>
+        hasAcceptedBatchDepletion(variantId)
+      )
+
     try {
-      await flushPendingCart.mutateAsync()
+      await flushPendingCart.mutateAsync({
+        acceptBatchDepletion: alreadyAccepted,
+        validateBatch: true,
+      })
       if (cartDirty) {
         clearCartDirty()
       }
       requestShippingRefresh()
+      setBatchDepletion(null)
+      setPendingCheckout(false)
       router.push("/checkout")
     } catch (error) {
+      const depletion = extractBatchDepletionFromError(error)
+      if (depletion) {
+        setBatchDepletion(depletion)
+        setPendingCheckout(true)
+        return
+      }
       console.error("Failed to sync cart before checkout:", error)
     }
   }
@@ -223,7 +256,36 @@ export function ProductCatalogPageClient({
         bottomNavLink={bottomNavLink}
         bottomNavText={bottomNavText}
         isCheckoutPending={flushPendingCart.isPending}
-        onProceedToCheckout={handleProceedToCheckout}
+        onProceedToCheckout={() => {
+          void handleProceedToCheckout(false)
+        }}
+      />
+
+      <InventoryDepletedModal
+        isOpen={!!batchDepletion}
+        imageUrl={batchDepletion?.imageUrl}
+        productTitle={batchDepletion?.productTitle}
+        title={BATCH_DEPLETED_TITLE}
+        description={
+          batchDepletion
+            ? buildBatchDepletionDescription(batchDepletion)
+            : null
+        }
+        isPending={flushPendingCart.isPending}
+        onClose={() => {
+          setBatchDepletion(null)
+          setPendingCheckout(false)
+        }}
+        onConfirm={() => {
+          if (batchDepletion?.variantId) {
+            useCartStore
+              .getState()
+              .markAcceptedBatchDepletion(batchDepletion.variantId)
+          }
+          if (pendingCheckout) {
+            void handleProceedToCheckout(true)
+          }
+        }}
       />
     </div>
   )

@@ -1,4 +1,18 @@
+export interface VariantBatchSummaryDto {
+  active_batch_id?: string | null
+  active_batch_name?: string | null
+  active_batch_remaining?: number | null
+  active_count: number
+  has_batches: boolean
+  max_batch_orderable_qty?: number | null
+  next_batch_name?: string | null
+  next_batch_remaining?: number | null
+  queued_count: number
+  total_count: number
+}
+
 export interface VariantDto {
+  batch_summary?: VariantBatchSummaryDto
   fulfillment_type: "ship_ready" | "pre_order" | "inactive"
   id: string
   image_src: string
@@ -11,6 +25,7 @@ export interface VariantDto {
   height_cm?: number
   length_cm?: number
   preorder_batch_label?: string | null
+  is_ltl?: boolean
 }
 
 export interface ProductImageDto {
@@ -82,6 +97,7 @@ export interface UpdateVariantCustomTextRequest {
 }
 
 export interface UpdateProductStatusRequest {
+  confirm_batch_cancel?: boolean
   fulfillment_type: string
 }
 
@@ -90,6 +106,12 @@ export interface UpdateVariantPriceRequest {
 }
 
 export interface UpdateVariantStatusRequest {
+  confirm_batch_cancel?: boolean
   fulfillment_type: "ship_ready" | "pre_order" | "inactive"
+  variant_id: string
+}
+
+export interface UpdateVariantLtlRequest {
+  is_ltl: boolean
   variant_id: string
 }

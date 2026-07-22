@@ -83,11 +83,14 @@ export interface FulfillmentGroup {
 
 export interface PreorderPackingItem {
   lineItemId: string
+  quantity?: number
   boxCount: number
   isNested: boolean
 }
 
 export interface PreorderShipment {
+  id?: string
+  batchId?: string | null
   estimatedShipping?: number
   finalShippingPrice?: number
   shippingNotes?: string
@@ -95,8 +98,40 @@ export interface PreorderShipment {
   totalBoxes: number
   totalWeightLb?: number
   invoiceSentAt?: string
+  invoiceUrl?: string
+  invoicePaidAt?: string
+  shopifyDraftOrderId?: string
   warehouseOrigin?: "east" | "west"
   packing?: PreorderPackingItem[]
+}
+
+export type OrderFulfillmentSegmentKind =
+  | "ship_ready"
+  | "preorder_unbatched"
+  | "preorder_batch"
+
+export interface OrderFulfillmentSegment {
+  key: string
+  kind: OrderFulfillmentSegmentKind
+  title: string
+  batchId?: string | null
+  batchName?: string
+  lineItems: OrderLineItem[]
+  shipment?: PreorderShipment
+  fulfillments: FulfillmentGroup[]
+  canRequestSecondPayment?: boolean
+  secondPaymentStatus?: "pending" | "ready" | "invoiced" | "paid" | string
+  groupBalanceDue?: number
+  groupShipping?: number
+}
+
+export interface SecondPaymentSummary {
+  totalBalanceDue: number
+  shippingTotal: number
+  canRequest: boolean
+  status: "pending" | "ready" | "invoiced" | "paid" | string
+  configuredGroups: number
+  totalGroups: number
 }
 
 export function isShipReadyLineItem(item: Pick<OrderLineItem, "type">): boolean {
@@ -182,10 +217,19 @@ export interface Order {
   type: OrderType
   shippingMethod?: string
   preorderShipment?: PreorderShipment
+  fulfillmentSegments?: OrderFulfillmentSegment[]
+  secondPayment?: SecondPaymentSummary
   fulfillments?: FulfillmentGroup[]
 }
 
-import type { OrderResponseDto, OrderItemDetailDto } from "./dtos"
+import type {
+  OrderResponseDto,
+  OrderItemDetailDto,
+  PreorderShipmentDto,
+  OrderFulfillmentSegmentDto,
+  OrderLineSliceDto,
+  FulfillmentDto,
+} from "./dtos"
 
 function mapLineItemDto(
   item: OrderItemDetailDto,
@@ -220,6 +264,123 @@ function mapLineItemDto(
   }
 }
 
+function mapShipmentDto(dto: PreorderShipmentDto): PreorderShipment {
+  return {
+    id: dto.id,
+    batchId: dto.batch_id,
+    estimatedShipping: dto.estimated_shipping
+      ? parseFloat(dto.estimated_shipping)
+      : undefined,
+    finalShippingPrice: dto.final_shipping_price
+      ? parseFloat(dto.final_shipping_price)
+      : undefined,
+    shippingNotes: dto.shipping_notes,
+    creditAmount: dto.credit_amount
+      ? parseFloat(dto.credit_amount)
+      : undefined,
+    totalBoxes: dto.total_boxes ?? 0,
+    totalWeightLb: dto.total_weight_lb
+      ? parseFloat(dto.total_weight_lb)
+      : undefined,
+    invoiceSentAt: dto.invoice_sent_at,
+    invoiceUrl: dto.invoice_url,
+    invoicePaidAt: dto.invoice_paid_at,
+    shopifyDraftOrderId: dto.shopify_draft_order_id,
+    warehouseOrigin: dto.warehouse_origin,
+    packing: dto.packing?.map((p) => ({
+      lineItemId: p.line_item_id,
+      quantity: p.quantity,
+      boxCount: p.box_count,
+      isNested: p.is_nested,
+    })),
+  }
+}
+
+function mapFulfillmentDto(f: FulfillmentDto): FulfillmentGroup {
+  return {
+    id: f.id,
+    displayId: f.display_id,
+    sequenceNumber: f.sequence_number,
+    trackingNumber: f.tracking_number,
+    trackingUrl: f.tracking_url,
+    trackingCompany: f.tracking_company,
+    shipmentStatus: f.shipment_status,
+    status: f.status,
+    fulfilledAt: f.fulfilled_at,
+    deliveredAt: f.delivered_at,
+    lineItems: f.line_items.map((li) => ({
+      lineItemId: li.line_item_id,
+      title: li.title,
+      quantity: li.quantity,
+      imageSrc: li.image_src,
+      unitPrice: li.unit_price ? parseFloat(li.unit_price) : undefined,
+    })),
+  }
+}
+
+function mapSliceToLineItem(
+  slice: OrderLineSliceDto,
+  currency: CurrencyCode
+): OrderLineItem {
+  const bucketType: "ship-ready" | "pre-order" =
+    slice.type === "ship_ready" || slice.type === "ship-ready"
+      ? "ship-ready"
+      : "pre-order"
+  return {
+    productId: slice.line_item_id,
+    shopifyProductId: slice.variant_id,
+    title: slice.title,
+    sku: slice.sku || slice.variant_id || "",
+    quantity: slice.quantity,
+    unitPrice: parseFloat(slice.unit_price || "0") || 0,
+    currency,
+    fulfillmentStep: slice.fulfillment_step,
+    itemStatus: slice.item_status,
+    imageSrc: slice.image_src,
+    trackingCompany: slice.tracking_company,
+    trackingLastEvent: slice.tracking_last_event,
+    trackingNumber: slice.tracking_number,
+    trackingUrl: slice.tracking_url,
+    type: bucketType,
+    dpAmount: slice.dp_amount ? parseFloat(slice.dp_amount) : undefined,
+    balanceDue: slice.balance_due ? parseFloat(slice.balance_due) : undefined,
+    finalAmount: slice.final_amount
+      ? parseFloat(slice.final_amount)
+      : undefined,
+    weightKg: slice.weight_kg,
+    widthCm: slice.width_cm,
+    heightCm: slice.height_cm,
+    depthCm: slice.depth_cm,
+    remainingQuantity: slice.remaining_quantity,
+  }
+}
+
+function mapSegmentDto(
+  dto: OrderFulfillmentSegmentDto,
+  currency: CurrencyCode
+): OrderFulfillmentSegment {
+  return {
+    key: dto.key,
+    kind: dto.kind,
+    title: dto.title,
+    batchId: dto.batch_id,
+    batchName: dto.batch_name,
+    lineItems: (dto.line_slices ?? []).map((s) =>
+      mapSliceToLineItem(s, currency)
+    ),
+    shipment: dto.shipment ? mapShipmentDto(dto.shipment) : undefined,
+    fulfillments: (dto.fulfillments ?? []).map(mapFulfillmentDto),
+    canRequestSecondPayment: Boolean(dto.can_request_second_payment),
+    secondPaymentStatus: dto.second_payment_status,
+    groupBalanceDue: dto.group_balance_due
+      ? parseFloat(dto.group_balance_due)
+      : undefined,
+    groupShipping: dto.group_shipping
+      ? parseFloat(dto.group_shipping)
+      : undefined,
+  }
+}
+
 export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
   const currency = (dto.currency as CurrencyCode) ?? "USD"
   const shipReadyItems = (dto.line_items?.ship_ready ?? []).map((item) =>
@@ -234,6 +395,10 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
   const hasPreOrder = preOrderItems.length > 0
   const type: OrderType =
     hasShipReady && hasPreOrder ? "mixed" : hasPreOrder ? "pre-order" : "ready"
+
+  const fulfillmentSegments = (dto.fulfillment_groups ?? []).map((g) =>
+    mapSegmentDto(g, currency)
+  )
 
   return {
     id: dto.id,
@@ -271,28 +436,17 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
     totalShipReady: parseFloat(dto.total_ship_ready) || 0,
     shippingMethod: dto.shipping_method,
     preorderShipment: dto.preorder_shipment
+      ? mapShipmentDto(dto.preorder_shipment)
+      : undefined,
+    fulfillmentSegments,
+    secondPayment: dto.second_payment
       ? {
-          estimatedShipping: dto.preorder_shipment.estimated_shipping
-            ? parseFloat(dto.preorder_shipment.estimated_shipping)
-            : undefined,
-          finalShippingPrice: dto.preorder_shipment.final_shipping_price
-            ? parseFloat(dto.preorder_shipment.final_shipping_price)
-            : undefined,
-          shippingNotes: dto.preorder_shipment.shipping_notes,
-          creditAmount: dto.preorder_shipment.credit_amount
-            ? parseFloat(dto.preorder_shipment.credit_amount)
-            : undefined,
-          totalBoxes: dto.preorder_shipment.total_boxes ?? 0,
-          totalWeightLb: dto.preorder_shipment.total_weight_lb
-            ? parseFloat(dto.preorder_shipment.total_weight_lb)
-            : undefined,
-          invoiceSentAt: dto.preorder_shipment.invoice_sent_at,
-          warehouseOrigin: dto.preorder_shipment.warehouse_origin,
-          packing: dto.preorder_shipment.packing?.map((p) => ({
-            lineItemId: p.line_item_id,
-            boxCount: p.box_count,
-            isNested: p.is_nested,
-          })),
+          totalBalanceDue: parseFloat(dto.second_payment.total_balance_due) || 0,
+          shippingTotal: parseFloat(dto.second_payment.shipping_total) || 0,
+          canRequest: Boolean(dto.second_payment.can_request),
+          status: dto.second_payment.status,
+          configuredGroups: dto.second_payment.configured_groups,
+          totalGroups: dto.second_payment.total_groups,
         }
       : undefined,
     currency: (dto.currency as CurrencyCode) ?? "USD",
@@ -303,7 +457,8 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
       ? {
           dpAmount: parseFloat(dto.total_deposit_paid) || 0,
           remainingAmount: parseFloat(dto.total_balance_due) || 0,
-          batch: undefined,
+          batch: fulfillmentSegments.find((s) => s.kind === "preorder_batch")
+            ?.batchName,
           dpPaidAt: undefined,
           remainingPaidAt: undefined,
         }
@@ -316,25 +471,7 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
       deliveredAt: null,
     },
     orderDate: dto.order_date || "",
-    fulfillments: (dto.fulfillments ?? []).map((f) => ({
-      id: f.id,
-      displayId: f.display_id,
-      sequenceNumber: f.sequence_number,
-      trackingNumber: f.tracking_number,
-      trackingUrl: f.tracking_url,
-      trackingCompany: f.tracking_company,
-      shipmentStatus: f.shipment_status,
-      status: f.status,
-      fulfilledAt: f.fulfilled_at,
-      deliveredAt: f.delivered_at,
-      lineItems: f.line_items.map((li) => ({
-        lineItemId: li.line_item_id,
-        title: li.title,
-        quantity: li.quantity,
-        imageSrc: li.image_src,
-        unitPrice: li.unit_price ? parseFloat(li.unit_price) : undefined,
-      })),
-    })),
+    fulfillments: (dto.fulfillments ?? []).map(mapFulfillmentDto),
   }
 }
 

@@ -22,6 +22,9 @@ const WAREHOUSE_OPTIONS: { value: WarehouseCode; label: string }[] = [
   { value: "west", label: "West Coast 3PL" },
 ]
 
+export const LTL_SHIPPING_MESSAGE =
+  "Shipping cost will be calculated by our team and collected with the final payment"
+
 type CheckoutShippingSegmentProps = {
   title: string
   batchLabel: string
@@ -32,6 +35,10 @@ type CheckoutShippingSegmentProps = {
   isLoading: boolean
   isError?: boolean
   rates?: ShippingRate[]
+  /** Segment contains at least one LTL item */
+  hasLtl?: boolean
+  /** Every item in the segment is LTL — no auto carrier rate */
+  allLtl?: boolean
 }
 
 function WarehouseDisplay({
@@ -125,10 +132,20 @@ function RatesPanel({
   isLoading,
   isError,
   rates,
+  hasLtl,
+  allLtl,
 }: Pick<
   CheckoutShippingSegmentProps,
-  "ratesEnabled" | "isLoading" | "isError" | "rates"
+  "ratesEnabled" | "isLoading" | "isError" | "rates" | "hasLtl" | "allLtl"
 >) {
+  if (allLtl) {
+    return (
+      <div className="flex h-17.5 min-w-0 flex-1 items-center rounded border border-black/20 bg-white px-3 py-2 text-left text-xs leading-snug text-[#737373] sm:px-4 sm:text-sm lg:flex-none lg:justify-center lg:text-center">
+        {LTL_SHIPPING_MESSAGE}
+      </div>
+    )
+  }
+
   if (!ratesEnabled) {
     return (
       <div className="flex h-17.5 min-w-0 flex-1 items-center rounded border border-black/20 bg-white px-3 py-2 text-left text-xs leading-snug text-[#737373] sm:px-4 sm:text-sm lg:flex-none lg:justify-center lg:text-center">
@@ -163,20 +180,27 @@ function RatesPanel({
   }
 
   return (
-    <div className="flex h-17.5 min-w-0 flex-1 items-center justify-between rounded border border-black/20 bg-white px-4 py-2 lg:flex-none">
-      <div className="flex flex-col gap-1">
-        <span className="font-medium text-slate-800">{rate.label}</span>
-        {rate.deliveryDays ? (
-          <span className="text-sm text-slate-500">
-            Estimated Delivery: {rate.deliveryDays} Days
-          </span>
-        ) : null}
+    <div className="flex min-h-17.5 min-w-0 flex-1 flex-col justify-center gap-1 rounded border border-black/20 bg-white px-4 py-2 lg:flex-none">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-col gap-1">
+          <span className="font-medium text-slate-800">{rate.label}</span>
+          {rate.deliveryDays ? (
+            <span className="text-sm text-slate-500">
+              Estimated Delivery: {rate.deliveryDays} Days
+            </span>
+          ) : null}
+        </div>
+        <span className="font-medium text-slate-800">
+          {rate.cost === "0" || rate.cost === "0.00"
+            ? "Free"
+            : formatCurrency(parseFloat(rate.cost))}
+        </span>
       </div>
-      <span className="font-medium text-slate-800">
-        {rate.cost === "0" || rate.cost === "0.00"
-          ? "Free"
-          : formatCurrency(parseFloat(rate.cost))}
-      </span>
+      {hasLtl ? (
+        <p className="text-xs leading-snug text-[#737373]">
+          LTL items: {LTL_SHIPPING_MESSAGE}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -191,6 +215,8 @@ export function CheckoutShippingSegment({
   isLoading,
   isError,
   rates,
+  hasLtl = false,
+  allLtl = false,
 }: CheckoutShippingSegmentProps) {
   const warehouseLabel =
     warehouseValue === "west" ? "West Coast 3PL" : "East Coast 3PL"
@@ -213,6 +239,8 @@ export function CheckoutShippingSegment({
           isLoading={isLoading}
           isError={isError}
           rates={rates}
+          hasLtl={hasLtl}
+          allLtl={allLtl}
         />
       </div>
     </section>

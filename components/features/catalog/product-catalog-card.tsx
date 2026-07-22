@@ -3,14 +3,22 @@
 import Image from "next/image"
 import { useEffect, useState } from "react"
 
-import { Boxes } from "lucide-react"
-
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Boxes, InfoIcon } from "lucide-react"
 import dynamic from "next/dynamic"
 
-import { InventoryDepletedModal } from "@/components/features/catalog/inventory-depleted-modal"
+import {
+  InventoryDepletedModal,
+  SHIP_READY_DEPLETED_TITLE,
+  shipReadyDepletedDescription,
+} from "@/components/features/catalog/inventory-depleted-modal"
 import { QuantitySelector } from "@/components/global/quantity-selector"
+import { Badge } from "@/components/ui/badge"
+import {
+  PreviewCard,
+  PreviewCardPopup,
+  PreviewCardTrigger,
+} from "@/components/ui/preview-card"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const DynamicImageCarousel = dynamic(
   () => import("@/components/global/image-carousel"),
@@ -21,18 +29,37 @@ const DynamicImageCarousel = dynamic(
 )
 
 import { useCart, useLocalCartVariantUpdate } from "@/hooks"
+import {
+  BATCH_DEPLETED_TITLE,
+  buildBatchDepletionDescription,
+  buildBatchDepletionEvent,
+  shouldShowBatchDepletion,
+} from "@/lib/cart/batch-quota"
 import { ensureCartSession } from "@/lib/cart/ensure-cart-session"
 import { withShopifyWidth } from "@/lib/shopify-image"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
 
+import type { BatchDepletion } from "@/types/batches"
 import type { ProductCatalogCardProps } from "@/types/products"
 
 export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
   const { market } = useCartStore()
+  const hasAcceptedBatchDepletion = useCartStore(
+    (state) => state.hasAcceptedBatchDepletion
+  )
+  const markAcceptedBatchDepletion = useCartStore(
+    (state) => state.markAcceptedBatchDepletion
+  )
 
   const [localQuantity, setLocalQuantity] = useState(0)
   const [showDepletedModal, setShowDepletedModal] = useState(false)
+  const [batchDepletion, setBatchDepletion] = useState<BatchDepletion | null>(
+    null
+  )
+  const [pendingBatchQuantity, setPendingBatchQuantity] = useState<
+    number | null
+  >(null)
   const [isCardHovered, setIsCardHovered] = useState(false)
 
   const { data: cartData } = useCart()
@@ -75,8 +102,6 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     setLocalQuantity(quantity)
   }, [quantity])
 
-  const isPending = false
-
   const applyLocalUpdate = (newTotal: number) => {
     setLocalQuantity(newTotal)
     updateLocalCart({
@@ -87,22 +112,9 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     void ensureCartSession()
   }
 
-  const handleIncrease = () => {
-    if (isShipReady && !isBackendPreOrder && !isConvertedToPreorder) {
-      if (localQuantity + 1 > product.inventory.quantity) {
-        setLocalQuantity(localQuantity + 1)
-        setShowDepletedModal(true)
-        return
-      }
-    }
-    applyLocalUpdate(localQuantity + 1)
-  }
+  const updateQuantity = (newTotal: number) => {
+    if (newTotal < 0) return
 
-  const handleDecrease = () => {
-    applyLocalUpdate(localQuantity - 1)
-  }
-
-  const handleCustomChange = (newTotal: number) => {
     if (isShipReady && !isBackendPreOrder && !isConvertedToPreorder) {
       if (newTotal > product.inventory.quantity) {
         setLocalQuantity(newTotal)
@@ -110,7 +122,28 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         return
       }
     }
+
+    const accepted = hasAcceptedBatchDepletion(product.sku)
+    if (shouldShowBatchDepletion(product, newTotal, accepted)) {
+      setPendingBatchQuantity(newTotal)
+      setBatchDepletion(buildBatchDepletionEvent(product))
+      setLocalQuantity(newTotal)
+      return
+    }
+
     applyLocalUpdate(newTotal)
+  }
+
+  const handleIncrease = () => {
+    updateQuantity(localQuantity + 1)
+  }
+
+  const handleDecrease = () => {
+    updateQuantity(localQuantity - 1)
+  }
+
+  const handleCustomChange = (newTotal: number) => {
+    updateQuantity(newTotal)
   }
 
   const handlePreorderConfirm = () => {
@@ -121,6 +154,14 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     })
     void ensureCartSession()
     setShowDepletedModal(false)
+  }
+
+  const handleBatchDepletionConfirm = () => {
+    if (pendingBatchQuantity === null) return
+    markAcceptedBatchDepletion(product.sku)
+    applyLocalUpdate(pendingBatchQuantity)
+    setBatchDepletion(null)
+    setPendingBatchQuantity(null)
   }
 
   return (
@@ -160,12 +201,40 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
           )}
         </div>
         <div className="flex flex-1 flex-col justify-center gap-1.5 sm:gap-2">
-          {product.category === "pre-order" && (
-            <Badge className="h-5.5! w-fit rounded p-1 text-xs font-normal! uppercase">
-              {product.preorderCustomText
-                ? `PRE-ORDER ${product.preorderCustomText}`
-                : "PRE-ORDER"}
-            </Badge>
+          {(product.category === "pre-order" || product.isLtl) && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {product.category === "pre-order" && (
+                <Badge className="h-5.5! w-fit rounded p-1 text-xs font-normal! uppercase">
+                  {product.preorderCustomText
+                    ? `PRE-ORDER ${product.preorderCustomText}`
+                    : "PRE-ORDER"}
+                </Badge>
+              )}
+              {product.isLtl && (
+                <PreviewCard>
+                  <PreviewCardTrigger
+                    render={
+                      <Badge className="h-5.5! w-fit cursor-pointer gap-1 rounded p-1 text-xs font-normal! uppercase" />
+                    }
+                  >
+                    LTL
+                    <InfoIcon className="size-3.5 opacity-90" aria-hidden />
+                    <span className="sr-only">About LTL shipping</span>
+                  </PreviewCardTrigger>
+                  <PreviewCardPopup sideOffset={8}>
+                    <div className="flex max-w-xs flex-col gap-1.5 p-1">
+                      <h4 className="text-sm font-medium text-alternate">
+                        LTL - less than truckload
+                      </h4>
+                      <p className="text-xs text-pretty text-muted-foreground">
+                        Shipping cost will be calculated by our team and
+                        collected with the final payment
+                      </p>
+                    </div>
+                  </PreviewCardPopup>
+                </PreviewCard>
+              )}
+            </div>
           )}
           <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
             <h3 className="min-w-0 text-left text-sm leading-snug text-alternate capitalize sm:flex-1">
@@ -186,8 +255,8 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
                   onIncrease={handleIncrease}
                   onDecrease={handleDecrease}
                   onChange={handleCustomChange}
-                  disabled={isPending}
-                  isPending={isPending}
+                  disabled={false}
+                  isPending={false}
                   className="h-9 w-27 border-none sm:w-32.5"
                 />
               </div>
@@ -198,13 +267,35 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
 
       <InventoryDepletedModal
         isOpen={showDepletedModal}
-        product={product}
+        imageUrl={product.imageUrl}
+        productTitle={product.title}
+        title={SHIP_READY_DEPLETED_TITLE}
+        description={shipReadyDepletedDescription()}
         onClose={() => {
           setShowDepletedModal(false)
           setLocalQuantity(quantity)
         }}
         onConfirm={handlePreorderConfirm}
         isPending={false}
+      />
+
+      <InventoryDepletedModal
+        isOpen={!!batchDepletion}
+        imageUrl={batchDepletion?.imageUrl}
+        productTitle={batchDepletion?.productTitle}
+        title={BATCH_DEPLETED_TITLE}
+        description={
+          batchDepletion
+            ? buildBatchDepletionDescription(batchDepletion)
+            : null
+        }
+        isPending={false}
+        onClose={() => {
+          setBatchDepletion(null)
+          setPendingBatchQuantity(null)
+          setLocalQuantity(quantity)
+        }}
+        onConfirm={handleBatchDepletionConfirm}
       />
     </>
   )

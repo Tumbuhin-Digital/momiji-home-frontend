@@ -6,6 +6,8 @@ import type {
   CartSessionDto,
   CartSummaryDto,
   MergeCartInput,
+  UpdateVariantQuantityInput,
+  UpdateVariantQuantityResponseDto,
   UpdateCartItemInput,
 } from "@/types/cart"
 import type { BaseResponse } from "@/types/core"
@@ -39,12 +41,21 @@ async function updateItem(
 
 async function updateVariantQuantity(
   variantId: string,
-  totalQuantity: number
-): Promise<void> {
-  await apiClient.patch<BaseResponse<void>>(`/cart/items/variant`, {
+  totalQuantity: number,
+  input?: Pick<
+    UpdateVariantQuantityInput,
+    "accept_batch_depletion" | "validate_batch"
+  >
+): Promise<UpdateVariantQuantityResponseDto> {
+  const response = await apiClient.patch<
+    BaseResponse<UpdateVariantQuantityResponseDto>
+  >(`/cart/items/variant`, {
+    accept_batch_depletion: input?.accept_batch_depletion,
+    validate_batch: input?.validate_batch,
     variant_id: variantId,
     total_quantity: totalQuantity,
   })
+  return response.data ?? {}
 }
 
 async function createSession(): Promise<CartSessionDto> {

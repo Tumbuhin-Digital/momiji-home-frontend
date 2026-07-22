@@ -14,6 +14,7 @@ import type {
   UpdateVariantCustomTextRequest,
   UpdateVariantPriceRequest,
   UpdateVariantStatusRequest,
+  UpdateVariantLtlRequest,
 } from "@/types/products"
 
 async function getProducts(
@@ -123,6 +124,12 @@ async function updateVariantStatus(
   await apiClient.patch<BaseResponse<void>>(`/products/variant/status`, input)
 }
 
+async function updateVariantLtl(
+  input: UpdateVariantLtlRequest
+): Promise<void> {
+  await apiClient.patch<BaseResponse<void>>(`/products/variant/ltl`, input)
+}
+
 async function getProductVariants(productId: string): Promise<Product[]> {
   const response = await apiClient.get<BaseResponse<ProductDto[]>>(
     `/products/${productId}/variants`
@@ -154,6 +161,7 @@ export const productsService = {
   updateProductBatch,
   updateProductStatus,
   updateVariantCustomText,
+  updateVariantLtl,
   updateVariantPrice,
   updateVariantStatus,
 }

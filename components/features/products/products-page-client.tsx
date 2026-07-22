@@ -18,6 +18,7 @@ import {
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs"
 
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -51,7 +52,8 @@ import dynamic from "next/dynamic"
 
 import { DimensionsCsvModal } from "@/components/features/products/dimensions-csv-modal"
 import { EditPriceModal } from "@/components/features/products/edit-price-modal"
-import { PreorderCustomTextCombobox } from "@/components/features/products/preorder-custom-text-combobox"
+import { BatchStatusCancelModal } from "@/components/features/products/batch-status-cancel-modal"
+import { ManageBatchModal } from "@/components/features/products/manage-batch-modal"
 import { ProductTableSkeleton } from "@/components/features/products/product-table-skeleton"
 import { StockWarningModal } from "@/components/features/products/stock-warning-modal"
 
@@ -63,7 +65,12 @@ const DynamicImageCarousel = dynamic(
   }
 )
 
-import { useProducts, useUpdateProductStatus, useUpdateVariantStatus } from "@/hooks"
+import {
+  useProducts,
+  useUpdateProductStatus,
+  useUpdateVariantLtl,
+  useUpdateVariantStatus,
+} from "@/hooks"
 import { formatVariantSpecs } from "@/lib/units"
 import { formatCurrency, formatLastSynced } from "@/lib/utils"
 
@@ -82,6 +89,36 @@ function statusLabel(category: ProductCategory | "mixed") {
   return category.replace("-", " ")
 }
 
+function LtlStatusToggle({
+  checked,
+  disabled,
+  onCheckedChange,
+}: {
+  checked: boolean
+  disabled?: boolean
+  onCheckedChange: (checked: boolean) => void
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Switch
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange}
+        className="data-checked:border-[#29CE2D]/40 data-checked:bg-[#29CE2D] data-unchecked:border-black/90 data-unchecked:bg-black/40"
+      />
+      <span
+        className={
+          checked
+            ? "text-sm font-medium text-[#29CE2D]"
+            : "text-sm text-slate-400"
+        }
+      >
+        {checked ? "On" : "Off"}
+      </span>
+    </div>
+  )
+}
+
 function effectivePrice(product: Product) {
   const usdMarket = product.pricing.markets["USD"]
   return usdMarket?.price ?? product.pricing.basePrice
@@ -92,12 +129,26 @@ const filterParser = parseAsString.withDefault("all")
 const sortParser = parseAsString.withDefault("name_asc")
 const pageParser = parseAsInteger.withDefault(1)
 
+function hasOpenBatches(product: Product) {
+  return (
+    product.batchSummary &&
+    (product.batchSummary.activeCount > 0 ||
+      product.batchSummary.queuedCount > 0)
+  )
+}
+
 function buildPaginationWindow(currentPage: number, totalPages: number) {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, i) => i + 1)
   }
 
-  const pages = new Set<number>([1, totalPages, currentPage - 1, currentPage, currentPage + 1])
+  const pages = new Set<number>([
+    1,
+    totalPages,
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+  ])
   const sortedPages = Array.from(pages)
     .filter((p) => p >= 1 && p <= totalPages)
     .sort((a, b) => a - b)
@@ -134,9 +185,27 @@ export default function ProductsPageClient() {
   const [pendingShipReadyTarget, setPendingShipReadyTarget] = useState<
     string | null
   >(null)
+  const [manageBatchOpen, setManageBatchOpen] = useState(false)
+  const [batchVariant, setBatchVariant] = useState<Product | null>(null)
+  const [pendingStatusChange, setPendingStatusChange] = useState<{
+    confirmBatchCancel: true
+    fulfillment_type: "ship_ready" | "pre_order" | "inactive"
+    mode: "product" | "variant"
+    productId?: string
+    variantId?: string
+    productName: string
+  } | null>(null)
 
   const updateProductStatusMutation = useUpdateProductStatus()
   const updateVariantStatusMutation = useUpdateVariantStatus()
+  const updateVariantLtlMutation = useUpdateVariantLtl()
+
+  const handleVariantLtlChange = async (variant: Product, isLtl: boolean) => {
+    await updateVariantLtlMutation.mutateAsync({
+      variant_id: variant.sku,
+      is_ltl: isLtl,
+    })
+  }
 
   const productsQuery = useProducts({
     search,
@@ -213,6 +282,74 @@ export default function ProductsPageClient() {
   const openEditModal = (product: Product) => {
     setSelectedProduct(product)
     setEditModalOpen(true)
+  }
+
+  const openBatchModal = (variant: Product) => {
+    setBatchVariant(variant)
+    setManageBatchOpen(true)
+  }
+
+  const handleProductStatusChange = async (
+    productId: string,
+    productName: string,
+    fulfillmentType: "ship_ready" | "pre_order" | "inactive",
+    confirmBatchCancel = false
+  ) => {
+    try {
+      await updateProductStatusMutation.mutateAsync({
+        productId,
+        input: {
+          confirm_batch_cancel: confirmBatchCancel,
+          fulfillment_type: fulfillmentType,
+        },
+      })
+      setPendingStatusChange(null)
+    } catch (error) {
+      const code =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (error as any)?.response?.data?.error?.code
+      if (code === "batch_cancel_confirmation_required") {
+        setPendingStatusChange({
+          confirmBatchCancel: true,
+          fulfillment_type: fulfillmentType,
+          mode: "product",
+          productId,
+          productName,
+        })
+        return
+      }
+      throw error
+    }
+  }
+
+  const handleVariantStatusChange = async (
+    variant: Product,
+    fulfillmentType: "ship_ready" | "pre_order" | "inactive",
+    confirmBatchCancel = false
+  ) => {
+    try {
+      await updateVariantStatusMutation.mutateAsync({
+        confirm_batch_cancel: confirmBatchCancel,
+        fulfillment_type: fulfillmentType,
+        variant_id: variant.sku,
+      })
+      setPendingStatusChange(null)
+    } catch (error) {
+      const code =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (error as any)?.response?.data?.error?.code
+      if (code === "batch_cancel_confirmation_required") {
+        setPendingStatusChange({
+          confirmBatchCancel: true,
+          fulfillment_type: fulfillmentType,
+          mode: "variant",
+          productName: variant.title,
+          variantId: variant.sku,
+        })
+        return
+      }
+      throw error
+    }
   }
 
   return (
@@ -372,7 +509,8 @@ export default function ProductsPageClient() {
                     <th className="px-6 py-4 font-medium">Product</th>
                     <th className="px-6 py-4 font-medium">Stock (Shopify)</th>
                     <th className="px-6 py-4 font-medium">Status</th>
-                    <th className="px-6 py-4 font-medium">Custom Text</th>
+                    <th className="px-6 py-4 font-medium">Pre-Order Batch</th>
+                    <th className="px-6 py-4 font-medium">LTL Status</th>
                     <th className="px-6 py-4 font-medium">RPP Price</th>
                     <th className="px-6 py-4 font-medium">WS$ Price</th>
                     <th className="px-6 py-4 font-medium">Action</th>
@@ -536,25 +674,24 @@ export default function ProductsPageClient() {
                                     className="w-40 rounded-xl bg-white shadow-lg"
                                   >
                                     <DropdownMenuItem
-                                      onClick={() => {
-                                        const totalStock = group.variants.reduce(
-                                          (acc, variant) =>
-                                            acc + variant.inventory.quantity,
-                                          0
-                                        )
+                                      onClick={async () => {
+                                        const totalStock =
+                                          group.variants.reduce(
+                                            (acc, variant) =>
+                                              acc + variant.inventory.quantity,
+                                            0
+                                          )
                                         if (totalStock === 0) {
                                           setPendingShipReadyTarget(
                                             group.variants[0].originalId
                                           )
                                           setConfirmShipReadyOpen(true)
                                         } else {
-                                          updateProductStatusMutation.mutate({
-                                            productId:
-                                              group.variants[0].originalId,
-                                            input: {
-                                              fulfillment_type: "ship_ready",
-                                            },
-                                          })
+                                          await handleProductStatusChange(
+                                            group.variants[0].originalId,
+                                            group.title,
+                                            "ship_ready"
+                                          )
                                         }
                                       }}
                                     >
@@ -565,13 +702,11 @@ export default function ProductsPageClient() {
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() =>
-                                        updateProductStatusMutation.mutate({
-                                          productId:
-                                            group.variants[0].originalId,
-                                          input: {
-                                            fulfillment_type: "pre_order",
-                                          },
-                                        })
+                                        handleProductStatusChange(
+                                          group.variants[0].originalId,
+                                          group.title,
+                                          "pre_order"
+                                        )
                                       }
                                     >
                                       <div className="flex items-center gap-2">
@@ -581,13 +716,11 @@ export default function ProductsPageClient() {
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() =>
-                                        updateProductStatusMutation.mutate({
-                                          productId:
-                                            group.variants[0].originalId,
-                                          input: {
-                                            fulfillment_type: "inactive",
-                                          },
-                                        })
+                                        handleProductStatusChange(
+                                          group.variants[0].originalId,
+                                          group.title,
+                                          "inactive"
+                                        )
                                       }
                                     >
                                       <div className="flex items-center gap-2">
@@ -601,9 +734,59 @@ export default function ProductsPageClient() {
                             </td>
                             <td className="px-6 py-4">
                               {singleVariant?.category === "pre-order" ? (
-                                <PreorderCustomTextCombobox
-                                  variantId={singleVariant.sku}
-                                  value={singleVariant.preorderCustomText}
+                                hasOpenBatches(singleVariant) ? (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="border-[#FF8D28]/40 text-[#FF8D28]"
+                                    onClick={() =>
+                                      openBatchModal(singleVariant)
+                                    }
+                                  >
+                                    ●{" "}
+                                    {singleVariant.batchSummary?.totalCount ||
+                                      0}{" "}
+                                    Batch
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="border-[#FFB56B] text-[#FF8D28]"
+                                    onClick={() =>
+                                      openBatchModal(singleVariant)
+                                    }
+                                  >
+                                    No Batch - Add
+                                  </Button>
+                                )
+                              ) : hasVariants &&
+                                groupCategory === "pre-order" &&
+                                isUniformCategory ? (
+                                <span className="font-medium text-slate-600">
+                                  {group.variants.reduce(
+                                    (sum, variant) =>
+                                      sum +
+                                      (variant.batchSummary?.totalCount || 0),
+                                    0
+                                  )}{" "}
+                                  Batch
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4">
+                              {singleVariant ? (
+                                <LtlStatusToggle
+                                  checked={Boolean(singleVariant.isLtl)}
+                                  disabled={updateVariantLtlMutation.isPending}
+                                  onCheckedChange={(checked) => {
+                                    void handleVariantLtlChange(
+                                      singleVariant,
+                                      checked
+                                    )
+                                  }}
                                 />
                               ) : (
                                 <span className="text-slate-400">—</span>
@@ -685,16 +868,15 @@ export default function ProductsPageClient() {
                                         className="w-40 rounded-xl bg-white shadow-lg"
                                       >
                                         <DropdownMenuItem
-                                          onClick={() => {
-                                            if (variant.inventory.quantity === 0) {
+                                          onClick={async () => {
+                                            if (
+                                              variant.inventory.quantity === 0
+                                            ) {
                                               setConfirmShipReadyOpen(true)
                                             } else {
-                                              updateVariantStatusMutation.mutate(
-                                                {
-                                                  variant_id: variant.sku,
-                                                  fulfillment_type:
-                                                    "ship_ready",
-                                                }
+                                              await handleVariantStatusChange(
+                                                variant,
+                                                "ship_ready"
                                               )
                                             }
                                           }}
@@ -706,10 +888,10 @@ export default function ProductsPageClient() {
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                           onClick={() =>
-                                            updateVariantStatusMutation.mutate({
-                                              variant_id: variant.sku,
-                                              fulfillment_type: "pre_order",
-                                            })
+                                            handleVariantStatusChange(
+                                              variant,
+                                              "pre_order"
+                                            )
                                           }
                                         >
                                           <div className="flex items-center gap-2">
@@ -719,10 +901,10 @@ export default function ProductsPageClient() {
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                           onClick={() =>
-                                            updateVariantStatusMutation.mutate({
-                                              variant_id: variant.sku,
-                                              fulfillment_type: "inactive",
-                                            })
+                                            handleVariantStatusChange(
+                                              variant,
+                                              "inactive"
+                                            )
                                           }
                                         >
                                           <div className="flex items-center gap-2">
@@ -735,13 +917,49 @@ export default function ProductsPageClient() {
                                   </td>
                                   <td className="px-6 py-4">
                                     {variant.category === "pre-order" ? (
-                                      <PreorderCustomTextCombobox
-                                        variantId={variant.sku}
-                                        value={variant.preorderCustomText}
-                                      />
+                                      hasOpenBatches(variant) ? (
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          className="border-[#FF8D28]/40 text-[#FF8D28]"
+                                          onClick={() =>
+                                            openBatchModal(variant)
+                                          }
+                                        >
+                                          ●{" "}
+                                          {variant.batchSummary?.totalCount ||
+                                            0}{" "}
+                                          Batch
+                                        </Button>
+                                      ) : (
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          className="border-[#FFB56B] text-[#FF8D28]"
+                                          onClick={() =>
+                                            openBatchModal(variant)
+                                          }
+                                        >
+                                          No Batch - Add
+                                        </Button>
+                                      )
                                     ) : (
                                       <span className="text-slate-400">—</span>
                                     )}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <LtlStatusToggle
+                                      checked={Boolean(variant.isLtl)}
+                                      disabled={
+                                        updateVariantLtlMutation.isPending
+                                      }
+                                      onCheckedChange={(checked) => {
+                                        void handleVariantLtlChange(
+                                          variant,
+                                          checked
+                                        )
+                                      }}
+                                    />
                                   </td>
                                   <td className="px-6 py-4 font-medium text-slate-600/60">
                                     {formatCurrency(variant.retailPrice ?? 0)}{" "}
@@ -773,7 +991,7 @@ export default function ProductsPageClient() {
 
                   {rows.length === 0 && !productsQuery.isLoading && (
                     <tr>
-                      <td colSpan={7} className="p-0">
+                      <td colSpan={8} className="p-0">
                         <div className="flex h-[calc(100vh-360px)] items-center justify-center">
                           <Empty className="gap-4 border-none">
                             <EmptyMedia variant="icon" className="mb-0">
@@ -868,6 +1086,57 @@ export default function ProductsPageClient() {
       <DimensionsCsvModal
         isOpen={csvModalOpen}
         onClose={() => setCsvModalOpen(false)}
+      />
+
+      {batchVariant ? (
+        <ManageBatchModal
+          isOpen={manageBatchOpen}
+          onClose={() => {
+            setManageBatchOpen(false)
+            setBatchVariant(null)
+          }}
+          variantId={batchVariant.sku}
+          productName={batchVariant.title}
+        />
+      ) : null}
+
+      <BatchStatusCancelModal
+        isOpen={!!pendingStatusChange}
+        productName={pendingStatusChange?.productName || ""}
+        isPending={
+          updateProductStatusMutation.isPending ||
+          updateVariantStatusMutation.isPending
+        }
+        onClose={() => setPendingStatusChange(null)}
+        onConfirm={async () => {
+          if (!pendingStatusChange) return
+          if (
+            pendingStatusChange.mode === "product" &&
+            pendingStatusChange.productId
+          ) {
+            await handleProductStatusChange(
+              pendingStatusChange.productId,
+              pendingStatusChange.productName,
+              pendingStatusChange.fulfillment_type,
+              true
+            )
+            return
+          }
+          if (
+            pendingStatusChange.mode === "variant" &&
+            pendingStatusChange.variantId
+          ) {
+            const variant = rows
+              .flatMap((group) => group.variants)
+              .find((item) => item.sku === pendingStatusChange.variantId)
+            if (!variant) return
+            await handleVariantStatusChange(
+              variant,
+              pendingStatusChange.fulfillment_type,
+              true
+            )
+          }
+        }}
       />
 
       <StockWarningModal

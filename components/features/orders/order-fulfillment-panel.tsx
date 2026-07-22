@@ -26,10 +26,10 @@ import {
   StepperTrigger,
 } from "@/components/ui/stepper"
 
-import { SecondPaymentConfirmationModal } from "@/components/features/orders/second-payment-confirmation-modal"
 import { PreorderCalculateShippingModal } from "@/components/features/orders/preorder-calculate-shipping-modal"
 import { CancelOrderModal } from "@/components/features/orders/cancel-order-modal"
 import { FulfillmentGroupCard } from "@/components/features/orders/fulfillment-group-card"
+import { SecondPaymentConfirmationModal } from "@/components/features/orders/second-payment-confirmation-modal"
 import { IconTruckFast } from "@/public/icons/iconsax-truck-fast"
 
 import {
@@ -44,8 +44,8 @@ import {
 import { queryKeys } from "@/lib/query/query-keys"
 import { formatCurrency } from "@/lib/utils"
 
-import type { Order } from "@/types/orders"
-import { matchesFulfillmentPanel, orderLineDisplayUnitPrice } from "@/types/orders/entities"
+import type { Order, OrderFulfillmentSegment } from "@/types/orders"
+import { orderLineDisplayUnitPrice } from "@/types/orders/entities"
 import type { OrderLineItem } from "@/types/orders/entities"
 import type { CreateFulfillmentDto } from "@/types/orders/dtos"
 
@@ -90,14 +90,46 @@ const preOrderSteps = [
 
 interface OrderFulfillmentPanelProps {
   order: Order
-  type: "ship-ready" | "pre-order"
+  segment: OrderFulfillmentSegment
   onOrderActioned?: () => void
   isLoading?: boolean
 }
 
+function segmentIsPreOrder(segment: OrderFulfillmentSegment): boolean {
+  return (
+    segment.kind === "preorder_batch" ||
+    segment.kind === "preorder_unbatched"
+  )
+}
+
+function derivePreorderVisualStep(
+  segment: OrderFulfillmentSegment,
+  maxItemStep: number
+): number {
+  const status = segment.secondPaymentStatus
+  if (
+    status === "paid" ||
+    segment.shipment?.invoicePaidAt ||
+    maxItemStep >= 4
+  ) {
+    return Math.max(maxItemStep, 4)
+  }
+  if (
+    status === "invoiced" ||
+    segment.shipment?.invoiceSentAt ||
+    maxItemStep >= 3
+  ) {
+    return 3
+  }
+  if (segment.shipment?.finalShippingPrice != null || maxItemStep >= 2) {
+    return 2
+  }
+  return 1
+}
+
 export function OrderFulfillmentPanel({
   order,
-  type,
+  segment,
   onOrderActioned,
   isLoading = false,
 }: OrderFulfillmentPanelProps) {
@@ -108,11 +140,9 @@ export function OrderFulfillmentPanel({
   const [selectedTrackingItem, setSelectedTrackingItem] =
     useState<OrderLineItem | null>(null)
 
-  const [acceptSuccess, setAcceptSuccess] = useState(false)
   const [cancelSuccess, setCancelSuccess] = useState(false)
   const [trackingSuccess, setTrackingSuccess] = useState(false)
   const [receivedSuccess, setReceivedSuccess] = useState(false)
-  const [showAcceptModal, setShowAcceptModal] = useState(false)
   const [showCalculateShippingModal, setShowCalculateShippingModal] =
     useState(false)
   const [calculateShippingModalKey, setCalculateShippingModalKey] = useState(0)
@@ -124,7 +154,11 @@ export function OrderFulfillmentPanel({
   const [markingDeliveredId, setMarkingDeliveredId] = useState<string | null>(
     null
   )
-  const [acceptError, setAcceptError] = useState<string | undefined>(undefined)
+  const [showSecondPaymentModal, setShowSecondPaymentModal] = useState(false)
+  const [secondPaymentError, setSecondPaymentError] = useState<
+    string | undefined
+  >()
+  const [invoiceSuccess, setInvoiceSuccess] = useState(false)
 
   const queryClient = useQueryClient()
 
@@ -136,20 +170,28 @@ export function OrderFulfillmentPanel({
   const markDelivered = useMarkFulfillmentDelivered(order.id)
   const requestSecondPayment = useRequestSecondPayment(order.id)
 
-  const items = order.lineItems.filter((item) =>
-    matchesFulfillmentPanel(item, type, order.type)
-  )
+  const items = segment.lineItems
+  const isPreOrder = segmentIsPreOrder(segment)
+  const shipment = segment.shipment
 
-  const isPreOrder = type === "pre-order"
-
-  const currentStep = items.reduce(
+  const maxItemStep = items.reduce(
     (max, item) => Math.max(max, item.fulfillmentStep || 1),
     1
   )
 
+  const currentStep = isPreOrder
+    ? derivePreorderVisualStep(segment, maxItemStep)
+    : maxItemStep
+
   const visualStep = isPreOrder
     ? currentStep
     : toShipReadyVisualStep(currentStep)
+
+  const panelTitle = segment.title
+  const batchSubtitle =
+    segment.kind === "preorder_batch" && segment.batchName
+      ? `${segment.batchName} (${items.reduce((n, i) => n + i.quantity, 0)} items)`
+      : null
 
   if (isLoading) {
     const steps = isPreOrder ? preOrderSteps : shipReadySteps
@@ -157,7 +199,7 @@ export function OrderFulfillmentPanel({
       <div className="relative overflow-hidden rounded-xl border border-[#D9E2E8] bg-[#F4F7F9]/30">
         <div className="flex flex-col gap-3 border-b border-[#D9E2E8] bg-[#EBF0F3] px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg font-bold text-slate-700">
-            {type === "ship-ready" ? "Ship Ready" : "Pre-Order"}
+            {panelTitle}
           </h3>
           <div className="flex flex-wrap gap-2">
             <Skeleton className="h-7 w-24 rounded-sm" />
@@ -228,33 +270,7 @@ export function OrderFulfillmentPanel({
       item.trackingLastEvent
   )
 
-  const apiFulfillmentType = type.replace("-", "_")
-
-  const handleRequestSecondPayment = async (_orderId: string) => {
-    setAcceptError(undefined)
-    try {
-      await requestSecondPayment.mutateAsync()
-      setShowAcceptModal(false)
-      setAcceptSuccess(true)
-      setTimeout(() => {
-        setAcceptSuccess(false)
-        onOrderActioned?.()
-      }, 2000)
-    } catch (error: any) {
-      console.error("Request second payment failed:", error)
-      const errMsg =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to send second payment invoice."
-      setAcceptError(errMsg)
-    }
-  }
-
-  const isPaymentReceived = items.some(
-    (item) =>
-      item.itemStatus === "payment_received" ||
-      (item.fulfillmentStep === 4 && !item.trackingNumber)
-  )
+  const apiFulfillmentType = isPreOrder ? "pre_order" : "ship_ready"
 
   const handleShippingConfigured = async () => {
     onOrderActioned?.()
@@ -262,8 +278,6 @@ export function OrderFulfillmentPanel({
       queryKey: queryKeys.orders.detail(order.id),
     })
     setShowCalculateShippingModal(false)
-    setAcceptError(undefined)
-    setShowAcceptModal(true)
   }
 
   const handleShippingEdited = async () => {
@@ -275,27 +289,72 @@ export function OrderFulfillmentPanel({
   }
 
   const isCancelled = order.fulfillmentStatus === "cancelled"
+  const paymentLocked =
+    segment.secondPaymentStatus === "invoiced" ||
+    segment.secondPaymentStatus === "paid" ||
+    Boolean(shipment?.invoiceSentAt) ||
+    Boolean(shipment?.invoicePaidAt)
 
   const canRequestSecondPayment =
-    isPreOrder &&
-    currentStep === 2 &&
-    order.preorderShipment?.finalShippingPrice != null
+    Boolean(segment.canRequestSecondPayment) ||
+    (shipment?.finalShippingPrice != null &&
+      !shipment?.invoiceSentAt &&
+      !shipment?.invoicePaidAt)
 
-  const showCalculateShipping = isPreOrder && currentStep === 1 && !isCancelled
+  const showCalculateShipping =
+    isPreOrder &&
+    !isCancelled &&
+    !paymentLocked &&
+    shipment?.finalShippingPrice == null
 
   const showEditShipping =
     isPreOrder &&
-    currentStep === 2 &&
     !isCancelled &&
-    order.preorderShipment?.finalShippingPrice != null
+    !paymentLocked &&
+    shipment?.finalShippingPrice != null
+
+  const showRequestSecondPayment =
+    isPreOrder && !isCancelled && canRequestSecondPayment && !paymentLocked
+
+  const handleRequestSecondPayment = async (
+    _orderId: string,
+    batchId?: string | null
+  ) => {
+    setSecondPaymentError(undefined)
+    try {
+      await requestSecondPayment.mutateAsync({ batchId: batchId ?? null })
+      setShowSecondPaymentModal(false)
+      setInvoiceSuccess(true)
+      setTimeout(() => {
+        setInvoiceSuccess(false)
+        onOrderActioned?.()
+      }, 2000)
+    } catch (error: unknown) {
+      const err = error as {
+        payload?: { message?: string; error?: { message?: string } }
+        response?: { data?: { message?: string } }
+        message?: string
+      }
+      setSecondPaymentError(
+        err?.payload?.error?.message ||
+          err?.payload?.message ||
+          err?.response?.data?.message ||
+          err?.message ||
+          "Failed to send second payment invoice."
+      )
+    }
+  }
 
   const trackingActionStep = isPreOrder ? 4 : 3
 
-  const preOrderFulfillments = (order.fulfillments ?? []).filter((f) =>
-    f.lineItems.some((li) =>
-      items.some((item) => item.productId === li.lineItemId)
-    )
-  )
+  const preOrderFulfillments =
+    segment.fulfillments?.length > 0
+      ? segment.fulfillments
+      : (order.fulfillments ?? []).filter((f) =>
+          f.lineItems.some((li) =>
+            items.some((item) => item.productId === li.lineItemId)
+          )
+        )
 
   const hasUnfulfilledPreOrder = isPreOrder
     ? items.some((item) => {
@@ -497,10 +556,10 @@ export function OrderFulfillmentPanel({
   return (
     <div className="relative overflow-hidden rounded-t-xl bg-[#F4F7F9]/60">
       <AnimatePresence>
-        {(acceptSuccess ||
-          cancelSuccess ||
+        {(cancelSuccess ||
           trackingSuccess ||
-          receivedSuccess) && (
+          receivedSuccess ||
+          invoiceSuccess) && (
           <motion.div
             key="success-overlay"
             initial={{ opacity: 0 }}
@@ -509,7 +568,7 @@ export function OrderFulfillmentPanel({
             transition={{ duration: 0.3 }}
             className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-xl bg-white/95 backdrop-blur-sm"
           >
-            {acceptSuccess || trackingSuccess || receivedSuccess ? (
+            {trackingSuccess || receivedSuccess || invoiceSuccess ? (
               <>
                 <motion.div
                   initial={{ scale: 0 }}
@@ -529,7 +588,7 @@ export function OrderFulfillmentPanel({
                   transition={{ delay: 0.2 }}
                   className="text-base font-bold text-emerald-700"
                 >
-                  {acceptSuccess && "Invoice Sent!"}
+                  {invoiceSuccess && "Second Payment Invoice Sent!"}
                   {trackingSuccess && "Tracking Added Successfully!"}
                   {receivedSuccess && "Received Count Updated!"}
                 </motion.p>
@@ -563,60 +622,73 @@ export function OrderFulfillmentPanel({
       </AnimatePresence>
 
       <div className="flex flex-col gap-3 rounded-t-xl border border-primary bg-primary/20 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-lg font-bold text-primary">
-          {type === "ship-ready" ? "Ship Ready" : "Pre-Order"}
-        </h3>
-        <div className="flex flex-wrap gap-2">
+        <div className="min-w-0">
+          <h3 className="text-lg font-bold text-primary">{panelTitle}</h3>
+          {batchSubtitle && (
+            <p className="text-sm font-medium text-primary/80">{batchSubtitle}</p>
+          )}
+        </div>
+        <div className="flex shrink-0 flex-nowrap items-center gap-2">
           {showCalculateShipping && (
             <Button
               variant="outline"
               size="sm"
-              className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+              className="h-auto min-h-0 shrink-0 justify-start whitespace-normal px-3 py-2.5 text-left leading-snug border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE] sm:h-auto"
               onClick={() => {
                 setCalculateShippingMode("initial")
                 setCalculateShippingModalKey((k) => k + 1)
                 setShowCalculateShippingModal(true)
               }}
             >
-              Calculate Shipping
+              <span className="block text-left">
+                Calculate
+                <br />
+                Shipping
+              </span>
             </Button>
           )}
           {showEditShipping && (
             <Button
               variant="outline"
               size="sm"
-              className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+              className="h-auto min-h-0 shrink-0 justify-start whitespace-normal px-3 py-2.5 text-left leading-snug border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE] sm:h-auto"
               onClick={() => {
                 setCalculateShippingMode("edit")
                 setCalculateShippingModalKey((k) => k + 1)
                 setShowCalculateShippingModal(true)
               }}
             >
-              Edit Shipping Rate
+              <span className="block text-left">
+                Edit Shipping
+                <br />
+                Rate
+              </span>
             </Button>
           )}
-          {isPreOrder && currentStep === 2 && !isCancelled && (
+          {showRequestSecondPayment && (
             <Button
-              variant="outline"
+              type="button"
               size="sm"
-              className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+              className="h-auto min-h-0 shrink-0 justify-start whitespace-normal px-3 py-2.5 text-left leading-snug bg-primary text-white hover:bg-primary/90 sm:h-auto"
+              disabled={requestSecondPayment.isPending}
               onClick={() => {
-                setAcceptError(undefined)
-                setShowAcceptModal(true)
+                setSecondPaymentError(undefined)
+                setShowSecondPaymentModal(true)
               }}
-              disabled={
-                !canRequestSecondPayment || requestSecondPayment.isPending
-              }
             >
-              Request Second Payment
+              <span className="block text-left">
+                Request Second
+                <br />
+                Payment
+              </span>
             </Button>
           )}
           {!showCalculateShipping &&
-            !(isPreOrder && currentStep === 2) &&
+            !(isPreOrder && currentStep === 2 && !paymentLocked) &&
             !isCancelled && (
               <>
                 {isPreOrder && currentStep === 3 && (
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+                  <span className="shrink-0 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
                     Waiting for payment
                   </span>
                 )}
@@ -627,7 +699,7 @@ export function OrderFulfillmentPanel({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                      className="shrink-0 border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
                       onClick={() => setShowFulfillModal(true)}
                       disabled={createFulfillment.isPending}
                     >
@@ -641,7 +713,7 @@ export function OrderFulfillmentPanel({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                      className="shrink-0 border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
                       onClick={() => {
                         if (items.length === 1) {
                           setSelectedTrackingItem(items[0])
@@ -662,7 +734,7 @@ export function OrderFulfillmentPanel({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
+                      className="shrink-0 border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE]"
                       onClick={() => {
                         if (items.length === 1) {
                           setSelectedReceivedItem(items[0])
@@ -753,27 +825,31 @@ export function OrderFulfillmentPanel({
 
         {isPreOrder && currentStep === 2 && !isCancelled && (
           <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            {order.preorderShipment?.finalShippingPrice != null ? (
+            {shipment?.finalShippingPrice != null ? (
               <p>
                 Shipping configured:{" "}
                 <span className="font-semibold text-slate-800">
-                  {formatCurrency(order.preorderShipment.finalShippingPrice)}{" "}
-                  USD
+                  {formatCurrency(shipment.finalShippingPrice)} USD
                 </span>
-                {order.preorderShipment.estimatedShipping != null && (
+                {shipment.estimatedShipping != null && (
                   <span className="text-slate-500">
                     {" "}
                     (checkout estimate{" "}
-                    {formatCurrency(order.preorderShipment.estimatedShipping)})
+                    {formatCurrency(shipment.estimatedShipping)})
                   </span>
                 )}
-                . Ready to request second payment.
+                .{" "}
+                {canRequestSecondPayment
+                  ? "Ready — use Request Second Payment for this group."
+                  : paymentLocked
+                    ? "Second payment invoice sent for this group."
+                    : "Finish setting the final shipping price, then request second payment for this group."}
               </p>
-            ) : order.preorderShipment?.estimatedShipping != null ? (
+            ) : shipment?.estimatedShipping != null ? (
               <p>
                 Checkout estimate saved (
-                {formatCurrency(order.preorderShipment.estimatedShipping)} USD).
-                Open <strong>Calculate Shipping</strong> to set the final price.
+                {formatCurrency(shipment.estimatedShipping)} USD). Open{" "}
+                <strong>Calculate Shipping</strong> to set the final price.
               </p>
             ) : (
               <p>
@@ -909,12 +985,14 @@ export function OrderFulfillmentPanel({
       )}
 
       <PreorderCalculateShippingModal
-        key={`calc-ship-${order.id}-${calculateShippingModalKey}`}
+        key={`calc-ship-${order.id}-${segment.key}-${calculateShippingModalKey}`}
         order={order}
         items={items}
         isOpen={showCalculateShippingModal}
         onClose={() => setShowCalculateShippingModal(false)}
         mode={calculateShippingMode}
+        batchId={segment.batchId ?? null}
+        shipment={shipment}
         onSaved={
           calculateShippingMode === "edit"
             ? handleShippingEdited
@@ -927,18 +1005,6 @@ export function OrderFulfillmentPanel({
         }
       />
 
-      <SecondPaymentConfirmationModal
-        order={order}
-        isOpen={showAcceptModal}
-        onClose={() => {
-          setShowAcceptModal(false)
-          setAcceptError(undefined)
-        }}
-        onConfirm={handleRequestSecondPayment}
-        isConfirming={requestSecondPayment.isPending}
-        error={acceptError}
-      />
-
       <CancelOrderModal
         order={order}
         isOpen={showCancelModal}
@@ -946,6 +1012,23 @@ export function OrderFulfillmentPanel({
         onConfirm={handleCancel}
         isConfirming={cancelOrder.isPending}
       />
+
+      {isPreOrder && (
+        <SecondPaymentConfirmationModal
+          order={order}
+          segment={segment}
+          isOpen={showSecondPaymentModal}
+          onClose={() => {
+            setShowSecondPaymentModal(false)
+            setSecondPaymentError(undefined)
+          }}
+          onConfirm={handleRequestSecondPayment}
+          isConfirming={requestSecondPayment.isPending}
+          error={secondPaymentError}
+          shippingTotal={segment.groupShipping ?? shipment?.finalShippingPrice}
+          groupBalanceDue={segment.groupBalanceDue}
+        />
+      )}
     </div>
   )
 }

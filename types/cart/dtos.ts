@@ -1,9 +1,12 @@
+import type { BatchDepletion } from "@/types/batches"
+
 export interface CartItemDto {
   balance_due?: string
   deposit_amount?: string
   id: string
   image_src: string
   inventory_quantity: number
+  is_ltl?: boolean
   quantity: number
   subtotal: string
   title: string
@@ -43,4 +46,15 @@ export interface CartSessionDto {
 
 export interface MergeCartInput {
   guest_session_id: string
+}
+
+export interface UpdateVariantQuantityInput {
+  accept_batch_depletion?: boolean
+  total_quantity: number
+  validate_batch?: boolean
+  variant_id: string
+}
+
+export interface UpdateVariantQuantityResponseDto {
+  batch_depletion?: BatchDepletion | null
 }

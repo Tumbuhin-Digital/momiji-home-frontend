@@ -1,14 +1,18 @@
 import type { CurrencyCode } from "@/types/core"
 
 export interface CartStore {
+  acceptedBatchDepletion: Record<string, boolean>
   cartDirty: boolean
+  clearAcceptedBatchDepletion: (variantId?: string) => void
   clearCartDirty: () => void
   clearPendingSync: (variantId?: string) => void
   consumeShippingRefresh: () => boolean
   expiresAt: string | null
   getPendingSync: () => Record<string, number>
+  hasAcceptedBatchDepletion: (variantId: string) => boolean
   isGlobalPending: boolean
   isOpen: boolean
+  markAcceptedBatchDepletion: (variantId: string) => void
   markCartDirty: () => void
   market: CurrencyCode
   markPendingSync: (variantId: string, totalQuantity: number) => void

@@ -24,44 +24,49 @@ import type { InventoryDepletedModalProps } from "@/types/products"
 export function InventoryDepletedModal({
   isOpen,
   isPending,
+  imageUrl,
+  productTitle,
+  title,
+  description,
   onClose,
   onConfirm,
-  product,
 }: InventoryDepletedModalProps) {
   return (
-    <Dialog open={isOpen}>
-      <DialogContent className="sm:max-w-150" showCloseButton={false}>
-        <DialogPanel className="flex flex-col items-center gap-6 p-4! sm:flex-row">
-          <div className="relative mx-auto flex size-32 shrink-0 items-center justify-center overflow-hidden rounded bg-linear-to-b from-white via-white to-black/5 sm:size-40">
-            {product?.imageUrl ? (
-              <Image
-                src={withShopifyWidth(product.imageUrl, 320)}
-                alt={product?.title || "Product Image"}
-                fill
-                className="object-contain mix-blend-multiply"
-                unoptimized
-              />
-            ) : (
-              <Boxes className="size-8 text-slate-300" />
-            )}
-          </div>
-          <div className="w-full">
-            <DialogHeader className="p-0 text-center">
-              <DialogTitle className="tracking-wide text-destructive sm:text-[22px]">
-                Ship Ready Inventory Depleted
-              </DialogTitle>
-              <DialogDescription className="text-[15px] leading-relaxed">
-                This design has{" "}
-                <span className="font-bold text-slate-800">sold out</span>.
-                Quantities will now be added on Pre-order basis (50% deposit)
-                and fulfilled in the next container
-              </DialogDescription>
-            </DialogHeader>
-          </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-xl" showCloseButton={false}>
+        <DialogPanel className="p-6!">
+          <DialogHeader className="items-start gap-4 p-0 text-left">
+            <div className="flex items-start gap-4">
+              <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-linear-to-b from-white via-white to-black/5">
+                {imageUrl ? (
+                  <Image
+                    src={withShopifyWidth(imageUrl, 160)}
+                    alt={productTitle || "Product Image"}
+                    fill
+                    className="object-contain mix-blend-multiply"
+                    unoptimized
+                  />
+                ) : (
+                  <Boxes className="size-6 text-slate-300" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                {productTitle ? (
+                  <div className="text-sm text-slate-400">{productTitle}</div>
+                ) : null}
+                <DialogTitle className="pt-1 text-lg tracking-wide text-destructive sm:text-[22px]">
+                  {title}
+                </DialogTitle>
+              </div>
+            </div>
+            <DialogDescription className="text-[15px] leading-relaxed text-slate-500">
+              {description}
+            </DialogDescription>
+          </DialogHeader>
         </DialogPanel>
         <DialogFooter
           variant="bare"
-          className="w-full flex-col-reverse gap-3 px-6 sm:flex-col-reverse sm:space-x-0 sm:px-6"
+          className="w-full flex-col-reverse gap-3 px-6 pb-6 sm:flex-col-reverse sm:space-x-0"
         >
           <DialogClose
             render={
@@ -95,5 +100,17 @@ export function InventoryDepletedModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+export const SHIP_READY_DEPLETED_TITLE = "Ship Ready Inventory Depleted"
+
+export function shipReadyDepletedDescription(): ReactNode {
+  return (
+    <>
+      This design has <span className="font-bold text-slate-800">sold out</span>
+      . Quantities will now be added on Pre-order basis (50% deposit) and
+      fulfilled in the next container
+    </>
   )
 }

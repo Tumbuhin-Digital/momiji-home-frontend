@@ -67,8 +67,9 @@ export function CartSheetItemRow({
 
   const handleIncrease = () => {
     if (disableIncrease) return
-    if (maxStock !== undefined && localQuantity >= maxStock) {
-      const next = localQuantity + 1
+    const current = localQuantity
+    if (maxStock !== undefined && current >= maxStock) {
+      const next = current + 1
       setLocalQuantity(next)
       onExceedStock?.(next, () => {
         setLocalQuantity(maxStock)
@@ -76,7 +77,12 @@ export function CartSheetItemRow({
       })
       return
     }
-    handleUpdate(localQuantity + 1)
+    handleUpdate(current + 1)
+  }
+
+  const handleDecrease = () => {
+    if (onDecreaseIntercept && onDecreaseIntercept()) return
+    handleUpdate(localQuantity - 1)
   }
 
   return (
@@ -125,10 +131,7 @@ export function CartSheetItemRow({
             quantity={localQuantity}
             isPending={isPending}
             onIncrease={handleIncrease}
-            onDecrease={() => {
-              if (onDecreaseIntercept && onDecreaseIntercept()) return
-              handleUpdate(localQuantity - 1)
-            }}
+            onDecrease={handleDecrease}
             onChange={(q) => {
               if (
                 q < localQuantity &&

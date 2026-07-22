@@ -10,6 +10,24 @@ function calculateMarketPrices(basePrice: number) {
   }
 }
 
+function mapBatchSummary(
+  summary?: ProductDto["variants"][number]["batch_summary"]
+) {
+  if (!summary) return undefined
+  return {
+    activeBatchId: summary.active_batch_id,
+    activeBatchName: summary.active_batch_name,
+    activeBatchRemaining: summary.active_batch_remaining,
+    activeCount: summary.active_count,
+    hasBatches: summary.has_batches,
+    maxBatchOrderableQty: summary.max_batch_orderable_qty,
+    nextBatchName: summary.next_batch_name,
+    nextBatchRemaining: summary.next_batch_remaining,
+    queuedCount: summary.queued_count,
+    totalCount: summary.total_count,
+  }
+}
+
 export function mapProductListItemToDomain(dto: ProductDto): Product[] {
   if (!dto.variants || dto.variants.length === 0) {
     return []
@@ -33,6 +51,7 @@ export function mapProductListItemToDomain(dto: ProductDto): Product[] {
 
     const variantIdClean = variant.id.split("/").pop() || variant.id
     const id = `${dto.id}-${variantIdClean}`
+    const batchSummary = mapBatchSummary(variant.batch_summary)
 
     return {
       id,
@@ -54,10 +73,10 @@ export function mapProductListItemToDomain(dto: ProductDto): Product[] {
         quantity:
           variant.inventory_quantity ?? (category === "ship-ready" ? 10 : 0),
         reserved: 0,
-        batchQuota: category === "pre-order" ? 50 : undefined,
-        batchAvailable: category === "pre-order" ? 50 : undefined,
         warehouseLocation: "DEFAULT",
         syncStatus: "synced",
+        batchQuota: batchSummary?.activeBatchRemaining ?? undefined,
+        batchAvailable: batchSummary?.maxBatchOrderableQty ?? undefined,
       },
       pricing: {
         basePrice: wsPriceNum,
@@ -72,6 +91,8 @@ export function mapProductListItemToDomain(dto: ProductDto): Product[] {
       heightCm: variant.height_cm,
       depthCm: variant.length_cm,
       preorderCustomText: variant.preorder_batch_label || undefined,
+      batchSummary,
+      isLtl: Boolean(variant.is_ltl),
     }
   })
 }

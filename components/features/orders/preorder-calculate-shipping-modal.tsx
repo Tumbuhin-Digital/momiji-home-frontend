@@ -31,10 +31,12 @@ import type {
 } from "@/types/orders/entities"
 
 const KG_TO_LB = 2.20462
+const SHIPPING_BUFFER_PERCENT = 10
 
 function defaultPacking(items: OrderLineItem[]): PreorderPackingItem[] {
   return items.map((item) => ({
     lineItemId: item.productId,
+    quantity: item.quantity,
     boxCount: item.quantity,
     isNested: false,
   }))
@@ -48,9 +50,25 @@ function mergePacking(
   const savedMap = new Map(saved.map((p) => [p.lineItemId, p]))
   return items.map((item) => {
     const existing = savedMap.get(item.productId)
-    if (existing) return existing
+    if (existing) {
+      const quantity = item.quantity
+      let boxCount = existing.boxCount
+      if (!existing.isNested) {
+        if (boxCount <= 0 || boxCount > quantity) {
+          boxCount = quantity
+        } else if (quantity % boxCount !== 0) {
+          boxCount = quantity
+        }
+      }
+      return {
+        ...existing,
+        quantity,
+        boxCount: existing.isNested ? 0 : boxCount,
+      }
+    }
     return {
       lineItemId: item.productId,
+      quantity: item.quantity,
       boxCount: item.quantity,
       isNested: false,
     }
@@ -78,7 +96,7 @@ function formatAddress(order: PreorderCalculateShippingModalProps["order"]) {
 }
 
 function initialFinalPrice(
-  shipment: PreorderCalculateShippingModalProps["order"]["preorderShipment"]
+  shipment: PreorderCalculateShippingModalProps["shipment"]
 ): string {
   if (shipment?.finalShippingPrice != null) {
     return shipment.finalShippingPrice.toFixed(2)
@@ -97,24 +115,29 @@ export function PreorderCalculateShippingModal({
   mode = "initial",
   onSaved,
   onShippingConfigured,
+  batchId = null,
+  shipment: shipmentProp,
 }: PreorderCalculateShippingModalProps) {
   const calculateShipping = useCalculatePreorderShipping(order.id)
   const updateShipping = useUpdatePreorderShipping(order.id)
 
+  const shipment = shipmentProp ?? order.preorderShipment
+
   const [packing, setPacking] = useState<PreorderPackingItem[]>(() =>
-    mergePacking(items, order.preorderShipment?.packing)
+    mergePacking(items, shipment?.packing)
   )
 
-  const shipment = order.preorderShipment
   const warehouseOrigin = shipment?.warehouseOrigin ?? "east"
   const checkoutEstimate = shipment?.estimatedShipping
   const [finalPrice, setFinalPrice] = useState<string>(() =>
-    initialFinalPrice(order.preorderShipment)
+    initialFinalPrice(shipment)
   )
-  const [notes, setNotes] = useState(
-    () => order.preorderShipment?.shippingNotes ?? ""
-  )
+  const [notes, setNotes] = useState(() => shipment?.shippingNotes ?? "")
   const [currentEstimate, setCurrentEstimate] = useState<number | undefined>()
+  const [currentBaseCost, setCurrentBaseCost] = useState<number | undefined>()
+  const [currentBufferAmount, setCurrentBufferAmount] = useState<
+    number | undefined
+  >()
   const [saveError, setSaveError] = useState<string | undefined>()
 
   const totalBoxes = useMemo(
@@ -144,6 +167,10 @@ export function PreorderCalculateShippingModal({
     hasCheckoutEstimate ||
     hasCurrentEstimate ||
     shipment?.finalShippingPrice != null
+  // Batch groups often only have a prior admin calc, not the original checkout quote.
+  const priorEstimateLabel = batchId
+    ? "Prior estimate"
+    : "Checkout estimate (UPS Ground)"
 
   const toggleNested = (lineItemId: string, checked: boolean) => {
     setPacking((prev) =>
@@ -163,22 +190,41 @@ export function PreorderCalculateShippingModal({
     setSaveError(undefined)
     try {
       const res = await calculateShipping.mutateAsync({
-        packing: packing.map((p) => ({
-          line_item_id: p.lineItemId,
-          box_count: p.boxCount,
-          is_nested: p.isNested,
-        })),
+        batch_id: batchId ?? null,
+        packing: packing.map((p) => {
+          const itemQty =
+            items.find((i) => i.productId === p.lineItemId)?.quantity ?? 0
+          const quantity = Math.min(p.quantity ?? itemQty, itemQty) || itemQty
+          let boxCount = p.boxCount
+          if (!p.isNested && boxCount > quantity) {
+            boxCount = quantity
+          }
+          return {
+            line_item_id: p.lineItemId,
+            quantity,
+            box_count: boxCount,
+            is_nested: p.isNested,
+          }
+        }),
       })
       const est = parseFloat(res.estimated_shipping)
       setCurrentEstimate(est)
+      const base = res.base_cost != null ? parseFloat(res.base_cost) : est
+      const buffer =
+        res.buffer_amount != null ? parseFloat(res.buffer_amount) : undefined
+      setCurrentBaseCost(Number.isNaN(base) ? undefined : base)
+      setCurrentBufferAmount(
+        buffer != null && !Number.isNaN(buffer) ? buffer : undefined
+      )
       setPacking(
         res.packing.map((p) => ({
           lineItemId: p.line_item_id,
+          quantity: p.quantity,
           boxCount: p.box_count,
           isNested: p.is_nested,
         }))
       )
-      // Pre-fill final price from current ShipStation rate; admin can edit before save.
+      // Pre-fill final price from buffered rate (carrier + 10%); admin can edit before save.
       if (!shipment?.finalShippingPrice) {
         setFinalPrice(res.estimated_shipping)
       }
@@ -210,13 +256,24 @@ export function PreorderCalculateShippingModal({
     }
     try {
       await updateShipping.mutateAsync({
+        batch_id: batchId ?? null,
         final_shipping_price: price,
         shipping_notes: notes,
-        packing: packing.map((p) => ({
-          line_item_id: p.lineItemId,
-          box_count: p.boxCount,
-          is_nested: p.isNested,
-        })),
+        packing: packing.map((p) => {
+          const itemQty =
+            items.find((i) => i.productId === p.lineItemId)?.quantity ?? 0
+          const quantity = Math.min(p.quantity ?? itemQty, itemQty) || itemQty
+          let boxCount = p.boxCount
+          if (!p.isNested && boxCount > quantity) {
+            boxCount = quantity
+          }
+          return {
+            line_item_id: p.lineItemId,
+            quantity,
+            box_count: boxCount,
+            is_nested: p.isNested,
+          }
+        }),
       })
       onSaved?.()
       onShippingConfigured?.()
@@ -379,9 +436,10 @@ export function PreorderCalculateShippingModal({
             </h4>
 
             <p className="mb-3 text-xs text-slate-500">
-              Checkout estimate is from order time. Recalculate for the current
-              rate with your packing plan. Labels are purchased manually via
-              Unishippers — enter the final shipping price below.
+              Recalculate for the current ShipStation rate with your packing
+              plan (carrier + {SHIPPING_BUFFER_PERCENT}% buffer). Labels are
+              purchased manually via Unishippers — enter the final shipping
+              price below.
             </p>
 
             <div className="mb-4 flex justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
@@ -410,29 +468,51 @@ export function PreorderCalculateShippingModal({
             </Button>
 
             {(hasCheckoutEstimate || hasCurrentEstimate) && (
-              <div className="mb-4 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+              <div className="mb-4 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
                 {hasCheckoutEstimate && (
                   <div className="flex justify-between gap-4">
-                    <span className="text-slate-600">
-                      Checkout estimate (UPS Ground)
-                    </span>
+                    <span className="text-slate-600">{priorEstimateLabel}</span>
                     <span className="font-medium">
                       {formatCurrency(checkoutEstimate!)} USD
                     </span>
                   </div>
                 )}
                 {hasCurrentEstimate && (
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-600">
-                      Current estimate (ShipStation, {totalBoxes} boxes)
-                    </span>
-                    <span className="font-medium">
-                      {formatCurrency(currentEstimate!)} USD
-                    </span>
+                  <div
+                    className={
+                      hasCheckoutEstimate
+                        ? "border-t border-slate-200 pt-3"
+                        : undefined
+                    }
+                  >
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-600">
+                        Current estimate ({totalBoxes}{" "}
+                        {totalBoxes === 1 ? "box" : "boxes"})
+                      </span>
+                      <span className="font-medium">
+                        {formatCurrency(currentEstimate!)} USD
+                      </span>
+                    </div>
+                    {(currentBaseCost != null ||
+                      currentBufferAmount != null) && (
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {formatCurrency(currentBaseCost ?? currentEstimate!)}{" "}
+                        carrier
+                        {currentBufferAmount != null &&
+                          !Number.isNaN(currentBufferAmount) && (
+                            <>
+                              {" "}
+                              + {formatCurrency(currentBufferAmount)} buffer (
+                              {SHIPPING_BUFFER_PERCENT}%)
+                            </>
+                          )}
+                      </p>
+                    )}
                   </div>
                 )}
                 {finalPrice && !Number.isNaN(parseFloat(finalPrice)) && (
-                  <div className="flex justify-between gap-4 border-t border-slate-200 pt-2">
+                  <div className="flex justify-between gap-4 border-t border-slate-200 pt-3">
                     <span className="text-slate-600">
                       Final shipping (admin)
                     </span>

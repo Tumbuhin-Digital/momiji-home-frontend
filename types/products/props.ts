@@ -1,3 +1,5 @@
+import type { ReactNode } from "react"
+
 import type { Product } from "./entities"
 
 export interface ProductCatalogCardProps {
@@ -5,9 +7,12 @@ export interface ProductCatalogCardProps {
 }
 
 export interface InventoryDepletedModalProps {
+  description: ReactNode
+  imageUrl?: string
   isOpen: boolean
-  product: Product | { title: string; imageUrl?: string } | null
   isPending?: boolean
+  productTitle?: string
+  title: string
   onClose: () => void
   onConfirm: () => void
 }

@@ -198,13 +198,23 @@ export function extractVariantMetaFromCart(
   variantId: string,
   fallback?: Partial<VariantCartMeta>
 ): VariantCartMeta | null {
-  const existing =
-    cart?.ship_ready.find((item) => item.variant_id === variantId) ??
-    cart?.pre_order.find((item) => item.variant_id === variantId)
+  const existingShip = cart?.ship_ready.find(
+    (item) => item.variant_id === variantId
+  )
+  const existingPre = cart?.pre_order.find(
+    (item) => item.variant_id === variantId
+  )
+  const existing = existingShip ?? existingPre
 
   if (!existing && !fallback?.title) {
     return null
   }
+
+  // Pure pre-order lines must stay forced; otherwise Shopify inventory_quantity
+  // re-splits them into ship_ready and corrupts totals while editing the cart.
+  const inferredForcedPreOrder =
+    fallback?.isForcedPreOrder ??
+    (Boolean(existingPre) && !existingShip)
 
   return {
     title: existing?.title ?? fallback?.title ?? "",
@@ -212,6 +222,6 @@ export function extractVariantMetaFromCart(
     unit_price: existing?.unit_price ?? fallback?.unit_price ?? "0",
     inventory_quantity:
       existing?.inventory_quantity ?? fallback?.inventory_quantity ?? 0,
-    isForcedPreOrder: fallback?.isForcedPreOrder,
+    isForcedPreOrder: inferredForcedPreOrder,
   }
 }

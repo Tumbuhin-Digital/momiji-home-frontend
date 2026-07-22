@@ -4,6 +4,7 @@ import type {
   CheckoutConfirmResponseDto,
   CheckoutConfirmResult,
   CheckoutCreateInput,
+  CheckoutCreateResult,
   CheckoutCreateResponseDto,
   CheckoutItem,
   CheckoutItemDto,
@@ -75,11 +76,7 @@ async function getSummary(
 
 async function createCheckout(
   input: CheckoutCreateInput
-): Promise<{
-  checkoutUrl: string
-  checkoutReference: string
-  expiresAt: string | null
-}> {
+): Promise<CheckoutCreateResult> {
   const response = await apiClient.post<
     BaseResponse<CheckoutCreateResponseDto>
   >("/checkout", input)
@@ -89,6 +86,7 @@ async function createCheckout(
   }
 
   return {
+    batchDepletion: response.data.batch_depletion || null,
     checkoutUrl: response.data.checkout_url,
     checkoutReference: response.data.checkout_reference || "",
     expiresAt: response.data.expires_at || null,
@@ -126,6 +124,8 @@ async function getCheckoutConfirm(
     totalPrice: parseFloat(d.total_price || "0"),
     shipReadyShipping: parseFloat(d.ship_ready_shipping || "0"),
     preorderShippingEstimate: parseFloat(d.preorder_shipping_estimate || "0"),
+    hasLtl: Boolean(d.has_ltl),
+    allLtl: Boolean(d.all_ltl),
     items: (d.items || []).map((item) => ({
       title: item.title,
       amountCharged: parseFloat(item.amount_charged || "0"),

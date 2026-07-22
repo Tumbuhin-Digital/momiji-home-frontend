@@ -39,8 +39,7 @@ export function QuantitySelector({
     }
   }, [quantity, isFocused])
 
-  const handleBlur = () => {
-    setIsFocused(false)
+  const commitInputValue = () => {
     let parsed = parseInt(inputValue, 10)
     if (isNaN(parsed) || parsed < 0) {
       parsed = quantity
@@ -51,11 +50,17 @@ export function QuantitySelector({
     }
   }
 
+  const handleBlur = () => {
+    setIsFocused(false)
+    commitInputValue()
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      handleBlur()
+      e.currentTarget.blur()
     }
   }
+
   return (
     <div
       className={cn(
@@ -86,17 +91,15 @@ export function QuantitySelector({
         </div>
       ) : onChange ? (
         <input
-          type="number"
-          min={0}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={inputValue}
           disabled={disabled}
           onChange={(e) => {
-            const val = e.target.value
+            // Keep typing local only — commit on blur/Enter to avoid race with +/- buttons.
+            const val = e.target.value.replace(/[^\d]/g, "")
             setInputValue(val)
-            const parsed = parseInt(val, 10)
-            if (!isNaN(parsed) && parsed >= 0) {
-              onChange(parsed)
-            }
           }}
           onFocus={() => setIsFocused(true)}
           onBlur={handleBlur}

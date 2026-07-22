@@ -251,7 +251,10 @@ export function useRequestSecondPayment(orderId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: () => ordersService.requestSecondPayment(orderId),
+    mutationFn: (input?: { batchId?: string | null }) =>
+      ordersService.requestSecondPayment(orderId, {
+        batch_id: input?.batchId ?? null,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
