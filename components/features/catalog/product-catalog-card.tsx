@@ -30,11 +30,11 @@ const DynamicImageCarousel = dynamic(
 
 import { useCart, useLocalCartVariantUpdate } from "@/hooks"
 import {
-  BATCH_DEPLETED_TITLE,
   buildBatchDepletionDescription,
   buildBatchDepletionEvent,
-  shouldClearBatchDepletionAcceptance,
-  shouldShowBatchDepletion,
+  getBatchDepletionAcceptanceSync,
+  getBatchDepletionStage,
+  getBatchDepletionTitle,
 } from "@/lib/cart/batch-quota"
 import { ensureCartSession } from "@/lib/cart/ensure-cart-session"
 import { withShopifyWidth } from "@/lib/shopify-image"
@@ -49,8 +49,8 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
   const markAcceptedBatchDepletion = useCartStore(
     (state) => state.markAcceptedBatchDepletion
   )
-  const clearAcceptedBatchDepletion = useCartStore(
-    (state) => state.clearAcceptedBatchDepletion
+  const setAcceptedBatchDepletionLevel = useCartStore(
+    (state) => state.setAcceptedBatchDepletionLevel
   )
 
   const [localQuantity, setLocalQuantity] = useState(0)
@@ -98,21 +98,28 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
     isForcedPreOrder: !isShipReady,
   }
 
+  const syncAcceptanceForQuantity = (qty: number) => {
+    const current = useCartStore
+      .getState()
+      .getAcceptedBatchDepletionLevel(product.sku)
+    const sync = getBatchDepletionAcceptanceSync(product, qty, current)
+    if (sync.action === "clear") {
+      setAcceptedBatchDepletionLevel(product.sku, undefined)
+    } else if (sync.action === "downgrade") {
+      setAcceptedBatchDepletionLevel(product.sku, sync.level)
+    }
+  }
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalQuantity(quantity)
-    // Stale acceptance in localStorage blocks the modal permanently otherwise.
-    if (shouldClearBatchDepletionAcceptance(product, quantity)) {
-      clearAcceptedBatchDepletion(product.sku)
-    }
-    // product fields read inside shouldClear*; sku/qty are the trigger.
+    syncAcceptanceForQuantity(quantity)
+    // product fields read inside sync*; sku/qty are the trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- avoid reset on every product object identity change
-  }, [quantity, product.sku, clearAcceptedBatchDepletion])
+  }, [quantity, product.sku, setAcceptedBatchDepletionLevel])
 
   const applyLocalUpdate = (newTotal: number) => {
-    if (shouldClearBatchDepletionAcceptance(product, newTotal)) {
-      clearAcceptedBatchDepletion(product.sku)
-    }
+    syncAcceptanceForQuantity(newTotal)
     setLocalQuantity(newTotal)
     updateLocalCart({
       variantId: product.sku,
@@ -133,16 +140,15 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
       }
     }
 
-    if (shouldClearBatchDepletionAcceptance(product, newTotal)) {
-      clearAcceptedBatchDepletion(product.sku)
-    }
+    syncAcceptanceForQuantity(newTotal)
 
-    const accepted = useCartStore
+    const acceptance = useCartStore
       .getState()
-      .hasAcceptedBatchDepletion(product.sku)
-    if (shouldShowBatchDepletion(product, newTotal, accepted)) {
+      .getAcceptedBatchDepletionLevel(product.sku)
+    const stage = getBatchDepletionStage(product, newTotal, acceptance)
+    if (stage !== "none") {
       setPendingBatchQuantity(newTotal)
-      setBatchDepletion(buildBatchDepletionEvent(product))
+      setBatchDepletion(buildBatchDepletionEvent(product, stage))
       setLocalQuantity(newTotal)
       return
     }
@@ -173,8 +179,26 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
   }
 
   const handleBatchDepletionConfirm = () => {
-    if (pendingBatchQuantity === null) return
-    markAcceptedBatchDepletion(product.sku)
+    if (pendingBatchQuantity === null || !batchDepletion) return
+
+    const confirmedLevel =
+      batchDepletion.kind === "unlimited" ? "unlimited" : "next_batch"
+    markAcceptedBatchDepletion(product.sku, confirmedLevel)
+
+    const acceptance = useCartStore
+      .getState()
+      .getAcceptedBatchDepletionLevel(product.sku)
+    const nextStage = getBatchDepletionStage(
+      product,
+      pendingBatchQuantity,
+      acceptance
+    )
+
+    if (nextStage === "unlimited") {
+      setBatchDepletion(buildBatchDepletionEvent(product, "unlimited"))
+      return
+    }
+
     applyLocalUpdate(pendingBatchQuantity)
     setBatchDepletion(null)
     setPendingBatchQuantity(null)
@@ -299,7 +323,11 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
         isOpen={!!batchDepletion}
         imageUrl={batchDepletion?.imageUrl}
         productTitle={batchDepletion?.productTitle}
-        title={BATCH_DEPLETED_TITLE}
+        title={
+          batchDepletion
+            ? getBatchDepletionTitle(batchDepletion)
+            : "Current pre-order batch has depleted"
+        }
         description={
           batchDepletion
             ? buildBatchDepletionDescription(batchDepletion)

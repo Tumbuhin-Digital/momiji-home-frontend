@@ -23,9 +23,12 @@ export interface VariantBatchesResponse {
   summary: BatchSummary
 }
 
+export type BatchDepletionKind = "next_batch" | "unlimited"
+
 export interface BatchDepletion {
   closedBatchName: string
   imageUrl: string
+  kind?: BatchDepletionKind
   nextBatchName?: string | null
   productTitle: string
   variantId: string
