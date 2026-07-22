@@ -633,54 +633,42 @@ export function OrderFulfillmentPanel({
             <Button
               variant="outline"
               size="sm"
-              className="h-auto min-h-0 shrink-0 justify-start whitespace-normal px-3 py-2.5 text-left leading-snug border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE] sm:h-auto"
+              className="shrink-0 border-[#A2D2FF] bg-[#D3E5FF] px-2 text-[11px] leading-none text-[#0052CC] hover:bg-[#BDE0FE] sm:text-[11px]"
               onClick={() => {
                 setCalculateShippingMode("initial")
                 setCalculateShippingModalKey((k) => k + 1)
                 setShowCalculateShippingModal(true)
               }}
             >
-              <span className="block text-left">
-                Calculate
-                <br />
-                Shipping
-              </span>
+              Calculate Shipping
             </Button>
           )}
           {showEditShipping && (
             <Button
               variant="outline"
               size="sm"
-              className="h-auto min-h-0 shrink-0 justify-start whitespace-normal px-3 py-2.5 text-left leading-snug border-[#A2D2FF] bg-[#D3E5FF] text-[#0052CC] hover:bg-[#BDE0FE] sm:h-auto"
+              className="shrink-0 border-[#A2D2FF] bg-[#D3E5FF] px-2 text-[11px] leading-none text-[#0052CC] hover:bg-[#BDE0FE] sm:text-[11px]"
               onClick={() => {
                 setCalculateShippingMode("edit")
                 setCalculateShippingModalKey((k) => k + 1)
                 setShowCalculateShippingModal(true)
               }}
             >
-              <span className="block text-left">
-                Edit Shipping
-                <br />
-                Rate
-              </span>
+              Edit Shipping Rate
             </Button>
           )}
           {showRequestSecondPayment && (
             <Button
               type="button"
               size="sm"
-              className="h-auto min-h-0 shrink-0 justify-start whitespace-normal px-3 py-2.5 text-left leading-snug bg-primary text-white hover:bg-primary/90 sm:h-auto"
+              className="shrink-0 bg-primary px-2 text-[11px] leading-none text-white hover:bg-primary/90 sm:text-[11px]"
               disabled={requestSecondPayment.isPending}
               onClick={() => {
                 setSecondPaymentError(undefined)
                 setShowSecondPaymentModal(true)
               }}
             >
-              <span className="block text-left">
-                Request Second
-                <br />
-                Payment
-              </span>
+              Request Second Payment
             </Button>
           )}
           {!showCalculateShipping &&

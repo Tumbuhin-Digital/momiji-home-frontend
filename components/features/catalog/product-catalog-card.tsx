@@ -33,6 +33,7 @@ import {
   BATCH_DEPLETED_TITLE,
   buildBatchDepletionDescription,
   buildBatchDepletionEvent,
+  shouldClearBatchDepletionAcceptance,
   shouldShowBatchDepletion,
 } from "@/lib/cart/batch-quota"
 import { ensureCartSession } from "@/lib/cart/ensure-cart-session"
@@ -45,11 +46,11 @@ import type { ProductCatalogCardProps } from "@/types/products"
 
 export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
   const { market } = useCartStore()
-  const hasAcceptedBatchDepletion = useCartStore(
-    (state) => state.hasAcceptedBatchDepletion
-  )
   const markAcceptedBatchDepletion = useCartStore(
     (state) => state.markAcceptedBatchDepletion
+  )
+  const clearAcceptedBatchDepletion = useCartStore(
+    (state) => state.clearAcceptedBatchDepletion
   )
 
   const [localQuantity, setLocalQuantity] = useState(0)
@@ -100,9 +101,18 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalQuantity(quantity)
-  }, [quantity])
+    // Stale acceptance in localStorage blocks the modal permanently otherwise.
+    if (shouldClearBatchDepletionAcceptance(product, quantity)) {
+      clearAcceptedBatchDepletion(product.sku)
+    }
+    // product fields read inside shouldClear*; sku/qty are the trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- avoid reset on every product object identity change
+  }, [quantity, product.sku, clearAcceptedBatchDepletion])
 
   const applyLocalUpdate = (newTotal: number) => {
+    if (shouldClearBatchDepletionAcceptance(product, newTotal)) {
+      clearAcceptedBatchDepletion(product.sku)
+    }
     setLocalQuantity(newTotal)
     updateLocalCart({
       variantId: product.sku,
@@ -123,7 +133,13 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
       }
     }
 
-    const accepted = hasAcceptedBatchDepletion(product.sku)
+    if (shouldClearBatchDepletionAcceptance(product, newTotal)) {
+      clearAcceptedBatchDepletion(product.sku)
+    }
+
+    const accepted = useCartStore
+      .getState()
+      .hasAcceptedBatchDepletion(product.sku)
     if (shouldShowBatchDepletion(product, newTotal, accepted)) {
       setPendingBatchQuantity(newTotal)
       setBatchDepletion(buildBatchDepletionEvent(product))

@@ -27,6 +27,19 @@ export function shouldShowBatchDepletion(
   return newPreOrderQty > remaining
 }
 
+/** Acceptance only applies while qty stays above the active batch; reset once back within quota. */
+export function shouldClearBatchDepletionAcceptance(
+  product: Product,
+  quantity: number
+): boolean {
+  if (product.category !== "pre-order") return false
+  if (!product.batchSummary?.hasBatches) return false
+
+  const remaining = getActiveBatchRemaining(product)
+  if (remaining == null) return quantity <= 0
+  return quantity <= remaining
+}
+
 export function buildBatchDepletionEvent(product: Product): BatchDepletion {
   return {
     closedBatchName:

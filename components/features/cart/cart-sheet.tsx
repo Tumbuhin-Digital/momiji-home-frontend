@@ -125,6 +125,9 @@ export function CartSheet() {
       metaOverrides
     )
     if (!meta) return
+    if (totalQuantity <= 0) {
+      useCartStore.getState().clearAcceptedBatchDepletion(variantId)
+    }
     markCartDirty()
     updateLocalCart({ variantId, totalQuantity, meta })
   }
