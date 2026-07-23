@@ -52,7 +52,7 @@ export function DimensionsCsvModal({
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = "variant-packaging-template.csv"
+      a.download = "variant-packaging-template.xlsx"
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -60,7 +60,7 @@ export function DimensionsCsvModal({
     } catch {
       toastManager.add({
         title: "Error",
-        description: "Failed to download CSV template",
+        description: "Failed to download packaging template",
         type: "error",
       })
     }
@@ -69,12 +69,13 @@ export function DimensionsCsvModal({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0]
-      if (file.name.endsWith(".csv")) {
+      const name = file.name.toLowerCase()
+      if (name.endsWith(".csv") || name.endsWith(".xlsx")) {
         setSelectedFile(file)
       } else {
         toastManager.add({
           title: "Error",
-          description: "Please select a valid CSV file",
+          description: "Please select a valid Excel (.xlsx) or CSV file",
           type: "error",
         })
         if (fileInputRef.current) fileInputRef.current.value = ""
@@ -118,7 +119,7 @@ export function DimensionsCsvModal({
               </DialogTitle>
               <DialogDescription className="text-[15px] leading-relaxed">
                 Import weight in pounds (lb) and length, width, height in inches
-                via CSV. Variants with missing weight (0 lb) are listed first in
+                via Excel. Variants with missing weight (0 lb) are listed first in
                 the template.
               </DialogDescription>
             </DialogHeader>
@@ -134,8 +135,9 @@ export function DimensionsCsvModal({
               1. Download Template
             </div>
             <p className="mb-4 text-xs text-slate-500">
-              Get the latest template to populate weight (lb) and dimensions
-              (inches). Zero-weight variants appear first.
+              Get the latest Excel template to populate weight (lb) and
+              dimensions (inches). Columns are sized to fit; zero-weight
+              variants appear first.
             </p>
             <Button
               variant="outline"
@@ -158,18 +160,18 @@ export function DimensionsCsvModal({
             </Button>
           </div>
 
-          {/* Step 2: Upload CSV */}
+          {/* Step 2: Upload file */}
           <div className="rounded border border-primary/30 bg-primary/20 p-4">
             <div className="mb-3 flex items-center gap-2 font-medium text-slate-700">
               <Upload className="size-4 text-primary" />
-              2. Upload CSV File
+              2. Upload Excel or CSV
             </div>
             <p className="mb-4 text-xs text-slate-500">
-              Import the populated CSV file. Max file size 5MB.
+              Import the filled template (.xlsx or .csv). Max file size 5MB.
             </p>
             <input
               type="file"
-              accept=".csv"
+              accept=".xlsx,.csv"
               className="hidden"
               ref={fileInputRef}
               onChange={handleFileChange}
@@ -228,7 +230,7 @@ export function DimensionsCsvModal({
             ) : (
               <>
                 <Upload className="mr-2 size-4" />
-                Import CSV
+                Import File
               </>
             )}
           </Button>

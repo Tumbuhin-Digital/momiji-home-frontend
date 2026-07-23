@@ -25,6 +25,7 @@ import type { Order, OrderFulfillmentSegment } from "@/types/orders"
 import {
   isPreOrderLineItem,
   isShipReadyLineItem,
+  orderLineDisplayUnitPrice,
 } from "@/types/orders"
 
 interface ManageOrderModalProps {
@@ -119,6 +120,19 @@ export function ManageOrderModal({
     (s) => s.kind === "preorder_batch" || s.kind === "preorder_unbatched"
   )
 
+  // Grand total customer pays: full merchandise (unit × qty) + final shipping.
+  const merchandiseTotal = currentOrder.lineItems.reduce((sum, item) => {
+    return sum + orderLineDisplayUnitPrice(item) * (item.quantity || 0)
+  }, 0)
+  const shippingFromSegments = segments.reduce((sum, segment) => {
+    const price =
+      segment.groupShipping ?? segment.shipment?.finalShippingPrice
+    return sum + (price != null ? price : 0)
+  }, 0)
+  const shippingTotal =
+    currentOrder.secondPayment?.shippingTotal ?? shippingFromSegments
+  const totalAmount = merchandiseTotal + shippingTotal
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
@@ -196,18 +210,6 @@ export function ManageOrderModal({
                   </p>
                 )}
               </div>
-            </div>
-            <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-1">
-                <p className="text-xs text-[#959595]">Email</p>
-                {isLoading ? (
-                  <Skeleton className="h-4 w-40" />
-                ) : (
-                  <p className="text-sm text-[#4A4A4A]">
-                    {currentOrder.customer?.email || "-"}
-                  </p>
-                )}
-              </div>
               <div className="flex flex-col gap-1">
                 <p className="text-xs text-[#959595]">Address</p>
                 {isLoading ? (
@@ -223,6 +225,28 @@ export function ManageOrderModal({
                           currentOrder.shippingAddress.country
                         }, ${currentOrder.shippingAddress.zip}`
                       : "-"}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-[#959595]">Email</p>
+                {isLoading ? (
+                  <Skeleton className="h-4 w-40" />
+                ) : (
+                  <p className="text-sm text-[#4A4A4A]">
+                    {currentOrder.customer?.email || "-"}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-[#959595]">Total Amount</p>
+                {isLoading ? (
+                  <Skeleton className="h-6 w-28" />
+                ) : (
+                  <p className="text-lg font-bold text-[#2C3E50]">
+                    {formatCurrency(totalAmount)} USD
                   </p>
                 )}
               </div>

@@ -11,16 +11,25 @@ import type { FulfillmentGroup } from "@/types/orders/entities"
 
 interface FulfillmentGroupCardProps {
   fulfillment: FulfillmentGroup
+  shippingCost?: number
   onMarkDelivered?: (fulfillmentId: string) => void
   isMarkingDelivered?: boolean
 }
 
 export function FulfillmentGroupCard({
   fulfillment,
+  shippingCost,
   onMarkDelivered,
   isMarkingDelivered = false,
 }: FulfillmentGroupCardProps) {
   const isDelivered = fulfillment.status === "delivered"
+  const itemsSubtotal = fulfillment.lineItems.reduce((sum, li) => {
+    if (li.unitPrice == null) return sum
+    return sum + li.unitPrice * li.quantity
+  }, 0)
+  const hasItemsSubtotal = fulfillment.lineItems.some(
+    (li) => li.unitPrice != null
+  )
 
   return (
     <div className="rounded-xl border border-[#D9E2E8] bg-white shadow-sm">
@@ -126,6 +135,27 @@ export function FulfillmentGroupCard({
           </div>
         ))}
       </div>
+
+      {(hasItemsSubtotal || shippingCost != null) && (
+        <div className="space-y-2 border-t border-[#D9E2E8] bg-[#F8FAFB] px-4 py-3">
+          {hasItemsSubtotal && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600">Items subtotal</span>
+              <span className="font-medium text-slate-800">
+                {formatCurrency(itemsSubtotal)}
+              </span>
+            </div>
+          )}
+          {shippingCost != null && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600">Final shipping</span>
+              <span className="font-medium text-slate-800">
+                {formatCurrency(shippingCost)} USD
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {!isDelivered && onMarkDelivered && (
         <div className="flex justify-end border-t border-[#D9E2E8] px-4 py-3">

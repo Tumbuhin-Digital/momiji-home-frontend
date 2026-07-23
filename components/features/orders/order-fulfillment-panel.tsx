@@ -195,6 +195,9 @@ export function OrderFulfillmentPanel({
     ? currentStep
     : toShipReadyVisualStep(currentStep)
 
+  const finalShippingCost =
+    segment.groupShipping ?? shipment?.finalShippingPrice
+
   const panelTitle = segment.title
   const batchSubtitle =
     segment.kind === "preorder_batch" && segment.batchName
@@ -800,6 +803,15 @@ export function OrderFulfillmentPanel({
           <div className="mb-8 w-full">{renderItemContent(items[0])}</div>
         )}
 
+        {isPreOrder && finalShippingCost != null && (
+          <div className="mb-6 flex items-center justify-between rounded-lg border border-[#D9E2E8] bg-white px-4 py-3">
+            <span className="text-sm text-slate-600">Final shipping</span>
+            <span className="text-sm font-bold text-slate-900">
+              {formatCurrency(finalShippingCost)} USD
+            </span>
+          </div>
+        )}
+
         <Stepper value={visualStep} className="mb-6">
           {(isPreOrder ? preOrderSteps : shipReadySteps).map(
             ({ step, title }, idx, arr) => (
@@ -825,9 +837,9 @@ export function OrderFulfillmentPanel({
         {isPreOrder && currentStep === 1 && !isCancelled && (
           <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
             <p>
-              Step 1: open <strong>Calculate Shipping</strong> to review the
-              checkout estimate, adjust box packing, optionally recalculate the
-              current rate, and set the final shipping price from Unishippers.
+              Step 1: open <strong>Calculate Shipping</strong> to adjust box
+              packing and set the final Unishippers price. Carrier calculate is
+              optional — for LTL freight, enter the final price directly.
             </p>
           </div>
         )}
@@ -862,8 +874,9 @@ export function OrderFulfillmentPanel({
               </p>
             ) : (
               <p>
-                Open <strong>Calculate Shipping</strong> to calculate a rate and
-                set the final price before requesting second payment.
+                Open <strong>Calculate Shipping</strong> to set the final
+                shipping price (carrier calculate is optional for LTL). Then
+                request second payment for this group.
               </p>
             )}
           </div>
@@ -896,10 +909,15 @@ export function OrderFulfillmentPanel({
 
         {isPreOrder && preOrderFulfillments.length > 0 && (
           <div className="mt-4 flex flex-col gap-4">
-            {preOrderFulfillments.map((f) => (
+            {preOrderFulfillments.map((f, idx) => (
               <FulfillmentGroupCard
                 key={f.id}
                 fulfillment={f}
+                shippingCost={
+                  idx === 0 && finalShippingCost != null
+                    ? finalShippingCost
+                    : undefined
+                }
                 onMarkDelivered={handleMarkDelivered}
                 isMarkingDelivered={markingDeliveredId === f.id}
               />

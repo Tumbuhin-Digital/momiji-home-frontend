@@ -169,10 +169,11 @@ export function PreorderCalculateShippingModal({
 
   const hasCheckoutEstimate = checkoutEstimate != null
   const hasCurrentEstimate = currentEstimate != null
-  const canSave =
-    hasCheckoutEstimate ||
-    hasCurrentEstimate ||
-    shipment?.finalShippingPrice != null
+  const parsedFinalPrice = parseFloat(finalPrice)
+  const hasValidFinalPrice =
+    finalPrice !== "" && !Number.isNaN(parsedFinalPrice) && parsedFinalPrice >= 0
+  // Carrier calc is optional — LTL / freight often has no ShipStation rate.
+  const canSave = hasValidFinalPrice && totalBoxes > 0
   // Batch groups often only have a prior admin calc, not the original checkout quote.
   const priorEstimateLabel = batchId
     ? "Prior estimate"
@@ -253,10 +254,8 @@ export function PreorderCalculateShippingModal({
 
   const handleSaveAndClose = async () => {
     setSaveError(undefined)
-    if (!canSave) {
-      setSaveError(
-        "A checkout estimate or calculated rate is required before saving the final price."
-      )
+    if (totalBoxes <= 0) {
+      setSaveError("At least one shippable box is required.")
       return
     }
     const price = parseFloat(finalPrice)
@@ -446,10 +445,10 @@ export function PreorderCalculateShippingModal({
             </h4>
 
             <p className="mb-3 text-xs text-slate-500">
-              Recalculate for the current ShipStation rate with your packing
-              plan (carrier + {SHIPPING_BUFFER_PERCENT}% buffer). Labels are
-              purchased manually via Unishippers — enter the final shipping
-              price below.
+              Optionally recalculate a ShipStation ground rate for your packing
+              plan (carrier + {SHIPPING_BUFFER_PERCENT}% buffer). For LTL /
+              freight that cannot be rated automatically, skip Calculate and
+              enter the Unishippers final shipping price below.
             </p>
 
             <div className="mb-4 flex justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
@@ -477,15 +476,22 @@ export function PreorderCalculateShippingModal({
               )}
             </Button>
 
-            {(hasCheckoutEstimate || hasCurrentEstimate) && (
+            {(hasCheckoutEstimate ||
+              hasCurrentEstimate ||
+              hasValidFinalPrice) && (
               <div className="mb-4 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
-                {hasCheckoutEstimate && (
+                {hasCheckoutEstimate ? (
                   <div className="flex justify-between gap-4">
                     <span className="text-slate-600">{priorEstimateLabel}</span>
                     <span className="font-medium">
                       {formatCurrency(checkoutEstimate!)} USD
                     </span>
                   </div>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    No checkout carrier estimate (common for LTL). Enter the
+                    final freight price from Unishippers.
+                  </p>
                 )}
                 {hasCurrentEstimate && (
                   <div
@@ -531,13 +537,19 @@ export function PreorderCalculateShippingModal({
                     Last calculated: {rateCalculatedLabel}
                   </p>
                 )}
-                {finalPrice && !Number.isNaN(parseFloat(finalPrice)) && (
-                  <div className="flex justify-between gap-4 border-t border-slate-200 pt-3">
+                {hasValidFinalPrice && (
+                  <div
+                    className={
+                      hasCheckoutEstimate || hasCurrentEstimate
+                        ? "flex justify-between gap-4 border-t border-slate-200 pt-3"
+                        : "flex justify-between gap-4"
+                    }
+                  >
                     <span className="text-slate-600">
                       Final shipping (admin)
                     </span>
                     <span className="font-semibold text-slate-900">
-                      {formatCurrency(parseFloat(finalPrice))} USD
+                      {formatCurrency(parsedFinalPrice)} USD
                     </span>
                   </div>
                 )}
