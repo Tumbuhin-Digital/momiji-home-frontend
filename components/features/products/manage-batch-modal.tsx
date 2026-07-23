@@ -320,6 +320,16 @@ export function ManageBatchModal({
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <BatchQtyStepper
                       value={qtyAllocated}
+                      min={
+                        editingBatchId
+                          ? Math.max(
+                              1,
+                              sortedBatches.find(
+                                (batch) => batch.id === editingBatchId
+                              )?.qtySold ?? 1
+                            )
+                          : 1
+                      }
                       onChange={setQtyAllocated}
                       disabled={isPending}
                     />
