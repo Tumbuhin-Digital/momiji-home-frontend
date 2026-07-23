@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 
-import { AlertCircle, Package, XIcon } from "lucide-react"
+import { Package, XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -95,6 +95,16 @@ function formatAddress(order: PreorderCalculateShippingModalProps["order"]) {
   return `${addr.address1}${addr.address2 ? `, ${addr.address2}` : ""}, ${addr.city}, ${addr.province} ${addr.zip}`
 }
 
+function formatRateCalculatedAt(iso?: string): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  })
+}
+
 function initialFinalPrice(
   shipment: PreorderCalculateShippingModalProps["shipment"]
 ): string {
@@ -138,6 +148,9 @@ export function PreorderCalculateShippingModal({
   const [currentBufferAmount, setCurrentBufferAmount] = useState<
     number | undefined
   >()
+  const [rateCalculatedAt, setRateCalculatedAt] = useState<string | undefined>(
+    () => shipment?.rateCalculatedAt
+  )
   const [saveError, setSaveError] = useState<string | undefined>()
 
   const totalBoxes = useMemo(
@@ -154,13 +167,6 @@ export function PreorderCalculateShippingModal({
     }, 0)
   }, [packing, items])
 
-  const creditAmount = useMemo(() => {
-    if (checkoutEstimate == null) return 0
-    const final = parseFloat(finalPrice)
-    if (Number.isNaN(final)) return 0
-    return Math.max(0, checkoutEstimate - final)
-  }, [checkoutEstimate, finalPrice])
-
   const hasCheckoutEstimate = checkoutEstimate != null
   const hasCurrentEstimate = currentEstimate != null
   const canSave =
@@ -170,7 +176,8 @@ export function PreorderCalculateShippingModal({
   // Batch groups often only have a prior admin calc, not the original checkout quote.
   const priorEstimateLabel = batchId
     ? "Prior estimate"
-    : "Checkout estimate (UPS Ground)"
+    : "Checkout estimate — due later (UPS Ground)"
+  const rateCalculatedLabel = formatRateCalculatedAt(rateCalculatedAt)
 
   const toggleNested = (lineItemId: string, checked: boolean) => {
     setPacking((prev) =>
@@ -216,6 +223,9 @@ export function PreorderCalculateShippingModal({
       setCurrentBufferAmount(
         buffer != null && !Number.isNaN(buffer) ? buffer : undefined
       )
+      if (res.rate_calculated_at) {
+        setRateCalculatedAt(res.rate_calculated_at)
+      }
       setPacking(
         res.packing.map((p) => ({
           lineItemId: p.line_item_id,
@@ -509,7 +519,17 @@ export function PreorderCalculateShippingModal({
                           )}
                       </p>
                     )}
+                    {rateCalculatedLabel && (
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        Last calculated: {rateCalculatedLabel}
+                      </p>
+                    )}
                   </div>
+                )}
+                {!hasCurrentEstimate && rateCalculatedLabel && (
+                  <p className="text-xs text-slate-500">
+                    Last calculated: {rateCalculatedLabel}
+                  </p>
                 )}
                 {finalPrice && !Number.isNaN(parseFloat(finalPrice)) && (
                   <div className="flex justify-between gap-4 border-t border-slate-200 pt-3">
@@ -518,14 +538,6 @@ export function PreorderCalculateShippingModal({
                     </span>
                     <span className="font-semibold text-slate-900">
                       {formatCurrency(parseFloat(finalPrice))} USD
-                    </span>
-                  </div>
-                )}
-                {creditAmount > 0 && (
-                  <div className="flex justify-between gap-4 text-emerald-700">
-                    <span>Credit reference (manual)</span>
-                    <span className="font-medium">
-                      {formatCurrency(creditAmount)} USD
                     </span>
                   </div>
                 )}
@@ -568,17 +580,6 @@ export function PreorderCalculateShippingModal({
                 />
               </div>
             </div>
-
-            {creditAmount > 0 && (
-              <div className="mt-4 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-                <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                <span>
-                  Checkout estimate exceeds final by{" "}
-                  {formatCurrency(creditAmount)} — issue credit manually if
-                  applicable. No auto-refund.
-                </span>
-              </div>
-            )}
 
             {saveError && (
               <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">

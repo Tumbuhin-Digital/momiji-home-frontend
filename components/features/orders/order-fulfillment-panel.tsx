@@ -103,25 +103,33 @@ function segmentIsPreOrder(segment: OrderFulfillmentSegment): boolean {
 }
 
 function derivePreorderVisualStep(
-  segment: OrderFulfillmentSegment,
-  maxItemStep: number
+  segment: OrderFulfillmentSegment
 ): number {
-  const status = segment.secondPaymentStatus
+  const fulfillments = segment.fulfillments ?? []
   if (
-    status === "paid" ||
-    segment.shipment?.invoicePaidAt ||
-    maxItemStep >= 4
+    fulfillments.some(
+      (f) => f.status === "delivered" || Boolean(f.deliveredAt)
+    )
   ) {
-    return Math.max(maxItemStep, 4)
+    return 5
   }
-  if (
-    status === "invoiced" ||
-    segment.shipment?.invoiceSentAt ||
-    maxItemStep >= 3
-  ) {
+  if (fulfillments.length > 0) {
+    return 4
+  }
+
+  // Prefer this segment's payment/shipment state so sibling batches that share
+  // the same product line do not inherit shipped/tracking progress.
+  const status = segment.secondPaymentStatus
+  if (status === "paid" || segment.shipment?.invoicePaidAt) {
+    return 4
+  }
+  if (status === "invoiced" || segment.shipment?.invoiceSentAt) {
     return 3
   }
-  if (segment.shipment?.finalShippingPrice != null || maxItemStep >= 2) {
+  if (
+    status === "ready" ||
+    segment.shipment?.finalShippingPrice != null
+  ) {
     return 2
   }
   return 1
@@ -180,7 +188,7 @@ export function OrderFulfillmentPanel({
   )
 
   const currentStep = isPreOrder
-    ? derivePreorderVisualStep(segment, maxItemStep)
+    ? derivePreorderVisualStep(segment)
     : maxItemStep
 
   const visualStep = isPreOrder
@@ -347,14 +355,7 @@ export function OrderFulfillmentPanel({
 
   const trackingActionStep = isPreOrder ? 4 : 3
 
-  const preOrderFulfillments =
-    segment.fulfillments?.length > 0
-      ? segment.fulfillments
-      : (order.fulfillments ?? []).filter((f) =>
-          f.lineItems.some((li) =>
-            items.some((item) => item.productId === li.lineItemId)
-          )
-        )
+  const preOrderFulfillments = segment.fulfillments ?? []
 
   const hasUnfulfilledPreOrder = isPreOrder
     ? items.some((item) => {
@@ -369,7 +370,10 @@ export function OrderFulfillmentPanel({
     : false
 
   const handleFulfillConfirm = async (body: CreateFulfillmentDto) => {
-    await createFulfillment.mutateAsync(body)
+    await createFulfillment.mutateAsync({
+      ...body,
+      batch_id: segment.batchId ?? null,
+    })
     setShowFulfillModal(false)
     await queryClient.refetchQueries({
       queryKey: queryKeys.orders.detail(order.id),
@@ -469,12 +473,29 @@ export function OrderFulfillmentPanel({
                   Delivered
                 </span>
               )}
-              {item.itemStatus === "waiting_payment" && (
+              {isPreOrder &&
+                item.itemStatus !== "delivered" &&
+                (segment.secondPaymentStatus === "invoiced" ||
+                  (Boolean(shipment?.invoiceSentAt) &&
+                    !shipment?.invoicePaidAt)) && (
                 <span className="rounded-full bg-amber-50 px-3 py-0.5 text-[10px] font-bold text-amber-800">
                   Waiting for Payment
                 </span>
               )}
-              {item.itemStatus === "payment_received" && (
+              {isPreOrder &&
+                item.itemStatus !== "delivered" &&
+                (segment.secondPaymentStatus === "paid" ||
+                  Boolean(shipment?.invoicePaidAt)) && (
+                <span className="rounded-full bg-blue-50 px-3 py-0.5 text-[10px] font-bold text-blue-800">
+                  Payment Received
+                </span>
+              )}
+              {!isPreOrder && item.itemStatus === "waiting_payment" && (
+                <span className="rounded-full bg-amber-50 px-3 py-0.5 text-[10px] font-bold text-amber-800">
+                  Waiting for Payment
+                </span>
+              )}
+              {!isPreOrder && item.itemStatus === "payment_received" && (
                 <span className="rounded-full bg-blue-50 px-3 py-0.5 text-[10px] font-bold text-blue-800">
                   Payment Received
                 </span>

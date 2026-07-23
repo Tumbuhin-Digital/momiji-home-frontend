@@ -55,6 +55,7 @@ export interface PreorderShipmentDto {
   credit_amount?: string
   total_boxes: number
   total_weight_lb?: string
+  rate_calculated_at?: string
   invoice_sent_at?: string
   invoice_url?: string
   invoice_paid_at?: string
@@ -78,6 +79,7 @@ export interface CalculatePreorderShippingResponse {
   service_code: string
   currency: string
   batch_id?: string | null
+  rate_calculated_at?: string
 }
 
 export interface UpdatePreorderShippingRequest {
@@ -202,6 +204,7 @@ export interface FulfillmentDto {
   id: string
   display_id: string
   sequence_number: number
+  batch_id?: string | null
   tracking_number?: string
   tracking_url?: string
   tracking_company?: string
@@ -219,6 +222,7 @@ export interface CreateFulfillmentItemDto {
 
 export interface CreateFulfillmentDto {
   items: CreateFulfillmentItemDto[]
+  batch_id?: string | null
   tracking_number: string
   tracking_company: string
   tracking_url?: string

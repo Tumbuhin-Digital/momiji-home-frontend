@@ -97,6 +97,7 @@ export interface PreorderShipment {
   creditAmount?: number
   totalBoxes: number
   totalWeightLb?: number
+  rateCalculatedAt?: string
   invoiceSentAt?: string
   invoiceUrl?: string
   invoicePaidAt?: string
@@ -282,6 +283,7 @@ function mapShipmentDto(dto: PreorderShipmentDto): PreorderShipment {
     totalWeightLb: dto.total_weight_lb
       ? parseFloat(dto.total_weight_lb)
       : undefined,
+    rateCalculatedAt: dto.rate_calculated_at,
     invoiceSentAt: dto.invoice_sent_at,
     invoiceUrl: dto.invoice_url,
     invoicePaidAt: dto.invoice_paid_at,
