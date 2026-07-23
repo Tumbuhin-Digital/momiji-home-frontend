@@ -11,6 +11,23 @@ import type {
   VariantBatchesResponseDto,
 } from "@/types/batches"
 
+/**
+ * Path-safe variant id for /variants/:id/batches.
+ * Shopify GIDs contain "/" — encodeURIComponent turns those into %2F, which
+ * Vercel rejects with an empty 400 before the request reaches the API.
+ * Bare numeric ids avoid that and are expanded to GIDs on the backend.
+ */
+function toVariantPathParam(variantId: string): string {
+  const trimmed = variantId.trim()
+  const numeric = trimmed.includes("/")
+    ? (trimmed.split("/").pop() ?? trimmed)
+    : trimmed
+  if (/^\d+$/.test(numeric)) {
+    return numeric
+  }
+  return encodeURIComponent(trimmed)
+}
+
 function mapBatch(dto: BatchDto): Batch {
   return {
     closedAt: dto.closed_at,
@@ -40,7 +57,7 @@ async function getVariantBatches(
   variantId: string
 ): Promise<VariantBatchesResponse> {
   const response = await apiClient.get<BaseResponse<VariantBatchesResponseDto>>(
-    `/variants/${encodeURIComponent(variantId)}/batches`
+    `/variants/${toVariantPathParam(variantId)}/batches`
   )
   if (!response.data) {
     throw new Error("Failed to load variant batches")
@@ -53,7 +70,7 @@ async function createBatch(
   input: CreateBatchInput
 ): Promise<Batch> {
   const response = await apiClient.post<BaseResponse<BatchDto>>(
-    `/variants/${encodeURIComponent(variantId)}/batches`,
+    `/variants/${toVariantPathParam(variantId)}/batches`,
     input
   )
   if (!response.data) {
