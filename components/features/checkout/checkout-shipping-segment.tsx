@@ -27,6 +27,7 @@ export const LTL_SHIPPING_MESSAGE =
 
 type CheckoutShippingSegmentProps = {
   title: string
+  description?: string
   batchLabel: string
   locked?: boolean
   warehouseValue?: WarehouseCode
@@ -59,7 +60,7 @@ function WarehouseDisplay({
   if (locked) {
     return (
       <div
-        className="flex h-17.5 min-w-0 w-full items-center justify-between rounded border border-black/20 bg-white px-4 py-2"
+        className="flex h-17.5 w-full min-w-0 items-center justify-between rounded border border-black/20 bg-white px-4 py-2"
         aria-label="Ship-from warehouse (East Coast, locked)"
       >
         <div className="flex min-w-0 flex-col items-start gap-0.5">
@@ -93,7 +94,7 @@ function WarehouseDisplay({
       <SelectPrimitive.Trigger
         className={cn(
           selectTriggerVariants(),
-          "h-17.5! min-w-0 w-full rounded border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal shadow-none not-data-disabled:not-focus-visible:not-aria-invalid:not-data-pressed:before:shadow-none [[data-disabled],:focus-visible,[aria-invalid],[data-pressed]]:shadow-none"
+          "h-17.5! w-full min-w-0 rounded border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal shadow-none not-data-disabled:not-focus-visible:not-aria-invalid:not-data-pressed:before:shadow-none [[data-disabled],:focus-visible,[aria-invalid],[data-pressed]]:shadow-none"
         )}
       >
         <div className="flex w-full items-center justify-between gap-2">
@@ -207,6 +208,7 @@ function RatesPanel({
 
 export function CheckoutShippingSegment({
   title,
+  description,
   batchLabel,
   locked = false,
   warehouseValue = "east",
@@ -223,9 +225,14 @@ export function CheckoutShippingSegment({
 
   return (
     <section className="space-y-4">
-      <h2 className="mb-2 text-base font-normal text-alternate">{title}</h2>
+      <div className="space-y-1">
+        <h2 className="text-base font-normal text-alternate">{title}</h2>
+        {description ? (
+          <p className="text-sm text-alternate/70">{description}</p>
+        ) : null}
+      </div>
       <div className="flex flex-row items-stretch gap-2 lg:grid lg:grid-cols-[minmax(220px,280px)_1fr] lg:gap-4">
-        <div className="min-w-0 w-full flex-1 lg:contents">
+        <div className="w-full min-w-0 flex-1 lg:contents">
           <WarehouseDisplay
             warehouseLabel={locked ? "East Coast 3PL" : warehouseLabel}
             batchLabel={batchLabel}

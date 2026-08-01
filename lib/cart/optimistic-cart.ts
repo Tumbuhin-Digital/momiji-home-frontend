@@ -64,6 +64,7 @@ function buildCartItem(
     inventory_quantity: meta.inventory_quantity,
     unit_price: meta.unit_price,
     subtotal: subtotal.toFixed(2),
+    preorder_batch_label: existingItem?.preorder_batch_label,
   }
 
   if (fulfillmentType === "pre_order" && quantity > 0) {

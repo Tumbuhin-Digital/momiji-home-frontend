@@ -7,6 +7,7 @@ export interface CartItemDto {
   image_src: string
   inventory_quantity: number
   is_ltl?: boolean
+  preorder_batch_label?: string | null
   quantity: number
   subtotal: string
   title: string

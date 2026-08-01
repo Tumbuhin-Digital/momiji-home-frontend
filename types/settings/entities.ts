@@ -1,6 +1,7 @@
 export interface CheckoutNotes {
   dueNowNote: string
   dueLaterNote: string
+  preOrderShippingNote: string
   storeClosed: boolean
   storeClosedMessage: string
 }
@@ -8,6 +9,7 @@ export interface CheckoutNotes {
 export interface UpdateCheckoutNotesInput {
   dueNowNote: string
   dueLaterNote: string
+  preOrderShippingNote: string
   storeClosed: boolean
   storeClosedMessage: string
 }

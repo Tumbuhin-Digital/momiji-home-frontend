@@ -1,6 +1,7 @@
 export interface CheckoutNotesDto {
   due_now_note: string
   due_later_note: string
+  preorder_shipping_note: string
   store_closed: boolean
   store_closed_message: string
 }
@@ -8,6 +9,7 @@ export interface CheckoutNotesDto {
 export interface UpdateCheckoutNotesDto {
   due_now_note: string
   due_later_note: string
+  preorder_shipping_note: string
   store_closed: boolean
   store_closed_message: string
 }

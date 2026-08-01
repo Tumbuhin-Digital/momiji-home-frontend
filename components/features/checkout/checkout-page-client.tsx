@@ -733,11 +733,18 @@ export default function CheckoutPageClient() {
         return
       }
       const err = error as {
-        payload?: { error?: { code?: string; message?: string }; message?: string }
-        response?: { data?: { error?: { code?: string; message?: string }; message?: string } }
+        payload?: {
+          error?: { code?: string; message?: string }
+          message?: string
+        }
+        response?: {
+          data?: {
+            error?: { code?: string; message?: string }
+            message?: string
+          }
+        }
       }
-      const code =
-        err?.payload?.error?.code ?? err?.response?.data?.error?.code
+      const code = err?.payload?.error?.code ?? err?.response?.data?.error?.code
       const message =
         err?.payload?.error?.message ??
         err?.payload?.message ??
@@ -1186,6 +1193,10 @@ export default function CheckoutPageClient() {
               {preOrderItems.length > 0 && (
                 <CheckoutShippingSegment
                   title="Pre-Order Items"
+                  description={
+                    checkoutNotes?.preOrderShippingNote ||
+                    "You will be notified when our next shipment arrives in the US"
+                  }
                   batchLabel={preOrderBatchLabel}
                   warehouseValue={preorderOrigin}
                   onWarehouseChange={setPreorderOrigin}
@@ -1312,6 +1323,9 @@ export default function CheckoutPageClient() {
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {item.quantity}x (pcs)
+                              {item.preorder_batch_label
+                                ? ` • ${item.preorder_batch_label}`
+                                : ""}
                             </p>
                             {item.is_ltl ? (
                               <p className="text-xs leading-snug text-muted-foreground">
@@ -1346,7 +1360,7 @@ export default function CheckoutPageClient() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-alternate/60">+ Shipping</span>
-                          <span className="text-alternate/60 text-right">
+                          <span className="text-right text-alternate/60">
                             {shipReadyAllLtl ? (
                               <span className="italic">
                                 Calculated by our team
@@ -1414,7 +1428,7 @@ export default function CheckoutPageClient() {
                             <span className="text-alternate/60">
                               + Shipping (Pre-Order)
                             </span>
-                            <span className="text-alternate/60 text-right">
+                            <span className="text-right text-alternate/60">
                               {preOrderAllLtl ? (
                                 <span className="italic">
                                   Calculated by our team
@@ -1449,6 +1463,25 @@ export default function CheckoutPageClient() {
                 </div>
 
                 <div className="space-y-6">
+                  {/* Grand Total */}
+                  <div className="flex items-center justify-between border-b-2 border-alternate/40 pb-4">
+                    <h3 className="text-xl font-medium text-black uppercase sm:text-2xl">
+                      TOTAL
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      {(checkoutSummaryMutation.isPending ||
+                        isParsingAddress) && (
+                        <Loader2 className="size-5 animate-spin text-alternate/50" />
+                      )}
+                      <span className="text-xl font-medium text-black sm:text-2xl">
+                        {formatCurrency(
+                          parseFloat(summaryState.totalDueNow || "0") +
+                            parseFloat(summaryState.totalDueLater || "0")
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
                   {/* Total Due Now */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between pb-px">

@@ -52,10 +52,10 @@ export function CartSheet() {
   const pathname = usePathname()
   const router = useRouter()
 
-  const nextMonthDate = new Date()
-  nextMonthDate.setDate(1)
-  nextMonthDate.setMonth(nextMonthDate.getMonth() + 1)
-  const nextMonthName = nextMonthDate.toLocaleString("en-US", { month: "long" })
+  // const nextMonthDate = new Date()
+  // nextMonthDate.setDate(1)
+  // nextMonthDate.setMonth(nextMonthDate.getMonth() + 1)
+  // const nextMonthName = nextMonthDate.toLocaleString("en-US", { month: "long" })
 
   const isOpen = useCartStore((state) => state.isOpen)
   const setIsOpen = useCartStore((state) => state.setIsOpen)
@@ -119,11 +119,7 @@ export function CartSheet() {
       import("@/lib/cart/optimistic-cart").VariantCartMeta
     >
   ) => {
-    const meta = extractVariantMetaFromCart(
-      cartData,
-      variantId,
-      metaOverrides
-    )
+    const meta = extractVariantMetaFromCart(cartData, variantId, metaOverrides)
     if (!meta) return
     if (totalQuantity <= 0) {
       useCartStore.getState().clearAcceptedBatchDepletion(variantId)
@@ -246,7 +242,7 @@ export function CartSheet() {
               {shipReadyItems.length > 0 && (
                 <div className="flex flex-col gap-4">
                   <h3 className="font-semibold text-header sm:text-lg">
-                    ShipReady
+                    Ship-Ready
                   </h3>
                   <div className="flex flex-col gap-4">
                     {shipReadyItems.map((item) => {
@@ -309,16 +305,6 @@ export function CartSheet() {
                       )
                     })}
                   </div>
-                  <div className="flex items-center justify-between border-b-2 border-black/80 pt-2 pb-2">
-                    <span className="font-medium text-alternate uppercase">
-                      TOTAL DUE NOW
-                    </span>
-                    <span className="font-medium text-alternate">
-                      {formatCurrency(
-                        parseFloat(summary.total_ship_ready || "0")
-                      )}
-                    </span>
-                  </div>
                 </div>
               )}
 
@@ -377,14 +363,6 @@ export function CartSheet() {
                       )
                     })}
                   </div>
-                  <div className="flex items-center justify-between border-b-2 border-black/60 pt-2 pb-2">
-                    <span className="font-medium text-alternate uppercase">
-                      TOTAL DUE NOW
-                    </span>
-                    <span className="font-medium text-alternate">
-                      {formatCurrency(parseFloat(summary.total_deposit || "0"))}
-                    </span>
-                  </div>
                 </div>
               )}
             </SheetPanel>
@@ -392,36 +370,72 @@ export function CartSheet() {
 
           {allItemsLength > 0 && (
             <SheetFooter className="flex flex-col bg-popover sm:flex-col">
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between border-b border-alternate/10 pb-2">
-                  <span className="text-sm font-medium text-alternate">
-                    Total ShipReady
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between border-b-2 border-alternate py-3">
+                  <span className="font-semibold text-alternate uppercase">
+                    TOTAL
                   </span>
-                  <span className="font-medium text-alternate">
+                  <span className="font-semibold text-alternate">
                     {formatCurrency(
-                      parseFloat(summary.total_ship_ready || "0")
+                      parseFloat(summary.total_ship_ready || "0") +
+                        parseFloat(summary.total_pre_order || "0")
                     )}
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-alternate/10 pb-2">
-                  <span className="text-sm font-medium text-alternate">
-                    Total Pre-Order Deposit
-                  </span>
-                  <span className="font-medium text-alternate">
-                    {formatCurrency(parseFloat(summary.total_deposit || "0"))}
-                  </span>
-                </div>
-                <div className="flex justify-between pb-1">
-                  <span className="text-sm font-medium text-alternate">
-                    Total Balance Due {nextMonthName}
-                  </span>
+
+                <div className="flex items-center justify-between pt-3 pb-5">
+                  <span className="text-alternate">Total Due Now</span>
                   <span className="font-medium text-alternate">
                     {formatCurrency(
-                      parseFloat(summary.total_balance_due || "0")
+                      parseFloat(summary.total_charged_now || "0")
                     )}
                   </span>
+                </div>
+
+                <div className="flex flex-col gap-1.5 border-t border-alternate/15 pt-4 text-sm text-alternate">
+                  {shipReadyItems.length > 0 && (
+                    <div className="flex justify-between">
+                      <span>Total Ship Ready</span>
+                      <span>
+                        {formatCurrency(
+                          parseFloat(summary.total_ship_ready || "0")
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  {preOrderItems.length > 0 && (
+                    <>
+                      <div className="flex justify-between">
+                        <span>Total Pre-Order</span>
+                        <span>
+                          {formatCurrency(
+                            parseFloat(summary.total_pre_order || "0")
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between pl-4 text-alternate/55">
+                        <span>Deposit Due Now</span>
+                        <span>
+                          {formatCurrency(
+                            parseFloat(summary.total_deposit || "0")
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between pl-4 text-alternate/55">
+                        {/* <span>Deposit Due {nextMonthName}</span> */}
+                        <span>Deposit Due Later</span>
+                        <span>
+                          {formatCurrency(
+                            parseFloat(summary.total_balance_due || "0")
+                          )}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
+
               <div className="flex flex-col gap-2">
                 <Button
                   type="button"
@@ -434,7 +448,7 @@ export function CartSheet() {
                     Proceed To Checkout
                   </span>
                 </Button>
-                <p className="text-center text-sm text-alternate">
+                <p className="text-center text-sm text-alternate/70">
                   shipping calculated at checkout
                 </p>
               </div>
@@ -514,9 +528,7 @@ export function CartSheet() {
         productTitle={batchDepletion?.productTitle}
         title={BATCH_DEPLETED_TITLE}
         description={
-          batchDepletion
-            ? buildBatchDepletionDescription(batchDepletion)
-            : null
+          batchDepletion ? buildBatchDepletionDescription(batchDepletion) : null
         }
         isPending={flushPendingCart.isPending}
         onClose={() => {

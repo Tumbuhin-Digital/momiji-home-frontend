@@ -35,6 +35,7 @@ import { Separator } from "@/components/ui/separator"
 import { toastManager } from "@/components/ui/toast"
 
 import { useCreateManualOrder } from "@/hooks/use-manual-order"
+import { useCheckoutNotes } from "@/hooks/use-settings"
 import { useShippingRates, useValidateAddress } from "@/hooks/use-shipping"
 import { parseAddressPaste } from "@/lib/checkout/address-paste"
 import { computeManualOrderSummary } from "@/lib/manual-order/summary"
@@ -142,6 +143,7 @@ export function ManualOrderPageClient() {
   const [isParsingAddress, setIsParsingAddress] = useState(false)
   const [parsingProgress, setParsingProgress] = useState(0)
   const [successOpen, setSuccessOpen] = useState(false)
+  const { data: checkoutNotes } = useCheckoutNotes()
   const [invoiceUrl, setInvoiceUrl] = useState("")
   const [invoiceEmailSent, setInvoiceEmailSent] = useState(true)
 
@@ -721,6 +723,10 @@ export function ManualOrderPageClient() {
             {preOrder.length > 0 && (
               <CheckoutShippingSegment
                 title="Pre-Order Items"
+                description={
+                  checkoutNotes?.preOrderShippingNote ||
+                  "You will be notified when our next shipment arrives in the US"
+                }
                 batchLabel={segmentBatchLabel(
                   preOrder,
                   preOrder[0]?.batchLabel || "Pre-Order"
@@ -841,7 +847,8 @@ export function ManualOrderPageClient() {
               {formatCurrency(summary.totalDueNow)}
             </p>
             <p className="text-xs text-muted-foreground">
-              1-2 business days dispatch, UPS Ground or equivalent carrier
+              {checkoutNotes?.dueNowNote ??
+                "1-2 business days dispatch, UPS Ground or equivalent carrier"}
             </p>
           </div>
 
@@ -852,7 +859,8 @@ export function ManualOrderPageClient() {
                 {formatCurrency(summary.totalDueLater)}
               </p>
               <p className="text-xs text-muted-foreground">
-                You will be notified when our next shipment arrives in the US
+                {checkoutNotes?.dueLaterNote ??
+                  "You will be notified when our next shipment arrives in the US"}
               </p>
             </div>
           )}

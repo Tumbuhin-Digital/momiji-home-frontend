@@ -29,12 +29,15 @@ export default function SettingsClient() {
   const [draft, setDraft] = useState<{
     dueNowNote: string
     dueLaterNote: string
+    preOrderShippingNote: string
     storeClosed: boolean
     storeClosedMessage: string
   } | null>(null)
 
   const currentDueNowNote = draft?.dueNowNote ?? data?.dueNowNote ?? ""
   const currentDueLaterNote = draft?.dueLaterNote ?? data?.dueLaterNote ?? ""
+  const currentPreOrderShippingNote =
+    draft?.preOrderShippingNote ?? data?.preOrderShippingNote ?? ""
   const currentStoreClosed = draft?.storeClosed ?? data?.storeClosed ?? false
   const currentStoreClosedMessage =
     draft?.storeClosedMessage ??
@@ -43,23 +46,51 @@ export default function SettingsClient() {
 
   const isPending = updateMutation.isPending
 
-  const handleSave = async () => {
-    if (!currentDueNowNote.trim() || !currentDueLaterNote.trim()) {
+  const buildDraft = (overrides: {
+    dueNowNote?: string
+    dueLaterNote?: string
+    preOrderShippingNote?: string
+    storeClosed?: boolean
+    storeClosedMessage?: string
+  }) => ({
+    dueNowNote: overrides.dueNowNote ?? currentDueNowNote,
+    dueLaterNote: overrides.dueLaterNote ?? currentDueLaterNote,
+    preOrderShippingNote:
+      overrides.preOrderShippingNote ?? currentPreOrderShippingNote,
+    storeClosed: overrides.storeClosed ?? currentStoreClosed,
+    storeClosedMessage:
+      overrides.storeClosedMessage ?? currentStoreClosedMessage,
+  })
+
+  const notesPayload = () => ({
+    dueNowNote: currentDueNowNote.trim(),
+    dueLaterNote: currentDueLaterNote.trim(),
+    preOrderShippingNote: currentPreOrderShippingNote.trim(),
+    storeClosed: currentStoreClosed,
+    storeClosedMessage: currentStoreClosedMessage.trim(),
+  })
+
+  const validateNotes = () => {
+    if (
+      !currentDueNowNote.trim() ||
+      !currentDueLaterNote.trim() ||
+      !currentPreOrderShippingNote.trim()
+    ) {
       toastManager.add({
         title: "Error",
-        description: "Both checkout notes are required",
+        description: "All checkout notes are required",
         type: "error",
       })
-      return
+      return false
     }
+    return true
+  }
+
+  const handleSave = async () => {
+    if (!validateNotes()) return
 
     try {
-      await updateMutation.mutateAsync({
-        dueNowNote: currentDueNowNote.trim(),
-        dueLaterNote: currentDueLaterNote.trim(),
-        storeClosed: currentStoreClosed,
-        storeClosedMessage: currentStoreClosedMessage.trim(),
-      })
+      await updateMutation.mutateAsync(notesPayload())
       toastManager.add({
         title: "Saved",
         description: "Checkout notes updated successfully",
@@ -84,22 +115,10 @@ export default function SettingsClient() {
       return
     }
 
-    if (!currentDueNowNote.trim() || !currentDueLaterNote.trim()) {
-      toastManager.add({
-        title: "Error",
-        description: "Both checkout notes are required",
-        type: "error",
-      })
-      return
-    }
+    if (!validateNotes()) return
 
     try {
-      await updateMutation.mutateAsync({
-        dueNowNote: currentDueNowNote.trim(),
-        dueLaterNote: currentDueLaterNote.trim(),
-        storeClosed: currentStoreClosed,
-        storeClosedMessage: currentStoreClosedMessage.trim(),
-      })
+      await updateMutation.mutateAsync(notesPayload())
       toastManager.add({
         title: "Saved",
         description: "Store status updated successfully",
@@ -158,12 +177,7 @@ export default function SettingsClient() {
               id="store-closed"
               checked={currentStoreClosed}
               onCheckedChange={(value) =>
-                setDraft({
-                  dueNowNote: currentDueNowNote,
-                  dueLaterNote: currentDueLaterNote,
-                  storeClosed: value,
-                  storeClosedMessage: currentStoreClosedMessage,
-                })
+                setDraft(buildDraft({ storeClosed: value }))
               }
               disabled={isPending}
             />
@@ -180,12 +194,7 @@ export default function SettingsClient() {
               id="store-closed-message"
               value={currentStoreClosedMessage}
               onChange={(e) =>
-                setDraft({
-                  dueNowNote: currentDueNowNote,
-                  dueLaterNote: currentDueLaterNote,
-                  storeClosed: currentStoreClosed,
-                  storeClosedMessage: e.target.value,
-                })
+                setDraft(buildDraft({ storeClosedMessage: e.target.value }))
               }
               disabled={isPending}
               rows={3}
@@ -235,12 +244,7 @@ export default function SettingsClient() {
               id="due-now-note"
               value={currentDueNowNote}
               onChange={(e) =>
-                setDraft({
-                  dueNowNote: e.target.value,
-                  dueLaterNote: currentDueLaterNote,
-                  storeClosed: currentStoreClosed,
-                  storeClosedMessage: currentStoreClosedMessage,
-                })
+                setDraft(buildDraft({ dueNowNote: e.target.value }))
               }
               disabled={isPending}
               rows={3}
@@ -260,12 +264,7 @@ export default function SettingsClient() {
               id="due-later-note"
               value={currentDueLaterNote}
               onChange={(e) =>
-                setDraft({
-                  dueNowNote: currentDueNowNote,
-                  dueLaterNote: e.target.value,
-                  storeClosed: currentStoreClosed,
-                  storeClosedMessage: currentStoreClosedMessage,
-                })
+                setDraft(buildDraft({ dueLaterNote: e.target.value }))
               }
               disabled={isPending}
               rows={3}
@@ -275,6 +274,29 @@ export default function SettingsClient() {
             <p className="text-xs text-alternate/60">
               Shown below the Due Later amount when pre-order items are in the
               cart.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label
+              htmlFor="preorder-shipping-note"
+              className="text-sm font-medium"
+            >
+              Pre-Order Items note
+            </Label>
+            <Textarea
+              id="preorder-shipping-note"
+              value={currentPreOrderShippingNote}
+              onChange={(e) =>
+                setDraft(buildDraft({ preOrderShippingNote: e.target.value }))
+              }
+              disabled={isPending}
+              rows={3}
+              placeholder="Description shown under Pre-Order Items shipping"
+              className="resize-y text-sm"
+            />
+            <p className="text-xs text-alternate/60">
+              Shown under the Pre-Order Items heading in the shipping section.
             </p>
           </div>
 
