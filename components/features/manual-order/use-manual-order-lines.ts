@@ -27,7 +27,8 @@ function productToManualLine(product: Product, quantity = 1): ManualLine | null 
     widthCm: product.widthCm,
     heightCm: product.heightCm,
     depthCm: product.depthCm,
-    batchLabel: product.preorderCustomText,
+    batchLabel:
+      product.batchSummary?.activeBatchName || product.preorderCustomText,
   }
 }
 

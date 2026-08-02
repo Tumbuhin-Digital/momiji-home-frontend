@@ -245,8 +245,8 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
             <div className="flex flex-wrap items-center gap-1.5">
               {product.category === "pre-order" && (
                 <Badge className="h-5.5! w-fit rounded p-1 text-xs font-normal! uppercase">
-                  {product.preorderCustomText
-                    ? `PRE-ORDER ${product.preorderCustomText}`
+                  {product.batchSummary?.activeBatchName
+                    ? `PRE-ORDER ${product.batchSummary.activeBatchName}`
                     : "PRE-ORDER"}
                 </Badge>
               )}

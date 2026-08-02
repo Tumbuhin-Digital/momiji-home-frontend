@@ -1097,6 +1097,14 @@ export default function ProductsPageClient() {
           }}
           variantId={batchVariant.sku}
           productName={batchVariant.title}
+          storedLabel={(() => {
+            const liveProduct = (productsQuery.data?.data ?? []).find(
+              (product) => product.sku === batchVariant.sku
+            )
+            return liveProduct
+              ? liveProduct.preorderCustomText
+              : batchVariant.preorderCustomText
+          })()}
         />
       ) : null}
 
