@@ -249,13 +249,9 @@ export default function ProductsPageClient() {
     list.forEach((item) => {
       const key = item.shopifyProductId || item.id.split("-")[0]
       if (!groups[key]) {
-        let parentTitle = item.title
-        if (item.title.includes(" - ")) {
-          parentTitle = item.title.split(" - ")[0]
-        }
         groups[key] = {
           shopifyProductId: key,
-          title: parentTitle,
+          title: item.title,
           imageUrl: item.imageUrl,
           images: item.images || [],
           variants: [],
@@ -264,7 +260,19 @@ export default function ProductsPageClient() {
       groups[key].variants.push(item)
     })
 
-    return Object.values(groups)
+    // Multi-variant Shopify products are shown as "Parent - Option"; strip the
+    // option for the parent row. Single-SKU products often bake size into the
+    // product title itself (e.g. "... Mint Green - Extra Large") — keep it.
+    return Object.values(groups).map((group) => {
+      if (group.variants.length <= 1) {
+        return { ...group, title: group.variants[0]?.title ?? group.title }
+      }
+      const firstTitle = group.variants[0]?.title ?? group.title
+      const parentTitle = firstTitle.includes(" - ")
+        ? firstTitle.split(" - ")[0]
+        : firstTitle
+      return { ...group, title: parentTitle }
+    })
   }, [productsQuery.data])
 
   const toggleExpand = (productId: string) => {
@@ -506,7 +514,7 @@ export default function ProductsPageClient() {
               <table className="w-full min-w-250 text-left text-sm text-slate-600">
                 <thead className="sticky top-0 z-10 bg-primary text-white">
                   <tr>
-                    <th className="px-6 py-4 font-medium">Product</th>
+                    <th className="min-w-72 px-6 py-4 font-medium">Product</th>
                     <th className="px-6 py-4 font-medium">Stock (Shopify)</th>
                     <th className="px-6 py-4 font-medium">Status</th>
                     <th className="px-6 py-4 font-medium">Pre-Order Batch</th>
@@ -569,9 +577,9 @@ export default function ProductsPageClient() {
                         <Fragment key={group.shopifyProductId}>
                           {/* Parent/Main Row */}
                           <tr className="transition-colors hover:bg-slate-50/50">
-                            <td className="px-6 py-4">
-                              <div className="flex items-center justify-start gap-4">
-                                <div className="relative size-12 overflow-hidden rounded-md border border-slate-200 bg-linear-to-b from-white via-white to-black/5">
+                            <td className="min-w-72 px-6 py-4">
+                              <div className="flex items-center justify-start gap-6">
+                                <div className="relative size-12 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-linear-to-b from-white via-white to-black/5">
                                   {group.images && group.images.length > 1 ? (
                                     <DynamicImageCarousel
                                       images={group.images}
@@ -597,7 +605,7 @@ export default function ProductsPageClient() {
                                     </div>
                                   )}
                                 </div>
-                                <div className="flex min-w-0 flex-1 flex-col">
+                                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                                   <span className="font-medium text-slate-800">
                                     {group.title}
                                   </span>

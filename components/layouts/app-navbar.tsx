@@ -43,10 +43,10 @@ export function AppNavbar() {
   }
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-40 flex h-16 items-center justify-between border-b border-primary/10 bg-navbar p-4 shadow-xs backdrop-blur-md transition-all duration-300 sm:h-24 sm:px-10 sm:py-4">
-      <div className="flex flex-1">
+    <header className="fixed top-0 right-0 left-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-primary/10 bg-navbar p-4 shadow-xs backdrop-blur-md transition-all duration-300 sm:h-24 sm:gap-6 sm:px-10 sm:py-4">
+      <div className="flex min-w-0 flex-1">
         <form
-          className="hidden w-xs max-w-full shrink-0 sm:block"
+          className="hidden w-full max-w-48 shrink-0 sm:block md:max-w-56 lg:max-w-xs"
           onSubmit={handleSearchSubmit}
           role="search"
         >

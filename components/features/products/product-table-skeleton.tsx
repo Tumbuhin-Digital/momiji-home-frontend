@@ -9,9 +9,9 @@ export function ProductTableSkeleton() {
       {rows.map((index) => (
         <Fragment key={`skeleton-row-${index}`}>
           <tr className="border-b border-primary/50 bg-white last:border-0">
-            <td className="px-6 py-4">
-              <div className="flex items-center justify-start gap-4">
-                <Skeleton className="size-12 rounded-md" />
+            <td className="min-w-72 px-6 py-4">
+              <div className="flex items-center justify-start gap-6">
+                <Skeleton className="size-12 shrink-0 rounded-md" />
                 <div className="flex flex-col gap-2">
                   <Skeleton className="h-4 w-40" />
                   <Skeleton className="h-3 w-20" />
