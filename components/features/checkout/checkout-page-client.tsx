@@ -182,7 +182,7 @@ export default function CheckoutPageClient() {
   const [isParsingAddress, setIsParsingAddress] = useState(false)
   const [parsingProgress, setParsingProgress] = useState(0)
   const [hasFlushedCart, setHasFlushedCart] = useState(false)
-  const [preorderOrigin, setPreorderOrigin] = useState<WarehouseCode>("east")
+  const [preorderOrigin, setPreorderOrigin] = useState<WarehouseCode>("west")
   const [checkoutBatchDepletion, setCheckoutBatchDepletion] = useState<
     import("@/types/batches").BatchDepletion | null
   >(null)
