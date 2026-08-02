@@ -60,11 +60,8 @@ const manualOrderSchema = z.object({
   zipCode: z.string().min(1, "ZIP Code is required"),
   phone: z
     .string()
-    .optional()
-    .refine(
-      (v) => !v || /^\+1\d{10}$/.test(v),
-      "Valid US phone number is required (10 digits)"
-    ),
+    .min(1, "Phone number is required")
+    .regex(/^\+1\d{10}$/, "Valid US phone number is required (10 digits)"),
   shippingMethod: z.string().optional(),
 })
 
@@ -139,7 +136,7 @@ function LineRow({
 
 export function ManualOrderPageClient() {
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [preorderOrigin, setPreorderOrigin] = useState<WarehouseCode>("east")
+  const [preorderOrigin, setPreorderOrigin] = useState<WarehouseCode>("west")
   const [isParsingAddress, setIsParsingAddress] = useState(false)
   const [parsingProgress, setParsingProgress] = useState(0)
   const [successOpen, setSuccessOpen] = useState(false)
@@ -199,9 +196,17 @@ export function ManualOrderPageClient() {
   const ratesAddressInput = useMemo(
     () => ({
       zip: formValues.zipCode || "",
-      country: isUSCountry(formValues.country) ? "US" : formValues.country || "US",
+      country: isUSCountry(formValues.country)
+        ? "US"
+        : formValues.country || "US",
       city: formValues.city || "",
-      state: getNormalizedState(formValues.country || "US", formValues.state || "") || formValues.state || "",
+      state:
+        getNormalizedState(
+          formValues.country || "US",
+          formValues.state || ""
+        ) ||
+        formValues.state ||
+        "",
       address1: formValues.address || "",
     }),
     [
@@ -253,7 +258,9 @@ export function ManualOrderPageClient() {
     },
     {
       enabled:
-        ratesAddressReady && preOrder.length > 0 && preOrderLineItems.length > 0,
+        ratesAddressReady &&
+        preOrder.length > 0 &&
+        preOrderLineItems.length > 0,
     }
   )
 
@@ -368,7 +375,7 @@ export function ManualOrderPageClient() {
         email: values.email,
         first_name: values.firstName,
         last_name: values.lastName,
-        phone: values.phone || "",
+        phone: values.phone,
         address1: values.address,
         city: values.city,
         state: getNormalizedState(values.country, values.state),
@@ -672,8 +679,7 @@ export function ManualOrderPageClient() {
                     className="w-full border-none bg-transparent p-0 pr-10 font-inter text-base leading-[140%] font-normal text-foreground ring-0 outline-none focus-visible:ring-0 [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
                   />
                   <label htmlFor="manual-phone" className={floatingLabelClass}>
-                    Phone{" "}
-                    <span className="text-muted-foreground">(optional)</span>
+                    Phone
                   </label>
                   <div className="absolute top-1/2 right-4 -translate-y-1/2">
                     <PreviewCard>
@@ -695,8 +701,7 @@ export function ManualOrderPageClient() {
                             Phone Number Format
                           </h4>
                           <p className="text-xs text-pretty text-muted-foreground">
-                            Optional for manual orders. If provided, enter a
-                            10-digit US number. Example: 123-456-7890.
+                            Enter a 10-digit US number. Example: 123-456-7890.
                           </p>
                         </div>
                       </PreviewCardPopup>
@@ -742,151 +747,154 @@ export function ManualOrderPageClient() {
           </section>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-          <Card className="gap-1 rounded-xl border-l-4 border-black/20 bg-muted shadow-none">
-            <CardContent className="space-y-2 p-4">
-              <p className="font-medium text-alternate/80">Due Now</p>
-              <div className="space-y-0.5 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-alternate/60">Ship Ready Total</span>
-                  <span className="text-alternate/60">
-                    {formatCurrency(summary.shipReadyTotal)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-alternate/60">+ Shipping (carrier)</span>
-                  <span className="text-alternate/60">
-                    {shipReadyRatesQuery.isLoading ? (
-                      <Loader2 className="inline size-4 animate-spin" />
-                    ) : (
-                      formatCurrency(shipReadyRates?.[0]?.baseCost ?? "0")
-                    )}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-alternate/60">
-                    + Shipping buffer (10%)
-                  </span>
-                  <span className="text-alternate/60">
-                    {shipReadyRatesQuery.isLoading ? (
-                      <Loader2 className="inline size-4 animate-spin" />
-                    ) : (
-                      formatCurrency(shipReadyRates?.[0]?.bufferAmount ?? "0")
-                    )}
-                  </span>
-                </div>
-                {preOrder.length > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-alternate/60">
-                      Pre-Order - 50% Deposit
-                    </span>
-                    <span className="text-alternate/60">
-                      {formatCurrency(summary.preorderDeposit)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <Separator className="my-2 bg-black/20" />
-              <div className="flex justify-between text-alternate">
-                <span>Total</span>
-                <span>{formatCurrency(summary.totalDueNow)}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {preOrder.length > 0 && (
-            <Card className="gap-1 rounded-xl border-l-4 border-black/20 bg-muted shadow-none">
+        <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+          <div className="space-y-3 border-b border-black/12 pb-6">
+            <Card className="gap-1 rounded-xl border-l-4 border-primary bg-primary/20 shadow-none">
               <CardContent className="space-y-2 p-4">
-                <p className="font-medium text-alternate/80">Due Later</p>
-                <div className="space-y-0.5 text-sm">
+                <p className="font-medium text-alternate/80">Due Now</p>
+                <div className="space-y-0.5">
                   <div className="flex justify-between">
+                    <span className="text-alternate/60">ShipReady Total</span>
                     <span className="text-alternate/60">
-                      Pre-order - Remaining 50%
-                    </span>
-                    <span className="text-alternate/60">
-                      {formatCurrency(summary.preorderBalance)}
+                      {formatCurrency(summary.shipReadyTotal)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-alternate/60">
-                      + Shipping (carrier)
-                    </span>
-                    <span className="text-alternate/60">
-                      {preOrderRatesQuery.isLoading ? (
+                    <span className="text-alternate/60">+ Shipping</span>
+                    <span className="text-right text-alternate/60">
+                      {shipReady.length === 0 ? (
+                        formatCurrency(0)
+                      ) : shipReadyRatesQuery.isLoading ? (
                         <Loader2 className="inline size-4 animate-spin" />
+                      ) : shipReadyRates?.[0] ? (
+                        formatCurrency(shipReadyRates[0].cost)
                       ) : (
-                        formatCurrency(preOrderRates?.[0]?.baseCost ?? "0")
+                        <span className="italic">Calculated at checkout</span>
                       )}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-alternate/60">
-                      + Shipping buffer (10%)
-                    </span>
-                    <span className="text-alternate/60">
-                      {preOrderRatesQuery.isLoading ? (
-                        <Loader2 className="inline size-4 animate-spin" />
-                      ) : (
-                        formatCurrency(preOrderRates?.[0]?.bufferAmount ?? "0")
-                      )}
-                    </span>
-                  </div>
+                  {preOrder.length > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-alternate/60">
+                        Pre-Order - 50% Deposit
+                      </span>
+                      <span className="text-alternate/60">
+                        {formatCurrency(summary.preorderDeposit)}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <Separator className="my-2 bg-black/20" />
                 <div className="flex justify-between text-alternate">
                   <span>Total</span>
-                  <span>{formatCurrency(summary.totalDueLater)}</span>
+                  <span>{formatCurrency(summary.totalDueNow)}</span>
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          <div className="space-y-1 pt-2">
-            <p className="text-sm text-muted-foreground">Total Due now</p>
-            <p className="text-3xl font-semibold text-alternate">
-              {formatCurrency(summary.totalDueNow)}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {checkoutNotes?.dueNowNote ??
-                "1-2 business days dispatch, UPS Ground or equivalent carrier"}
-            </p>
+            {preOrder.length > 0 && (
+              <Card className="gap-1 rounded-xl border-l-4 border-black/20 bg-muted shadow-none">
+                <CardContent className="space-y-2 p-4">
+                  <p className="font-medium text-alternate/80">Due Later</p>
+                  <div className="space-y-0.5">
+                    <div className="flex justify-between">
+                      <span className="text-alternate/60">
+                        Pre-order - Remaining 50%
+                      </span>
+                      <span className="text-alternate/60">
+                        {formatCurrency(summary.preorderBalance)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-alternate/60">
+                        + Shipping (Pre-Order)
+                      </span>
+                      <span className="text-right text-alternate/60">
+                        {preOrderRatesQuery.isLoading ? (
+                          <Loader2 className="inline size-4 animate-spin" />
+                        ) : preOrderRates?.[0] ? (
+                          formatCurrency(preOrderRates[0].cost)
+                        ) : (
+                          formatCurrency(0)
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                  <Separator className="my-2 bg-black/20" />
+                  <div className="flex justify-between text-alternate">
+                    <span>Total</span>
+                    <span>{formatCurrency(summary.totalDueLater)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
-          {preOrder.length > 0 && (
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Due Later</p>
-              <p className="text-3xl font-semibold text-alternate">
-                {formatCurrency(summary.totalDueLater)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {checkoutNotes?.dueLaterNote ??
-                  "You will be notified when our next shipment arrives in the US"}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b-2 border-alternate/40 pb-4">
+              <h3 className="text-xl font-medium text-black uppercase sm:text-2xl">
+                TOTAL
+              </h3>
+              <span className="text-xl font-medium text-black sm:text-2xl">
+                {formatCurrency(summary.totalDueNow + summary.totalDueLater)}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between pb-px">
+                <h3 className="text-xl font-medium text-black sm:text-2xl">
+                  Total Due now
+                </h3>
+                <span className="text-xl font-medium text-black sm:text-2xl">
+                  {formatCurrency(summary.totalDueNow)}
+                </span>
+              </div>
+              <p className="text-sm text-alternate/80 sm:text-base">
+                {checkoutNotes?.dueNowNote ??
+                  "1-2 business days dispatch, UPS Ground or equivalent carrier"}
               </p>
             </div>
-          )}
 
-          <Button
-            type="submit"
-            disabled={isSubmitting || lines.length === 0}
-            className="h-14 w-full bg-[#5B7C8A] text-base font-medium text-white hover:bg-[#4d6a76]"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                Creating…
-              </>
-            ) : (
-              "CREATE INVOICE"
+            {preOrder.length > 0 && summary.totalDueLater > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-px">
+                  <h3 className="text-xl font-medium text-black sm:text-2xl">
+                    Due Later
+                  </h3>
+                  <span className="text-xl font-medium text-black sm:text-2xl">
+                    {formatCurrency(summary.totalDueLater)}
+                  </span>
+                </div>
+                <p className="text-sm text-alternate/80 sm:text-base">
+                  {checkoutNotes?.dueLaterNote ??
+                    "You will be notified when our next shipment arrives in the US"}
+                </p>
+              </div>
             )}
-          </Button>
 
-          <Link
-            href="/order-management"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-alternate"
-          >
-            <ArrowLeft className="size-4" />
-            Back to Manage Order
-          </Link>
+            <Button
+              type="submit"
+              disabled={isSubmitting || lines.length === 0}
+              className="h-14 w-full bg-[#5B7C8A] text-base font-medium text-white hover:bg-[#4d6a76]"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Creating…
+                </>
+              ) : (
+                "CREATE INVOICE"
+              )}
+            </Button>
+
+            <Link
+              href="/order-management"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-alternate"
+            >
+              <ArrowLeft className="size-4" />
+              Back to Manage Order
+            </Link>
+          </div>
         </aside>
       </form>
 
