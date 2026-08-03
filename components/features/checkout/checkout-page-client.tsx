@@ -13,11 +13,15 @@ import { Controller, useForm } from "react-hook-form"
 import { toastManager } from "@/components/ui/toast"
 import { z } from "zod"
 
-import type { CheckoutSummaryInput } from "@/types/checkout/entities"
+import type {
+  CheckoutCreateInput,
+  CheckoutSummaryInput,
+} from "@/types/checkout/entities"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Empty,
   EmptyContent,
@@ -26,6 +30,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { Label } from "@/components/ui/label"
 import { PhoneInput } from "@/components/ui/phone-input"
 import { Spinner } from "@/components/ui/spinner"
 import {
@@ -83,27 +88,131 @@ import { withShopifyWidth } from "@/lib/shopify-image"
 import { useCartStore } from "@/lib/stores/cart.store"
 import { formatCurrency } from "@/lib/utils"
 
-const checkoutSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Invalid email address"),
-  acceptsMarketing: z.boolean().optional(),
-  country: z.string().min(1, "Country is required"),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  address: z.string().min(1, "Street address is required"),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  zipCode: z.string().min(1, "ZIP Code is required"),
-  phone: z
-    .string()
-    .min(1, "Phone number is required")
-    .regex(/^\+1\d{10}$/, "Valid US phone number is required (10 digits)"),
-  shippingMethod: z.string().optional(),
-})
+const checkoutSchema = z
+  .object({
+    email: z.string().min(1, "Email is required").email("Invalid email address"),
+    acceptsMarketing: z.boolean().optional(),
+    country: z.string().min(1, "Country is required"),
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    company: z.string().optional(),
+    address: z.string().min(1, "Street address is required"),
+    city: z.string().min(1, "City is required"),
+    state: z.string().min(1, "State is required"),
+    zipCode: z.string().min(1, "ZIP Code is required"),
+    phone: z
+      .string()
+      .min(1, "Phone number is required")
+      .regex(/^\+1\d{10}$/, "Valid US phone number is required (10 digits)"),
+    shippingMethod: z.string().optional(),
+    sameAsShipping: z.boolean(),
+    billingCountry: z.string().optional(),
+    billingFirstName: z.string().optional(),
+    billingLastName: z.string().optional(),
+    billingCompany: z.string().optional(),
+    billingAddress: z.string().optional(),
+    billingCity: z.string().optional(),
+    billingState: z.string().optional(),
+    billingZipCode: z.string().optional(),
+    billingPhone: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.sameAsShipping) return
+
+    const requiredBilling: Array<{
+      key: keyof typeof data
+      message: string
+    }> = [
+      { key: "billingCountry", message: "Country is required" },
+      { key: "billingFirstName", message: "First name is required" },
+      { key: "billingLastName", message: "Last name is required" },
+      { key: "billingAddress", message: "Street address is required" },
+      { key: "billingCity", message: "City is required" },
+      { key: "billingState", message: "State is required" },
+      { key: "billingZipCode", message: "ZIP Code is required" },
+    ]
+
+    for (const field of requiredBilling) {
+      const value = data[field.key]
+      if (typeof value !== "string" || !value.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: field.message,
+          path: [field.key],
+        })
+      }
+    }
+
+    if (!data.billingPhone?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Phone number is required",
+        path: ["billingPhone"],
+      })
+    } else if (!/^\+1\d{10}$/.test(data.billingPhone)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Valid US phone number is required (10 digits)",
+        path: ["billingPhone"],
+      })
+    }
+  })
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>
 
+function buildCheckoutCreateInput(
+  values: CheckoutFormValues,
+  options: {
+    acceptBatchDepletion: boolean
+    origin?: "east" | "west"
+  }
+): CheckoutCreateInput {
+  const normalizedState = getNormalizedState(values.country, values.state)
+  const payload: CheckoutCreateInput = {
+    accept_batch_depletion: options.acceptBatchDepletion,
+    address1: values.address,
+    address_id: 0,
+    city: values.city,
+    company: values.company?.trim() || undefined,
+    country: values.country,
+    email: values.email,
+    first_name: values.firstName,
+    last_name: values.lastName,
+    phone: values.phone,
+    shipping_method: values.shippingMethod || "",
+    state: normalizedState,
+    zip: values.zipCode,
+    origin: options.origin,
+    same_as_shipping: values.sameAsShipping,
+  }
+
+  if (!values.sameAsShipping) {
+    payload.billing_first_name = values.billingFirstName
+    payload.billing_last_name = values.billingLastName
+    payload.billing_company = values.billingCompany?.trim() || undefined
+    payload.billing_address1 = values.billingAddress
+    payload.billing_city = values.billingCity
+    payload.billing_state = getNormalizedState(
+      values.billingCountry || values.country,
+      values.billingState || ""
+    )
+    payload.billing_zip = values.billingZipCode
+    payload.billing_country = values.billingCountry
+    payload.billing_phone = values.billingPhone
+  }
+
+  return payload
+}
+
 const CHECKOUT_PAYMENT_WINDOW = "momiji_shopify_checkout"
 const CHECKOUT_WINDOW_FEATURES = "noopener=no,noreferrer=no"
+
+const floatingLabelClass =
+  "pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-base text-[#737373] transition-all duration-200 group-focus-within:top-3 group-focus-within:translate-y-0 group-focus-within:text-[11px] group-has-[input:not(:placeholder-shown)]:top-3 group-has-[input:not(:placeholder-shown)]:translate-y-0 group-has-[input:not(:placeholder-shown)]:text-[11px]"
+const floatingInputClass =
+  "w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+const floatingFieldClass =
+  "group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary"
 
 function openCheckoutPaymentWindow(): Window | null {
   const win = window.open("", CHECKOUT_PAYMENT_WINDOW, CHECKOUT_WINDOW_FEATURES)
@@ -154,12 +263,23 @@ export default function CheckoutPageClient() {
       country: "United States",
       firstName: "",
       lastName: "",
+      company: "",
       address: "",
       city: "",
       state: "",
       zipCode: "",
       phone: "",
       shippingMethod: "",
+      sameAsShipping: true,
+      billingCountry: "United States",
+      billingFirstName: "",
+      billingLastName: "",
+      billingCompany: "",
+      billingAddress: "",
+      billingCity: "",
+      billingState: "",
+      billingZipCode: "",
+      billingPhone: "",
     },
   })
 
@@ -234,6 +354,23 @@ export default function CheckoutPageClient() {
       : formValues.country || "US"
 
   const isUS = isUSCountry(formValues.country || "")
+  const isBillingUS = isUSCountry(formValues.billingCountry || "")
+  const sameAsShipping = formValues.sameAsShipping !== false
+
+  const handleSameAsShippingChange = (checked: boolean) => {
+    setValue("sameAsShipping", checked, { shouldValidate: true })
+    if (!checked) {
+      setValue("billingCountry", formValues.country || "United States")
+      setValue("billingFirstName", formValues.firstName || "")
+      setValue("billingLastName", formValues.lastName || "")
+      setValue("billingCompany", formValues.company || "")
+      setValue("billingAddress", formValues.address || "")
+      setValue("billingCity", formValues.city || "")
+      setValue("billingState", formValues.state || "")
+      setValue("billingZipCode", formValues.zipCode || "")
+      setValue("billingPhone", formValues.phone || "")
+    }
+  }
   const normalizedState = getNormalizedState(
     formValues.country || "",
     formValues.state || ""
@@ -610,21 +747,12 @@ export default function CheckoutPageClient() {
 
     try {
       const { checkoutUrl, checkoutReference, expiresAt } =
-        await createCheckoutMutation.mutateAsync({
-          accept_batch_depletion: alreadyAcceptedBatchDepletion,
-          address1: values.address,
-          address_id: 0,
-          city: values.city,
-          country: values.country,
-          email: values.email,
-          first_name: values.firstName,
-          last_name: values.lastName,
-          phone: values.phone,
-          shipping_method: values.shippingMethod || "",
-          state: normalizedState,
-          zip: values.zipCode,
-          origin: preOrderItems.length > 0 ? preorderOrigin : undefined,
-        })
+        await createCheckoutMutation.mutateAsync(
+          buildCheckoutCreateInput(values, {
+            acceptBatchDepletion: alreadyAcceptedBatchDepletion,
+            origin: preOrderItems.length > 0 ? preorderOrigin : undefined,
+          })
+        )
       initiatedCheckoutReference = checkoutReference
       setCurrentCheckoutUrl(checkoutUrl)
       setCheckoutReference(checkoutReference)
@@ -692,26 +820,13 @@ export default function CheckoutPageClient() {
 
     const paymentWindow = openCheckoutPaymentWindow()
     try {
-      const normalizedPendingState = getNormalizedState(
-        pendingCheckoutValues.country,
-        pendingCheckoutValues.state
-      )
       const { checkoutUrl, checkoutReference, expiresAt } =
-        await createCheckoutMutation.mutateAsync({
-          accept_batch_depletion: true,
-          address1: pendingCheckoutValues.address,
-          address_id: 0,
-          city: pendingCheckoutValues.city,
-          country: pendingCheckoutValues.country,
-          email: pendingCheckoutValues.email,
-          first_name: pendingCheckoutValues.firstName,
-          last_name: pendingCheckoutValues.lastName,
-          phone: pendingCheckoutValues.phone,
-          shipping_method: pendingCheckoutValues.shippingMethod || "",
-          state: normalizedPendingState,
-          zip: pendingCheckoutValues.zipCode,
-          origin: preOrderItems.length > 0 ? preorderOrigin : undefined,
-        })
+        await createCheckoutMutation.mutateAsync(
+          buildCheckoutCreateInput(pendingCheckoutValues, {
+            acceptBatchDepletion: true,
+            origin: preOrderItems.length > 0 ? preorderOrigin : undefined,
+          })
+        )
       setCurrentCheckoutUrl(checkoutUrl)
       setCheckoutReference(checkoutReference)
       setIsWaitingForPayment(true)
@@ -951,6 +1066,22 @@ export default function CheckoutPageClient() {
                     </div>
                   </div>
 
+                  {/* Company */}
+                  <div>
+                    <div className={floatingFieldClass}>
+                      <input
+                        {...register("company")}
+                        id="company"
+                        type="text"
+                        placeholder=" "
+                        className={floatingInputClass}
+                      />
+                      <label htmlFor="company" className={floatingLabelClass}>
+                        Company (optional)
+                      </label>
+                    </div>
+                  </div>
+
                   {/* Address */}
                   <div>
                     <div className="group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
@@ -1175,6 +1306,291 @@ export default function CheckoutPageClient() {
                     )}
                   </div>
                 </div>
+              </section>
+
+              {/* Billing address */}
+              <section className="space-y-4">
+                <h2 className="text-2xl font-medium text-alternate">
+                  Billing address
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="sameAsShipping"
+                    checked={sameAsShipping}
+                    onCheckedChange={(checked) =>
+                      handleSameAsShippingChange(checked === true)
+                    }
+                    className="size-4.5 cursor-pointer rounded border-neutral-300 bg-white data-checked:border-primary data-checked:bg-primary data-checked:text-white"
+                  />
+                  <Label
+                    htmlFor="sameAsShipping"
+                    className="cursor-pointer text-sm font-medium text-foreground"
+                  >
+                    Same as shipping address
+                  </Label>
+                </div>
+
+                {!sameAsShipping && (
+                  <div className="space-y-4">
+                    <div>
+                      <Select
+                        value={formValues.billingCountry || "United States"}
+                        defaultValue="United States"
+                        onValueChange={(v) =>
+                          setValue("billingCountry", v || "", {
+                            shouldValidate: true,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-17.5! w-full rounded border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal">
+                          <div className="flex flex-col items-start gap-0.5">
+                            <span className="text-[11px] text-[#737373]">
+                              Country/Region
+                            </span>
+                            <SelectValue placeholder="Country/Region" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="United States">
+                            United States
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.billingCountry && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {errors.billingCountry.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <div className={floatingFieldClass}>
+                          <input
+                            {...register("billingFirstName")}
+                            id="billingFirstName"
+                            type="text"
+                            placeholder=" "
+                            className={floatingInputClass}
+                          />
+                          <label
+                            htmlFor="billingFirstName"
+                            className={floatingLabelClass}
+                          >
+                            First Name
+                          </label>
+                        </div>
+                        {errors.billingFirstName && (
+                          <p className="mt-1 text-sm text-red-500">
+                            {errors.billingFirstName.message}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <div className={floatingFieldClass}>
+                          <input
+                            {...register("billingLastName")}
+                            id="billingLastName"
+                            type="text"
+                            placeholder=" "
+                            className={floatingInputClass}
+                          />
+                          <label
+                            htmlFor="billingLastName"
+                            className={floatingLabelClass}
+                          >
+                            Last Name
+                          </label>
+                        </div>
+                        {errors.billingLastName && (
+                          <p className="mt-1 text-sm text-red-500">
+                            {errors.billingLastName.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className={floatingFieldClass}>
+                        <input
+                          {...register("billingCompany")}
+                          id="billingCompany"
+                          type="text"
+                          placeholder=" "
+                          className={floatingInputClass}
+                        />
+                        <label
+                          htmlFor="billingCompany"
+                          className={floatingLabelClass}
+                        >
+                          Company (optional)
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className={floatingFieldClass}>
+                        <input
+                          {...register("billingAddress")}
+                          id="billingAddress"
+                          type="text"
+                          placeholder=" "
+                          className={floatingInputClass}
+                        />
+                        <label
+                          htmlFor="billingAddress"
+                          className={floatingLabelClass}
+                        >
+                          Address
+                        </label>
+                      </div>
+                      {errors.billingAddress && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {errors.billingAddress.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div>
+                        <div className={floatingFieldClass}>
+                          <input
+                            {...register("billingCity")}
+                            id="billingCity"
+                            type="text"
+                            placeholder=" "
+                            className={floatingInputClass}
+                          />
+                          <label
+                            htmlFor="billingCity"
+                            className={floatingLabelClass}
+                          >
+                            City
+                          </label>
+                        </div>
+                        {errors.billingCity && (
+                          <p className="mt-1 text-sm text-red-500">
+                            {errors.billingCity.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        {isBillingUS ? (
+                          <Controller
+                            name="billingState"
+                            control={control}
+                            render={({ field }) => (
+                              <Select
+                                value={field.value}
+                                onValueChange={(v) => field.onChange(v || "")}
+                              >
+                                <SelectTrigger className="h-17.5! w-full rounded border border-black/20 bg-white px-4 py-2 font-inter text-base leading-[140%] font-normal">
+                                  <div className="flex flex-col items-start gap-0.5">
+                                    <span className="text-[11px] text-[#737373]">
+                                      State
+                                    </span>
+                                    <SelectValue placeholder="State" />
+                                  </div>
+                                </SelectTrigger>
+                                <SelectContent
+                                  className="max-h-90!"
+                                  alignItemWithTrigger={false}
+                                >
+                                  {US_STATES_LIST.map((stateOption) => (
+                                    <SelectItem
+                                      key={stateOption.value}
+                                      value={stateOption.value}
+                                    >
+                                      {stateOption.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        ) : (
+                          <div className={floatingFieldClass}>
+                            <input
+                              {...register("billingState")}
+                              id="billingState"
+                              type="text"
+                              placeholder=" "
+                              className={floatingInputClass}
+                            />
+                            <label
+                              htmlFor="billingState"
+                              className={floatingLabelClass}
+                            >
+                              State
+                            </label>
+                          </div>
+                        )}
+                        {errors.billingState && (
+                          <p className="mt-1 text-sm text-red-500">
+                            {errors.billingState.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <div className={floatingFieldClass}>
+                          <input
+                            {...register("billingZipCode")}
+                            id="billingZipCode"
+                            type="text"
+                            placeholder=" "
+                            className={floatingInputClass}
+                          />
+                          <label
+                            htmlFor="billingZipCode"
+                            className={floatingLabelClass}
+                          >
+                            ZIP Code
+                          </label>
+                        </div>
+                        {errors.billingZipCode && (
+                          <p className="mt-1 text-sm text-red-500">
+                            {errors.billingZipCode.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Controller
+                        control={control}
+                        name="billingPhone"
+                        render={({
+                          field: { value, onChange, ref, ...fieldProps },
+                        }) => (
+                          <div className="group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary">
+                            <PhoneInput
+                              {...fieldProps}
+                              id="billingPhone"
+                              ref={ref}
+                              value={value}
+                              onChange={onChange}
+                              placeholder=" "
+                              className="w-full border-none bg-transparent p-0 font-inter text-base leading-[140%] font-normal text-foreground ring-0 outline-none focus-visible:ring-0 [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                            />
+                            <label
+                              htmlFor="billingPhone"
+                              className={floatingLabelClass}
+                            >
+                              Phone
+                            </label>
+                          </div>
+                        )}
+                      />
+                      {errors.billingPhone && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {errors.billingPhone.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </section>
 
               {shipReadyItems.length > 0 && (

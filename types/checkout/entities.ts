@@ -47,6 +47,7 @@ export interface CheckoutCreateInput {
   address1?: string
   address_id?: number
   city?: string
+  company?: string
   country?: string
   email?: string
   first_name?: string
@@ -56,6 +57,16 @@ export interface CheckoutCreateInput {
   state?: string
   zip?: string
   origin?: "east" | "west"
+  same_as_shipping?: boolean
+  billing_first_name?: string
+  billing_last_name?: string
+  billing_company?: string
+  billing_address1?: string
+  billing_city?: string
+  billing_state?: string
+  billing_zip?: string
+  billing_country?: string
+  billing_phone?: string
 }
 
 export interface CheckoutCreateResult {

@@ -7,12 +7,23 @@ export interface ManualOrderCreateRequest {
   email: string
   first_name: string
   last_name: string
+  company?: string
   phone: string
   address1: string
   city: string
   state: string
   zip: string
   country: string
+  same_as_shipping?: boolean
+  billing_first_name?: string
+  billing_last_name?: string
+  billing_company?: string
+  billing_address1?: string
+  billing_city?: string
+  billing_state?: string
+  billing_zip?: string
+  billing_country?: string
+  billing_phone?: string
   shipping_method?: string
   origin?: "east" | "west"
   line_items: ManualOrderLineItemDto[]

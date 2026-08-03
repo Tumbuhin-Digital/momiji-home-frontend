@@ -18,6 +18,8 @@ import { SelectProductModal } from "@/components/features/manual-order/select-pr
 import { useManualOrderLines } from "@/components/features/manual-order/use-manual-order-lines"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import { PhoneInput } from "@/components/ui/phone-input"
 import {
   PreviewCard,
@@ -47,25 +49,127 @@ import {
   toUSStateAbbr,
 } from "@/constants/states"
 
-import type { ManualLine } from "@/types/manual-order"
+import type { ManualLine, ManualOrderCreateRequest } from "@/types/manual-order"
 
-const manualOrderSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Invalid email address"),
-  country: z.string().min(1, "Country is required"),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  address: z.string().min(1, "Street address is required"),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  zipCode: z.string().min(1, "ZIP Code is required"),
-  phone: z
-    .string()
-    .min(1, "Phone number is required")
-    .regex(/^\+1\d{10}$/, "Valid US phone number is required (10 digits)"),
-  shippingMethod: z.string().optional(),
-})
+const manualOrderSchema = z
+  .object({
+    email: z.string().min(1, "Email is required").email("Invalid email address"),
+    country: z.string().min(1, "Country is required"),
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    company: z.string().optional(),
+    address: z.string().min(1, "Street address is required"),
+    city: z.string().min(1, "City is required"),
+    state: z.string().min(1, "State is required"),
+    zipCode: z.string().min(1, "ZIP Code is required"),
+    phone: z
+      .string()
+      .min(1, "Phone number is required")
+      .regex(/^\+1\d{10}$/, "Valid US phone number is required (10 digits)"),
+    shippingMethod: z.string().optional(),
+    sameAsShipping: z.boolean(),
+    billingCountry: z.string().optional(),
+    billingFirstName: z.string().optional(),
+    billingLastName: z.string().optional(),
+    billingCompany: z.string().optional(),
+    billingAddress: z.string().optional(),
+    billingCity: z.string().optional(),
+    billingState: z.string().optional(),
+    billingZipCode: z.string().optional(),
+    billingPhone: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.sameAsShipping) return
+
+    const requiredBilling: Array<{
+      key: keyof typeof data
+      message: string
+    }> = [
+      { key: "billingCountry", message: "Country is required" },
+      { key: "billingFirstName", message: "First name is required" },
+      { key: "billingLastName", message: "Last name is required" },
+      { key: "billingAddress", message: "Street address is required" },
+      { key: "billingCity", message: "City is required" },
+      { key: "billingState", message: "State is required" },
+      { key: "billingZipCode", message: "ZIP Code is required" },
+    ]
+
+    for (const field of requiredBilling) {
+      const value = data[field.key]
+      if (typeof value !== "string" || !value.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: field.message,
+          path: [field.key],
+        })
+      }
+    }
+
+    if (!data.billingPhone?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Phone number is required",
+        path: ["billingPhone"],
+      })
+    } else if (!/^\+1\d{10}$/.test(data.billingPhone)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Valid US phone number is required (10 digits)",
+        path: ["billingPhone"],
+      })
+    }
+  })
 
 type ManualOrderFormValues = z.infer<typeof manualOrderSchema>
+
+function buildManualOrderCreateRequest(
+  values: ManualOrderFormValues,
+  options: {
+    lineItems: ManualLine[]
+    origin?: "east" | "west"
+  }
+): ManualOrderCreateRequest {
+  const country = isUSCountry(values.country) ? "US" : values.country
+  const payload: ManualOrderCreateRequest = {
+    email: values.email,
+    first_name: values.firstName,
+    last_name: values.lastName,
+    company: values.company?.trim() || undefined,
+    phone: values.phone,
+    address1: values.address,
+    city: values.city,
+    state: getNormalizedState(values.country, values.state),
+    zip: values.zipCode,
+    country,
+    same_as_shipping: values.sameAsShipping,
+    shipping_method: values.shippingMethod || undefined,
+    origin: options.origin,
+    line_items: options.lineItems.map((l) => ({
+      variant_id: l.variantId,
+      quantity: l.quantity,
+    })),
+  }
+
+  if (!values.sameAsShipping) {
+    const billingCountry = values.billingCountry || values.country
+    payload.billing_first_name = values.billingFirstName
+    payload.billing_last_name = values.billingLastName
+    payload.billing_company = values.billingCompany?.trim() || undefined
+    payload.billing_address1 = values.billingAddress
+    payload.billing_city = values.billingCity
+    payload.billing_state = getNormalizedState(
+      billingCountry,
+      values.billingState || ""
+    )
+    payload.billing_zip = values.billingZipCode
+    payload.billing_country = isUSCountry(billingCountry)
+      ? "US"
+      : billingCountry
+    payload.billing_phone = values.billingPhone
+  }
+
+  return payload
+}
 
 const floatingFieldClass =
   "group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary"
@@ -163,12 +267,23 @@ export function ManualOrderPageClient() {
       country: "United States",
       firstName: "",
       lastName: "",
+      company: "",
       address: "",
       city: "",
       state: "",
       zipCode: "",
       phone: "",
       shippingMethod: "",
+      sameAsShipping: true,
+      billingCountry: "United States",
+      billingFirstName: "",
+      billingLastName: "",
+      billingCompany: "",
+      billingAddress: "",
+      billingCity: "",
+      billingState: "",
+      billingZipCode: "",
+      billingPhone: "",
     },
   })
 
@@ -183,6 +298,22 @@ export function ManualOrderPageClient() {
   } = form
   // eslint-disable-next-line react-hooks/incompatible-library
   const formValues = watch()
+  const sameAsShipping = formValues.sameAsShipping !== false
+
+  const handleSameAsShippingChange = (checked: boolean) => {
+    setValue("sameAsShipping", checked, { shouldValidate: true })
+    if (!checked) {
+      setValue("billingCountry", formValues.country || "United States")
+      setValue("billingFirstName", formValues.firstName || "")
+      setValue("billingLastName", formValues.lastName || "")
+      setValue("billingCompany", formValues.company || "")
+      setValue("billingAddress", formValues.address || "")
+      setValue("billingCity", formValues.city || "")
+      setValue("billingState", formValues.state || "")
+      setValue("billingZipCode", formValues.zipCode || "")
+      setValue("billingPhone", formValues.phone || "")
+    }
+  }
 
   const createMutation = useCreateManualOrder()
   const validateAddress = useValidateAddress()
@@ -371,23 +502,12 @@ export function ManualOrderPageClient() {
     }
 
     try {
-      const result = await createMutation.mutateAsync({
-        email: values.email,
-        first_name: values.firstName,
-        last_name: values.lastName,
-        phone: values.phone,
-        address1: values.address,
-        city: values.city,
-        state: getNormalizedState(values.country, values.state),
-        zip: values.zipCode,
-        country: isUSCountry(values.country) ? "US" : values.country,
-        shipping_method: values.shippingMethod || undefined,
-        origin: preOrder.length > 0 ? preorderOrigin : undefined,
-        line_items: lines.map((l) => ({
-          variant_id: l.variantId,
-          quantity: l.quantity,
-        })),
-      })
+      const result = await createMutation.mutateAsync(
+        buildManualOrderCreateRequest(values, {
+          lineItems: lines,
+          origin: preOrder.length > 0 ? preorderOrigin : undefined,
+        })
+      )
 
       setInvoiceUrl(result.invoiceUrl)
       setInvoiceEmailSent(result.invoiceEmailSent)
@@ -548,6 +668,17 @@ export function ManualOrderPageClient() {
                   </p>
                 )}
               </div>
+            </div>
+            <div className={floatingFieldClass}>
+              <input
+                {...register("company")}
+                id="manual-company"
+                placeholder=" "
+                className={floatingInputClass}
+              />
+              <label htmlFor="manual-company" className={floatingLabelClass}>
+                Company (optional)
+              </label>
             </div>
           </section>
 
@@ -713,7 +844,248 @@ export function ManualOrderPageClient() {
             {errors.phone && (
               <p className="text-sm text-red-500">{errors.phone.message}</p>
             )}
+          </section>
 
+          <section className="space-y-4">
+            <h2 className="text-2xl font-medium text-alternate">
+              Billing address
+            </h2>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="manual-sameAsShipping"
+                checked={sameAsShipping}
+                onCheckedChange={(checked) =>
+                  handleSameAsShippingChange(checked === true)
+                }
+                className="size-4.5 cursor-pointer rounded border-neutral-300 bg-white data-checked:border-primary data-checked:bg-primary data-checked:text-white"
+              />
+              <Label
+                htmlFor="manual-sameAsShipping"
+                className="cursor-pointer text-sm font-medium text-foreground"
+              >
+                Same as shipping address
+              </Label>
+            </div>
+
+            {!sameAsShipping && (
+              <div className="space-y-4">
+                <Select
+                  value={formValues.billingCountry || "United States"}
+                  onValueChange={(v) =>
+                    setValue("billingCountry", v || "United States", {
+                      shouldValidate: true,
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-17.5! w-full rounded border border-black/20 bg-white px-4 py-2">
+                    <div className="flex flex-col items-start gap-0.5">
+                      <span className="text-[11px] text-[#737373]">
+                        Country/Region
+                      </span>
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="United States">United States</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.billingCountry && (
+                  <p className="text-sm text-red-500">
+                    {errors.billingCountry.message}
+                  </p>
+                )}
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <div className={floatingFieldClass}>
+                      <input
+                        {...register("billingFirstName")}
+                        id="manual-billing-first"
+                        placeholder=" "
+                        className={floatingInputClass}
+                      />
+                      <label
+                        htmlFor="manual-billing-first"
+                        className={floatingLabelClass}
+                      >
+                        First Name
+                      </label>
+                    </div>
+                    {errors.billingFirstName && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.billingFirstName.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <div className={floatingFieldClass}>
+                      <input
+                        {...register("billingLastName")}
+                        id="manual-billing-last"
+                        placeholder=" "
+                        className={floatingInputClass}
+                      />
+                      <label
+                        htmlFor="manual-billing-last"
+                        className={floatingLabelClass}
+                      >
+                        Last Name
+                      </label>
+                    </div>
+                    {errors.billingLastName && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.billingLastName.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className={floatingFieldClass}>
+                  <input
+                    {...register("billingCompany")}
+                    id="manual-billing-company"
+                    placeholder=" "
+                    className={floatingInputClass}
+                  />
+                  <label
+                    htmlFor="manual-billing-company"
+                    className={floatingLabelClass}
+                  >
+                    Company (optional)
+                  </label>
+                </div>
+
+                <div className={floatingFieldClass}>
+                  <input
+                    {...register("billingAddress")}
+                    id="manual-billing-address"
+                    placeholder=" "
+                    className={floatingInputClass}
+                  />
+                  <label
+                    htmlFor="manual-billing-address"
+                    className={floatingLabelClass}
+                  >
+                    Address
+                  </label>
+                </div>
+                {errors.billingAddress && (
+                  <p className="text-sm text-red-500">
+                    {errors.billingAddress.message}
+                  </p>
+                )}
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div>
+                    <div className={floatingFieldClass}>
+                      <input
+                        {...register("billingCity")}
+                        id="manual-billing-city"
+                        placeholder=" "
+                        className={floatingInputClass}
+                      />
+                      <label
+                        htmlFor="manual-billing-city"
+                        className={floatingLabelClass}
+                      >
+                        City
+                      </label>
+                    </div>
+                    {errors.billingCity && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.billingCity.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Select
+                      value={formValues.billingState || ""}
+                      onValueChange={(v) =>
+                        setValue("billingState", v || "", {
+                          shouldValidate: true,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-17.5! w-full rounded border border-black/20 bg-white px-4 py-2">
+                        <div className="flex flex-col items-start gap-0.5">
+                          <span className="text-[11px] text-[#737373]">
+                            State
+                          </span>
+                          <SelectValue placeholder="State" />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {US_STATES_LIST.map((s) => (
+                          <SelectItem key={s.value} value={s.value}>
+                            {s.value}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.billingState && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.billingState.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <div className={floatingFieldClass}>
+                      <input
+                        {...register("billingZipCode")}
+                        id="manual-billing-zip"
+                        placeholder=" "
+                        className={floatingInputClass}
+                      />
+                      <label
+                        htmlFor="manual-billing-zip"
+                        className={floatingLabelClass}
+                      >
+                        ZIP Code
+                      </label>
+                    </div>
+                    {errors.billingZipCode && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.billingZipCode.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <Controller
+                  name="billingPhone"
+                  control={control}
+                  render={({
+                    field: { value, onChange, ref, ...fieldProps },
+                  }) => (
+                    <div className={floatingFieldClass}>
+                      <PhoneInput
+                        {...fieldProps}
+                        id="manual-billing-phone"
+                        ref={ref}
+                        value={value}
+                        onChange={onChange}
+                        placeholder=" "
+                        className="w-full border-none bg-transparent p-0 font-inter text-base leading-[140%] font-normal text-foreground ring-0 outline-none focus-visible:ring-0 [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
+                      />
+                      <label
+                        htmlFor="manual-billing-phone"
+                        className={floatingLabelClass}
+                      >
+                        Phone
+                      </label>
+                    </div>
+                  )}
+                />
+                {errors.billingPhone && (
+                  <p className="text-sm text-red-500">
+                    {errors.billingPhone.message}
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-4">
             {shipReady.length > 0 && (
               <CheckoutShippingSegment
                 title="Ship Ready Items"

@@ -171,6 +171,19 @@ export interface OrderResponseDto {
     address1: string
     address2?: string
     city: string
+    company?: string
+    country: string
+    first_name: string
+    last_name: string
+    phone: string
+    province: string
+    zip: string
+  } | null
+  billing_address?: {
+    address1: string
+    address2?: string
+    city: string
+    company?: string
     country: string
     first_name: string
     last_name: string

@@ -201,6 +201,19 @@ export interface Order {
     address1: string
     address2?: string
     city: string
+    company?: string
+    country: string
+    firstName: string
+    lastName: string
+    phone: string
+    province: string
+    zip: string
+  } | null
+  billingAddress: {
+    address1: string
+    address2?: string
+    city: string
+    company?: string
     country: string
     firstName: string
     lastName: string
@@ -422,12 +435,27 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
           address1: dto.shipping_address.address1,
           address2: dto.shipping_address.address2,
           city: dto.shipping_address.city,
+          company: dto.shipping_address.company,
           country: dto.shipping_address.country,
           firstName: dto.shipping_address.first_name,
           lastName: dto.shipping_address.last_name,
           phone: dto.shipping_address.phone,
           province: dto.shipping_address.province,
           zip: dto.shipping_address.zip,
+        }
+      : null,
+    billingAddress: dto.billing_address
+      ? {
+          address1: dto.billing_address.address1,
+          address2: dto.billing_address.address2,
+          city: dto.billing_address.city,
+          company: dto.billing_address.company,
+          country: dto.billing_address.country,
+          firstName: dto.billing_address.first_name,
+          lastName: dto.billing_address.last_name,
+          phone: dto.billing_address.phone,
+          province: dto.billing_address.province,
+          zip: dto.billing_address.zip,
         }
       : null,
     lineItems: allItems,

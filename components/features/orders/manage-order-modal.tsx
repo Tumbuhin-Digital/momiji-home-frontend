@@ -34,16 +34,75 @@ interface ManageOrderModalProps {
   onClose: () => void
 }
 
+type OrderAddress = NonNullable<Order["shippingAddress"]>
+
+function formatPersonName(
+  firstName?: string | null,
+  lastName?: string | null
+): string {
+  return [firstName, lastName]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(" ")
+}
+
+function formatOrderAddress(address: OrderAddress): string {
+  const address1 = address.address1?.trim() || ""
+  const address2 = address.address2?.trim() || ""
+  const zip = address.zip?.trim() || ""
+
+  // Paste autofill often stores the full line in address1 already.
+  if (zip && address1.includes(zip)) {
+    return [address1, address2].filter(Boolean).join(", ")
+  }
+
+  const cityLine = [address.city, address.province, address.zip]
+    .filter(Boolean)
+    .join(", ")
+  return [address1, address2, cityLine, address.country]
+    .filter((part) => Boolean(part && String(part).trim()))
+    .join(", ")
+}
+
+function InfoField({
+  label,
+  value,
+  isLoading,
+  strong = false,
+}: {
+  label: string
+  value: string
+  isLoading: boolean
+  strong?: boolean
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1">
+      <p className="text-[11px] leading-none text-[#959595]">{label}</p>
+      {isLoading ? (
+        <Skeleton className="h-4 w-28" />
+      ) : (
+        <p
+          className={
+            strong
+              ? "text-sm leading-snug font-bold text-[#2C3E50]"
+              : "text-sm leading-snug text-[#4A4A4A]"
+          }
+        >
+          {value || "-"}
+        </p>
+      )}
+    </div>
+  )
+}
+
 function fallbackSegments(order: Order): OrderFulfillmentSegment[] {
   const shipReadyItems = order.lineItems.filter(
     (item) =>
-      isShipReadyLineItem(item) ||
-      (!item.type && order.type === "ready")
+      isShipReadyLineItem(item) || (!item.type && order.type === "ready")
   )
   const preOrderItems = order.lineItems.filter(
     (item) =>
-      isPreOrderLineItem(item) ||
-      (!item.type && order.type === "pre-order")
+      isPreOrderLineItem(item) || (!item.type && order.type === "pre-order")
   )
   const segments: OrderFulfillmentSegment[] = []
   if (shipReadyItems.length > 0) {
@@ -125,26 +184,38 @@ export function ManageOrderModal({
     return sum + orderLineDisplayUnitPrice(item) * (item.quantity || 0)
   }, 0)
   const shippingFromSegments = segments.reduce((sum, segment) => {
-    const price =
-      segment.groupShipping ?? segment.shipment?.finalShippingPrice
+    const price = segment.groupShipping ?? segment.shipment?.finalShippingPrice
     return sum + (price != null ? price : 0)
   }, 0)
   const shippingTotal =
     currentOrder.secondPayment?.shippingTotal ?? shippingFromSegments
   const totalAmount = merchandiseTotal + shippingTotal
 
+  const shippingRecipient = currentOrder.shippingAddress
+    ? formatPersonName(
+        currentOrder.shippingAddress.firstName,
+        currentOrder.shippingAddress.lastName
+      )
+    : ""
+  const billingRecipient = currentOrder.billingAddress
+    ? formatPersonName(
+        currentOrder.billingAddress.firstName,
+        currentOrder.billingAddress.lastName
+      )
+    : shippingRecipient
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="flex max-h-[90vh] w-[95vw] max-w-7xl flex-col gap-6 overflow-y-auto rounded-2xl border-none p-8 shadow-xl"
+        className="flex max-h-[90vh] w-[95vw] max-w-7xl flex-col gap-3 overflow-y-auto rounded-2xl border-none p-5 shadow-xl sm:p-6"
         showCloseButton={false}
       >
-        <DialogHeader className="flex shrink-0 flex-row items-start justify-between gap-4 p-0">
+        <DialogHeader className="flex shrink-0 flex-row items-start justify-between gap-3 p-0">
           <div className="text-left">
-            <DialogTitle className="text-[28px] font-bold tracking-tight text-[#2C3E50] sm:text-[32px]">
+            <DialogTitle className="text-2xl font-bold tracking-tight text-[#2C3E50] sm:text-[28px]">
               #{currentOrder.orderNumber}
             </DialogTitle>
-            <span className="text-sm text-[#7F8C8D] sm:text-lg">
+            <span className="text-sm text-[#7F8C8D]">
               {totalItems} items - {formatCurrency(currentOrder.totalPrice)} USD
             </span>
           </div>
@@ -163,7 +234,7 @@ export function ManageOrderModal({
         </DialogHeader>
 
         {hasPreorderSegments && currentOrder.secondPayment && (
-          <div className="rounded-lg border border-[#EBEBEB] bg-[#F8F9FA] px-4 py-3 text-sm text-[#4A4A4A]">
+          <div className="rounded-lg border border-[#EBEBEB] bg-[#F8F9FA] px-3 py-2 text-sm text-[#4A4A4A]">
             Shipping configured for{" "}
             <span className="font-semibold">
               {currentOrder.secondPayment.configuredGroups}/
@@ -182,80 +253,99 @@ export function ManageOrderModal({
           </div>
         )}
 
-        <div className="flex flex-col gap-4 rounded-xl border border-[#EBEBEB] bg-[#F4F1ED] p-6">
-          <p className="text-sm font-semibold text-[#4A4A4A]">
+        <div className="shrink-0 rounded-xl border border-[#EBEBEB] bg-[#F4F1ED] px-4 py-4">
+          <p className="mb-3 text-xs font-semibold tracking-wide text-[#4A4A4A] uppercase">
             Customer Information
           </p>
-          <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
-            <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-1">
-                <p className="text-xs text-[#959595]">Name</p>
-                {isLoading ? (
-                  <Skeleton className="h-4 w-32" />
-                ) : (
-                  <p className="text-sm text-[#4A4A4A]">
-                    {currentOrder.customer?.name || "-"}
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-col gap-1">
-                <p className="text-xs text-[#959595]">Order Date</p>
-                {isLoading ? (
-                  <Skeleton className="h-4 w-24" />
-                ) : (
-                  <p className="text-sm text-[#4A4A4A]">
-                    {currentOrder.orderDate
-                      ? format(new Date(currentOrder.orderDate), "MMMM d, yyyy")
-                      : "-"}
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-col gap-1">
-                <p className="text-xs text-[#959595]">Address</p>
-                {isLoading ? (
-                  <Skeleton className="h-4 w-64" />
-                ) : (
-                  <p className="text-sm text-[#4A4A4A]">
-                    {currentOrder.shippingAddress
-                      ? `${currentOrder.shippingAddress.address1}${
-                          currentOrder.shippingAddress.address2
-                            ? `, ${currentOrder.shippingAddress.address2}`
-                            : ""
-                        }, ${currentOrder.shippingAddress.city}, ${
-                          currentOrder.shippingAddress.country
-                        }, ${currentOrder.shippingAddress.zip}`
-                      : "-"}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-1">
-                <p className="text-xs text-[#959595]">Email</p>
-                {isLoading ? (
-                  <Skeleton className="h-4 w-40" />
-                ) : (
-                  <p className="text-sm text-[#4A4A4A]">
-                    {currentOrder.customer?.email || "-"}
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-col gap-1">
-                <p className="text-xs text-[#959595]">Total Amount</p>
-                {isLoading ? (
-                  <Skeleton className="h-6 w-28" />
-                ) : (
-                  <p className="text-lg font-bold text-[#2C3E50]">
-                    {formatCurrency(totalAmount)} USD
-                  </p>
-                )}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+            <InfoField
+              label="Customer Name"
+              value={currentOrder.customer?.name || "-"}
+              isLoading={isLoading}
+            />
+            <InfoField
+              label="Email"
+              value={currentOrder.customer?.email || "-"}
+              isLoading={isLoading}
+            />
+            <InfoField
+              label="Order Date"
+              value={
+                currentOrder.orderDate
+                  ? format(new Date(currentOrder.orderDate), "MMMM d, yyyy")
+                  : "-"
+              }
+              isLoading={isLoading}
+            />
+            <InfoField
+              label="Total Amount"
+              value={`${formatCurrency(totalAmount)} USD`}
+              isLoading={isLoading}
+              strong
+            />
+            <InfoField
+              label="Shipping Recipient"
+              value={shippingRecipient || "-"}
+              isLoading={isLoading}
+            />
+            <InfoField
+              label="Billing Name"
+              value={billingRecipient || "-"}
+              isLoading={isLoading}
+            />
+            <InfoField
+              label="Company (Ship To)"
+              value={currentOrder.shippingAddress?.company || "-"}
+              isLoading={isLoading}
+            />
+            <InfoField
+              label="Company (Bill To)"
+              value={
+                currentOrder.billingAddress?.company ||
+                currentOrder.shippingAddress?.company ||
+                "-"
+              }
+              isLoading={isLoading}
+            />
+            <InfoField
+              label="Shipping Phone"
+              value={currentOrder.shippingAddress?.phone || "-"}
+              isLoading={isLoading}
+            />
+            <InfoField
+              label="Billing Phone"
+              value={
+                currentOrder.billingAddress?.phone ||
+                currentOrder.shippingAddress?.phone ||
+                "-"
+              }
+              isLoading={isLoading}
+            />
+            <InfoField
+              label="Shipping Address"
+              value={
+                currentOrder.shippingAddress
+                  ? formatOrderAddress(currentOrder.shippingAddress)
+                  : "-"
+              }
+              isLoading={isLoading}
+            />
+            <InfoField
+              label="Billing Address"
+              value={
+                currentOrder.billingAddress
+                  ? formatOrderAddress(currentOrder.billingAddress)
+                  : currentOrder.shippingAddress
+                    ? formatOrderAddress(currentOrder.shippingAddress)
+                    : "-"
+              }
+              isLoading={isLoading}
+            />
           </div>
         </div>
 
         <div
-          className={`grid gap-6 ${
+          className={`grid min-h-0 flex-1 gap-4 ${
             segments.length > 1 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
           }`}
         >
