@@ -2018,7 +2018,7 @@ export default function CheckoutPageClient() {
             toastManager.add({
               title: "Payment Timer Expired",
               description:
-                "The time to secure your items has expired. Please try checking out again.",
+                "Your hold and payment link have expired. Please try checking out again.",
               type: "warning",
             })
           }}
