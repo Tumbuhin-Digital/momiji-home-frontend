@@ -160,9 +160,9 @@ export function ProductCatalogPageClient({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-6 xl:gap-8">
-        <header className="px-4 pt-10 pb-6 text-center sm:px-10">
-          <h1 className="text-[32px] font-normal text-header sm:text-5xl xl:text-6xl">
+      <div className="flex flex-col items-center justify-center gap-6 md:gap-8">
+        <header className="mx-auto max-w-4xl px-4 pt-10 pb-6 text-center sm:px-10">
+          <h1 className="text-[32px] font-normal text-balance text-header sm:text-4xl md:text-5xl xl:text-6xl">
             {title}
           </h1>
         </header>
@@ -185,9 +185,9 @@ export function ProductCatalogPageClient({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center gap-6 xl:gap-8">
-      <header className="px-4 pt-10 pb-6 text-center sm:px-10">
-        <h1 className="text-[32px] font-normal text-header sm:text-5xl xl:text-6xl">
+    <div className="flex flex-col items-center justify-center gap-6 md:gap-8">
+      <header className="mx-auto max-w-4xl px-4 pt-10 pb-6 text-center sm:px-10">
+        <h1 className="text-[32px] font-normal text-balance text-header sm:text-4xl md:text-5xl xl:text-6xl">
           {title}
         </h1>
       </header>
@@ -267,9 +267,7 @@ export function ProductCatalogPageClient({
         productTitle={batchDepletion?.productTitle}
         title={BATCH_DEPLETED_TITLE}
         description={
-          batchDepletion
-            ? buildBatchDepletionDescription(batchDepletion)
-            : null
+          batchDepletion ? buildBatchDepletionDescription(batchDepletion) : null
         }
         isPending={flushPendingCart.isPending}
         onClose={() => {

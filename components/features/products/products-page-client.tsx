@@ -9,8 +9,10 @@ import {
   ChevronDown,
   ChevronRight,
   Edit2,
+  Link2,
   ListFilter,
   Loader2,
+  Plus,
   RotateCcw,
   Search,
   Upload,
@@ -52,6 +54,8 @@ import dynamic from "next/dynamic"
 
 import { DimensionsCsvModal } from "@/components/features/products/dimensions-csv-modal"
 import { EditPriceModal } from "@/components/features/products/edit-price-modal"
+import { LinkSkuModal } from "@/components/features/products/link-sku-modal"
+import { AddCustomProductModal } from "@/components/features/products/add-custom-product-modal"
 import { BatchStatusCancelModal } from "@/components/features/products/batch-status-cancel-modal"
 import { ManageBatchModal } from "@/components/features/products/manage-batch-modal"
 import { ProductTableSkeleton } from "@/components/features/products/product-table-skeleton"
@@ -87,6 +91,10 @@ function statusLabel(category: ProductCategory | "mixed") {
   if (category === "inactive") return "Inactive"
   if (category === "mixed") return "Mixed"
   return category.replace("-", " ")
+}
+
+function isUnlistedStatus(status?: string) {
+  return (status || "").toLowerCase() === "unlisted"
 }
 
 function LtlStatusToggle({
@@ -175,8 +183,11 @@ export default function ProductsPageClient() {
   const [page, setPage] = useQueryState("page", pageParser)
 
   const [editModalOpen, setEditModalOpen] = useState(false)
+  const [linkSkuModalOpen, setLinkSkuModalOpen] = useState(false)
   const [csvModalOpen, setCsvModalOpen] = useState(false)
+  const [customProductModalOpen, setCustomProductModalOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [linkSkuProduct, setLinkSkuProduct] = useState<Product | null>(null)
 
   const [expandedProducts, setExpandedProducts] = useState<
     Record<string, boolean>
@@ -218,7 +229,9 @@ export default function ProductsPageClient() {
             ? "inactive"
             : filter === "mixed"
               ? "mixed"
-              : undefined,
+              : filter === "unlisted"
+                ? "unlisted"
+                : undefined,
     sort: sort || "name_asc",
     page,
     limit: 10,
@@ -243,6 +256,7 @@ export default function ProductsPageClient() {
         imageUrl: string
         images: ProductImage[]
         variants: Product[]
+        isCustom: boolean
       }
     > = {}
 
@@ -255,9 +269,13 @@ export default function ProductsPageClient() {
           imageUrl: item.imageUrl,
           images: item.images || [],
           variants: [],
+          isCustom: item.origin === "custom",
         }
       }
       groups[key].variants.push(item)
+      if (item.origin === "custom") {
+        groups[key].isCustom = true
+      }
     })
 
     // Multi-variant Shopify products are shown as "Parent - Option"; strip the
@@ -290,6 +308,11 @@ export default function ProductsPageClient() {
   const openEditModal = (product: Product) => {
     setSelectedProduct(product)
     setEditModalOpen(true)
+  }
+
+  const openLinkSkuModal = (product: Product) => {
+    setLinkSkuProduct(product)
+    setLinkSkuModalOpen(true)
   }
 
   const openBatchModal = (variant: Product) => {
@@ -382,15 +405,27 @@ export default function ProductsPageClient() {
               products in total
             </p>
           </div>
-          <Button
-            type="button"
-            size="xl"
-            onClick={() => setCsvModalOpen(true)}
-            className="h-13! w-full sm:w-fit"
-          >
-            <Upload className="size-4" />
-            Upload Packaging
-          </Button>
+          <div className="flex w-full flex-col gap-2 sm:w-fit sm:flex-row">
+            <Button
+              type="button"
+              size="xl"
+              variant="outline"
+              onClick={() => setCustomProductModalOpen(true)}
+              className="h-13! w-full sm:w-fit"
+            >
+              <Plus className="size-4" />
+              Add Custom Product
+            </Button>
+            <Button
+              type="button"
+              size="xl"
+              onClick={() => setCsvModalOpen(true)}
+              className="h-13! w-full sm:w-fit"
+            >
+              <Upload className="size-4" />
+              Upload Packaging
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col gap-6">
@@ -463,6 +498,15 @@ export default function ProductsPageClient() {
                     Inactive
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
+                    checked={filter === "unlisted"}
+                    onCheckedChange={() => {
+                      setFilter(filter === "unlisted" ? "all" : "unlisted")
+                      setPage(1)
+                    }}
+                  >
+                    Unlisted
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
                     checked={filter === "mixed"}
                     onCheckedChange={() => {
                       setFilter(filter === "mixed" ? "all" : "mixed")
@@ -511,17 +555,19 @@ export default function ProductsPageClient() {
 
           <div className="overflow-hidden rounded-t-md border border-primary/50 bg-white">
             <div className="h-[calc(100vh-280px)] overflow-x-auto overflow-y-auto">
-              <table className="w-full min-w-250 text-left text-sm text-slate-600">
+              <table className="w-full min-w-220 text-left text-sm text-slate-600">
                 <thead className="sticky top-0 z-10 bg-primary text-white">
                   <tr>
                     <th className="min-w-72 px-6 py-4 font-medium">Product</th>
                     <th className="px-6 py-4 font-medium">Stock (Shopify)</th>
-                    <th className="px-6 py-4 font-medium">Status</th>
-                    <th className="px-6 py-4 font-medium">Pre-Order Batch</th>
+                    <th className="w-36 px-3 py-4 font-medium">Status</th>
+                    <th className="w-36 px-3 py-4 font-medium">Pre-Order Batch</th>
                     <th className="px-6 py-4 font-medium">LTL Status</th>
                     <th className="px-6 py-4 font-medium">RPP Price</th>
                     <th className="px-6 py-4 font-medium">WS$ Price</th>
-                    <th className="px-6 py-4 font-medium">Action</th>
+                    <th className="px-6 py-4 font-medium whitespace-nowrap">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-primary/50">
@@ -565,6 +611,9 @@ export default function ProductsPageClient() {
                       const groupCategory = isUniformCategory
                         ? group.variants[0].category
                         : "mixed"
+                      const groupIsUnlisted = group.variants.some((v) =>
+                        isUnlistedStatus(v.status)
+                      )
 
                       const singleVariant = !hasVariants
                         ? group.variants[0]
@@ -572,11 +621,26 @@ export default function ProductsPageClient() {
                       const singleVariantSpecs = singleVariant
                         ? formatVariantSpecs(singleVariant)
                         : null
+                      const inventoryUntracked = group.variants.every(
+                        (v) => v.inventory.tracked === false
+                      )
+                      const awaitingSku = group.variants.some(
+                        (v) => v.customLinkState === "awaiting_sku"
+                      )
+                      const stockDisplay = inventoryUntracked
+                        ? "—"
+                        : String(totalStock)
 
                       return (
                         <Fragment key={group.shopifyProductId}>
                           {/* Parent/Main Row */}
-                          <tr className="transition-colors hover:bg-slate-50/50">
+                          <tr
+                            className={`transition-colors hover:bg-slate-50/50 ${
+                              group.isCustom
+                                ? "border-l-4 border-l-amber-500"
+                                : ""
+                            }`}
+                          >
                             <td className="min-w-72 px-6 py-4">
                               <div className="flex items-center justify-start gap-6">
                                 <div className="relative size-12 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-linear-to-b from-white via-white to-black/5">
@@ -606,9 +670,26 @@ export default function ProductsPageClient() {
                                   )}
                                 </div>
                                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                  <span className="font-medium text-slate-800">
-                                    {group.title}
-                                  </span>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-medium text-slate-800">
+                                      {group.title}
+                                    </span>
+                                    {group.isCustom && (
+                                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-amber-800 uppercase">
+                                        Custom
+                                      </span>
+                                    )}
+                                    {groupIsUnlisted && (
+                                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-slate-600 uppercase">
+                                        Unlisted
+                                      </span>
+                                    )}
+                                  </div>
+                                  {awaitingSku && (
+                                    <span className="text-xs text-amber-700">
+                                      Awaiting SKU
+                                    </span>
+                                  )}
                                   {singleVariantSpecs && (
                                     <span className="text-xs text-slate-400">
                                       {singleVariantSpecs}
@@ -638,14 +719,14 @@ export default function ProductsPageClient() {
                               </div>
                             </td>
                             <td className="px-6 py-4 font-medium text-slate-800">
-                              {totalStock}
+                              {stockDisplay}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-3 py-4">
                               {groupCategory === "mixed" ? (
                                 <Button
                                   variant="outline"
                                   disabled
-                                  className="h-10! w-40 justify-between border-black/20 bg-white px-3 text-left text-slate-700 opacity-100 disabled:opacity-100"
+                                  className="h-9! w-32 justify-between border-black/20 bg-white px-2 text-left text-sm text-slate-700 opacity-100 disabled:opacity-100"
                                 >
                                   <div className="flex items-center gap-2">
                                     <div
@@ -664,7 +745,7 @@ export default function ProductsPageClient() {
                                       disabled={
                                         updateProductStatusMutation.isPending
                                       }
-                                      className="h-10! w-40 justify-between border-black/20 bg-white px-3 text-left text-slate-700 hover:bg-white hover:text-slate-700 disabled:opacity-50"
+                                      className="h-9! w-32 justify-between border-black/20 bg-white px-2 text-left text-sm text-slate-700 hover:bg-white hover:text-slate-700 disabled:opacity-50"
                                     >
                                       <div className="flex items-center gap-2">
                                         <div
@@ -679,17 +760,29 @@ export default function ProductsPageClient() {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent
                                     align="start"
-                                    className="w-40 rounded-xl bg-white shadow-lg"
+                                    className="w-32 rounded-xl bg-white shadow-lg"
                                   >
                                     <DropdownMenuItem
                                       onClick={async () => {
-                                        const totalStock =
+                                        const trackedStock =
                                           group.variants.reduce(
                                             (acc, variant) =>
-                                              acc + variant.inventory.quantity,
+                                              variant.inventory.tracked ===
+                                              false
+                                                ? acc
+                                                : acc +
+                                                  variant.inventory.quantity,
                                             0
                                           )
-                                        if (totalStock === 0) {
+                                        const allUntracked =
+                                          group.variants.every(
+                                            (v) =>
+                                              v.inventory.tracked === false
+                                          )
+                                        if (
+                                          !allUntracked &&
+                                          trackedStock === 0
+                                        ) {
                                           setPendingShipReadyTarget(
                                             group.variants[0].originalId
                                           )
@@ -740,13 +833,14 @@ export default function ProductsPageClient() {
                                 </DropdownMenu>
                               )}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-3 py-4">
                               {singleVariant?.category === "pre-order" ? (
                                 hasOpenBatches(singleVariant) ? (
                                   <Button
                                     type="button"
                                     variant="outline"
-                                    className="border-[#FF8D28]/40 text-[#FF8D28]"
+                                    size="sm"
+                                    className="h-9 border-[#FF8D28]/40 px-2 text-[#FF8D28]"
                                     onClick={() =>
                                       openBatchModal(singleVariant)
                                     }
@@ -760,12 +854,13 @@ export default function ProductsPageClient() {
                                   <Button
                                     type="button"
                                     variant="outline"
-                                    className="border-[#FFB56B] text-[#FF8D28]"
+                                    size="sm"
+                                    className="h-9 border-[#FFB56B] px-2 text-[#FF8D28]"
                                     onClick={() =>
                                       openBatchModal(singleVariant)
                                     }
                                   >
-                                    No Batch - Add
+                                    No Batch
                                   </Button>
                                 )
                               ) : hasVariants &&
@@ -806,13 +901,27 @@ export default function ProductsPageClient() {
                             <td className="px-6 py-4 font-medium text-slate-800">
                               {priceRange}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-4 whitespace-nowrap">
                               {singleVariant && (
                                 <div className="flex items-center justify-start gap-2">
+                                  {singleVariant.customLinkState ===
+                                    "awaiting_sku" && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-9 border-amber-600 text-amber-700"
+                                      onClick={() =>
+                                        openLinkSkuModal(singleVariant)
+                                      }
+                                    >
+                                      <Link2 className="size-4" />
+                                      Link to Shopify
+                                    </Button>
+                                  )}
                                   <Button
                                     variant="outline"
-                                    size="xl"
-                                    className="border-primary text-primary"
+                                    size="sm"
+                                    className="h-9 border-primary text-primary"
                                     onClick={() => openEditModal(singleVariant)}
                                   >
                                     <Edit2 className="size-4" />
@@ -831,7 +940,14 @@ export default function ProductsPageClient() {
                                 variant.title.split(" - ")[1] || variant.title
                               const variantSpecs = formatVariantSpecs(variant)
                               return (
-                                <tr key={variant.id}>
+                                <tr
+                                  key={variant.id}
+                                  className={
+                                    group.isCustom
+                                      ? "border-l-4 border-l-amber-500 bg-amber-50/20"
+                                      : undefined
+                                  }
+                                >
                                   <td className="px-6 py-4 pl-12">
                                     <div className="flex items-center gap-3">
                                       <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
@@ -839,6 +955,12 @@ export default function ProductsPageClient() {
                                         <span className="text-sm text-slate-600">
                                           {variantName}
                                         </span>
+                                        {variant.customLinkState ===
+                                          "awaiting_sku" && (
+                                          <span className="text-xs text-amber-700">
+                                            Awaiting SKU
+                                          </span>
+                                        )}
                                         {variantSpecs && (
                                           <span className="text-xs text-slate-400">
                                             {variantSpecs}
@@ -848,9 +970,11 @@ export default function ProductsPageClient() {
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 text-slate-600">
-                                    {variant.inventory.quantity}
+                                    {variant.inventory.tracked === false
+                                      ? "—"
+                                      : variant.inventory.quantity}
                                   </td>
-                                  <td className="px-6 py-4">
+                                  <td className="px-3 py-4">
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
                                         <Button
@@ -858,7 +982,7 @@ export default function ProductsPageClient() {
                                           disabled={
                                             updateVariantStatusMutation.isPending
                                           }
-                                          className="h-10! w-40 justify-between border-black/20 bg-white px-3 text-left text-slate-700 hover:bg-white hover:text-slate-700 disabled:opacity-50"
+                                          className="h-9! w-32 justify-between border-black/20 bg-white px-2 text-left text-sm text-slate-700 hover:bg-white hover:text-slate-700 disabled:opacity-50"
                                         >
                                           <div className="flex items-center gap-2">
                                             <div
@@ -873,11 +997,13 @@ export default function ProductsPageClient() {
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent
                                         align="start"
-                                        className="w-40 rounded-xl bg-white shadow-lg"
+                                        className="w-32 rounded-xl bg-white shadow-lg"
                                       >
                                         <DropdownMenuItem
                                           onClick={async () => {
                                             if (
+                                              variant.inventory.tracked !==
+                                                false &&
                                               variant.inventory.quantity === 0
                                             ) {
                                               setConfirmShipReadyOpen(true)
@@ -923,13 +1049,14 @@ export default function ProductsPageClient() {
                                       </DropdownMenuContent>
                                     </DropdownMenu>
                                   </td>
-                                  <td className="px-6 py-4">
+                                  <td className="px-3 py-4">
                                     {variant.category === "pre-order" ? (
                                       hasOpenBatches(variant) ? (
                                         <Button
                                           type="button"
                                           variant="outline"
-                                          className="border-[#FF8D28]/40 text-[#FF8D28]"
+                                          size="sm"
+                                          className="h-9 border-[#FF8D28]/40 px-2 text-[#FF8D28]"
                                           onClick={() =>
                                             openBatchModal(variant)
                                           }
@@ -943,12 +1070,13 @@ export default function ProductsPageClient() {
                                         <Button
                                           type="button"
                                           variant="outline"
-                                          className="border-[#FFB56B] text-[#FF8D28]"
+                                          size="sm"
+                                          className="h-9 border-[#FFB56B] px-2 text-[#FF8D28]"
                                           onClick={() =>
                                             openBatchModal(variant)
                                           }
                                         >
-                                          No Batch - Add
+                                          No Batch
                                         </Button>
                                       )
                                     ) : (
@@ -977,12 +1105,26 @@ export default function ProductsPageClient() {
                                     {formatCurrency(effectivePrice(variant))}{" "}
                                     USD
                                   </td>
-                                  <td className="px-6 py-4">
+                                  <td className="px-4 py-4 whitespace-nowrap">
                                     <div className="flex items-center justify-start gap-2">
+                                      {variant.customLinkState ===
+                                        "awaiting_sku" && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-9 border-amber-600 text-amber-700"
+                                          onClick={() =>
+                                            openLinkSkuModal(variant)
+                                          }
+                                        >
+                                          <Link2 className="size-4" />
+                                          Link to Shopify
+                                        </Button>
+                                      )}
                                       <Button
                                         variant="outline"
-                                        size="xl"
-                                        className="border-primary text-primary"
+                                        size="sm"
+                                        className="h-9 border-primary text-primary"
                                         onClick={() => openEditModal(variant)}
                                       >
                                         <Edit2 className="size-4" />
@@ -1091,9 +1233,27 @@ export default function ProductsPageClient() {
         />
       )}
 
+      {linkSkuProduct && (
+        <LinkSkuModal
+          key={`link-sku-${linkSkuProduct.sku}`}
+          isOpen={linkSkuModalOpen}
+          onClose={() => {
+            setLinkSkuModalOpen(false)
+            setLinkSkuProduct(null)
+          }}
+          productName={linkSkuProduct.title}
+          variantId={linkSkuProduct.sku}
+        />
+      )}
+
       <DimensionsCsvModal
         isOpen={csvModalOpen}
         onClose={() => setCsvModalOpen(false)}
+      />
+
+      <AddCustomProductModal
+        isOpen={customProductModalOpen}
+        onClose={() => setCustomProductModalOpen(false)}
       />
 
       {batchVariant ? (

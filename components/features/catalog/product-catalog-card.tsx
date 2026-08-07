@@ -329,9 +329,7 @@ export function ProductCatalogCard({ product }: ProductCatalogCardProps) {
             : "Current pre-order batch has depleted"
         }
         description={
-          batchDepletion
-            ? buildBatchDepletionDescription(batchDepletion)
-            : null
+          batchDepletion ? buildBatchDepletionDescription(batchDepletion) : null
         }
         isPending={false}
         onClose={() => {

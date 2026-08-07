@@ -24,6 +24,7 @@ export interface ProductBatchSummary {
 
 export interface Product {
   category: ProductCategory
+  customLinkState?: "awaiting_sku" | "linked" | null
   description: string
   id: string
   imageUrl: string
@@ -34,8 +35,10 @@ export interface Product {
     quantity: number
     reserved: number
     syncStatus: SyncStatus
+    tracked: boolean
     warehouseLocation: string
   }
+  origin?: "shopify_sync" | "custom"
   originalId: string
   pricing: {
     basePrice: number
@@ -53,6 +56,7 @@ export interface Product {
   retailPrice?: number
   shopifyProductId: string
   sku: string
+  skuLabel?: string | null
   status: string
   title: string
   updatedAt: string

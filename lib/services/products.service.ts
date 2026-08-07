@@ -6,6 +6,7 @@ import {
 
 import type { BaseResponse, PaginatedResult } from "@/types/core"
 import type {
+  CreateCustomProductRequest,
   Product,
   ProductDto,
   ProductQueryParams,
@@ -15,6 +16,7 @@ import type {
   UpdateVariantPriceRequest,
   UpdateVariantStatusRequest,
   UpdateVariantLtlRequest,
+  LinkCustomVariantSkuRequest,
 } from "@/types/products"
 
 async function getProducts(
@@ -130,6 +132,15 @@ async function updateVariantLtl(
   await apiClient.patch<BaseResponse<void>>(`/products/variant/ltl`, input)
 }
 
+async function linkCustomVariantSku(
+  input: LinkCustomVariantSkuRequest
+): Promise<void> {
+  await apiClient.patch<BaseResponse<void>>(
+    `/products/variant/link-sku`,
+    input
+  )
+}
+
 async function getProductVariants(productId: string): Promise<Product[]> {
   const response = await apiClient.get<BaseResponse<ProductDto[]>>(
     `/products/${productId}/variants`
@@ -151,13 +162,42 @@ async function importDimensions(file: File): Promise<void> {
   })
 }
 
+async function createCustomProduct(
+  input: CreateCustomProductRequest
+): Promise<ProductDto> {
+  const formData = new FormData()
+  formData.append("title", input.title)
+  formData.append("idempotency_key", input.idempotency_key)
+  formData.append("variants", JSON.stringify(input.variants))
+  if (input.internal_note) {
+    formData.append("internal_note", input.internal_note)
+  }
+  if (input.reference_image_url) {
+    formData.append("reference_image_url", input.reference_image_url)
+  }
+  if (input.reference_image) {
+    formData.append("reference_image", input.reference_image)
+  }
+  const response = await apiClient.post<BaseResponse<ProductDto>>(
+    "/products/custom",
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  )
+  if (!response.data) {
+    throw new Error("Failed to create custom product")
+  }
+  return response.data
+}
+
 export const productsService = {
+  createCustomProduct,
   downloadDimensionsTemplate,
   getCatalogProducts,
   getProductById,
   getProductVariants,
   getProducts,
   importDimensions,
+  linkCustomVariantSku,
   updateProductBatch,
   updateProductStatus,
   updateVariantCustomText,

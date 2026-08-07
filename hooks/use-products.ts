@@ -23,6 +23,8 @@ import type {
   UpdateVariantPriceRequest,
   UpdateVariantStatusRequest,
   UpdateVariantLtlRequest,
+  CreateCustomProductRequest,
+  LinkCustomVariantSkuRequest,
 } from "@/types/products"
 
 export function useDownloadDimensionsTemplate() {
@@ -117,6 +119,8 @@ export function useInfiniteCatalogProducts(
       return undefined
     },
     initialPageParam: 1,
+    staleTime: 10_000,
+    refetchOnWindowFocus: true,
     ...options,
   })
 }
@@ -225,6 +229,30 @@ export function useUpdateVariantLtl() {
   return useMutation({
     mutationFn: (input: UpdateVariantLtlRequest) =>
       productsService.updateVariantLtl(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalog.all })
+    },
+  })
+}
+
+export function useLinkCustomVariantSku() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: LinkCustomVariantSkuRequest) =>
+      productsService.linkCustomVariantSku(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalog.all })
+    },
+  })
+}
+
+export function useCreateCustomProduct() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: CreateCustomProductRequest) =>
+      productsService.createCustomProduct(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.catalog.all })

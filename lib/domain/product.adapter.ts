@@ -59,6 +59,7 @@ export function mapProductListItemToDomain(dto: ProductDto): Product[] {
       shopifyProductId: dto.shopify_id || dto.id,
       title,
       sku: variant.id,
+      skuLabel: variant.sku ?? null,
       description: dto.description || "",
       imageUrl:
         variant.image_src || (dto.images?.length ? dto.images[0].src : ""),
@@ -69,12 +70,15 @@ export function mapProductListItemToDomain(dto: ProductDto): Product[] {
         : [{ src: variant.image_src || "", alt: title, position: 1 }],
       category,
       status: dto.status || "ACTIVE",
+      origin: dto.origin || "shopify_sync",
+      customLinkState: variant.custom_link_state ?? null,
       inventory: {
         quantity:
           variant.inventory_quantity ?? (category === "ship-ready" ? 10 : 0),
         reserved: 0,
         warehouseLocation: "DEFAULT",
         syncStatus: "synced",
+        tracked: variant.inventory_tracked !== false,
         batchQuota: batchSummary?.activeBatchRemaining ?? undefined,
         batchAvailable: batchSummary?.maxBatchOrderableQty ?? undefined,
       },
@@ -115,11 +119,13 @@ export function mapProductDetailToDomain(dto: ProductDto): Product {
       : [],
     category: "ship-ready",
     status: dto.status || "ACTIVE",
+    origin: dto.origin || "shopify_sync",
     inventory: {
       quantity: 10,
       reserved: 0,
       warehouseLocation: "DEFAULT",
       syncStatus: "synced",
+      tracked: true,
     },
     pricing: {
       basePrice: 0,

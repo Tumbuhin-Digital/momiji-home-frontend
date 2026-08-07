@@ -32,3 +32,10 @@ export interface EditPriceModalProps {
   variantId: string
   onClose: () => void
 }
+
+export interface LinkSkuModalProps {
+  isOpen: boolean
+  productName: string
+  variantId: string
+  onClose: () => void
+}

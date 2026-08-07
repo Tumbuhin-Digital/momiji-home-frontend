@@ -13,11 +13,14 @@ export interface VariantBatchSummaryDto {
 
 export interface VariantDto {
   batch_summary?: VariantBatchSummaryDto
+  custom_link_state?: "awaiting_sku" | "linked" | null
   fulfillment_type: "ship_ready" | "pre_order" | "inactive"
   id: string
   image_src: string
   inventory_quantity?: number
+  inventory_tracked?: boolean
   retail_price: string
+  sku?: string | null
   title: string
   ws_price: string
   weight_kg?: number
@@ -42,6 +45,8 @@ export interface ProductDto {
   handle: string
   id: string
   images: ProductImageDto[]
+  internal_note?: string | null
+  origin?: "shopify_sync" | "custom"
   preorder_batch_label: string
   product_type: string
   shopify_id: string
@@ -57,11 +62,12 @@ import type { CurrencyCode } from "@/types/core"
 
 export interface ProductQueryParams {
   category?: ProductCategory | "all"
-  fulfillment_type?: "ship_ready" | "pre_order" | "inactive" | "mixed"
+  fulfillment_type?: "ship_ready" | "pre_order" | "inactive" | "mixed" | "unlisted"
   limit?: number
   page?: number
   search?: string
   sort?: string
+  status?: "active" | "unlisted"
 }
 
 export type CatalogQueryParams = ProductQueryParams
@@ -115,3 +121,24 @@ export interface UpdateVariantLtlRequest {
   is_ltl: boolean
   variant_id: string
 }
+
+export interface LinkCustomVariantSkuRequest {
+  sku: string
+  variant_id: string
+}
+
+export interface CreateCustomVariantRequest {
+  rpp_price: number
+  title: string
+  ws_price: number
+}
+
+export interface CreateCustomProductRequest {
+  idempotency_key: string
+  internal_note?: string
+  reference_image?: File
+  reference_image_url?: string
+  title: string
+  variants: CreateCustomVariantRequest[]
+}
+
