@@ -69,7 +69,11 @@ const DynamicImageCarousel = dynamic(
   }
 )
 
+import { toastManager } from "@/components/ui/toast"
+
 import {
+  useForceSync,
+  useProductSyncOnVisit,
   useProducts,
   useUpdateProductStatus,
   useUpdateVariantLtl,
@@ -241,6 +245,26 @@ export default function ProductsPageClient() {
   const updateProductStatusMutation = useUpdateProductStatus()
   const updateVariantStatusMutation = useUpdateVariantStatus()
   const updateVariantLtlMutation = useUpdateVariantLtl()
+  const forceSyncMutation = useForceSync()
+  useProductSyncOnVisit()
+
+  const handleSync = async () => {
+    try {
+      await forceSyncMutation.mutateAsync()
+      toastManager.add({
+        title: "Sync complete",
+        description: "Products were refreshed from Shopify.",
+        type: "success",
+      })
+    } catch {
+      toastManager.add({
+        title: "Sync failed",
+        description:
+          "Could not sync products from Shopify. This can take up to a couple of minutes — try again.",
+        type: "error",
+      })
+    }
+  }
 
   const handleVariantLtlChange = async (variant: Product, isLtl: boolean) => {
     await updateVariantLtlMutation.mutateAsync({
@@ -442,6 +466,19 @@ export default function ProductsPageClient() {
               type="button"
               size="xl"
               variant="outline"
+              onClick={() => void handleSync()}
+              disabled={forceSyncMutation.isPending}
+              className="h-13! w-full sm:w-fit"
+            >
+              <RotateCcw
+                className={`size-4 ${forceSyncMutation.isPending ? "animate-spin" : ""}`}
+              />
+              {forceSyncMutation.isPending ? "Syncing…" : "Sync"}
+            </Button>
+            <Button
+              type="button"
+              size="xl"
+              variant="outline"
               onClick={() => setCustomProductModalOpen(true)}
               className="h-13! w-full sm:w-fit"
             >
@@ -593,7 +630,9 @@ export default function ProductsPageClient() {
                     <th className="min-w-72 px-6 py-4 font-medium">Product</th>
                     <th className="px-6 py-4 font-medium">Stock (Shopify)</th>
                     <th className="w-36 px-3 py-4 font-medium">Status</th>
-                    <th className="w-36 px-3 py-4 font-medium">Pre-Order Batch</th>
+                    <th className="w-36 px-3 py-4 font-medium">
+                      Pre-Order Batch
+                    </th>
                     <th className="px-6 py-4 font-medium">LTL Status</th>
                     <th className="px-6 py-4 font-medium">RPP Price</th>
                     <th className="px-6 py-4 font-medium">WS$ Price</th>
@@ -808,8 +847,7 @@ export default function ProductsPageClient() {
                                           )
                                         const allUntracked =
                                           group.variants.every(
-                                            (v) =>
-                                              v.inventory.tracked === false
+                                            (v) => v.inventory.tracked === false
                                           )
                                         if (
                                           !allUntracked &&

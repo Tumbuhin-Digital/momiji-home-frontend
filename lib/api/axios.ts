@@ -219,7 +219,8 @@ apiAxios.interceptors.response.use((response) => {
         url.includes("/cart/items") ||
         url.includes("/shipping/calculate") ||
         url.includes("/shipping/validate-address") ||
-        url.includes("/checkout/summary")
+        url.includes("/checkout/summary") ||
+        url.includes("/products/sync")
 
       if (!isExcluded) {
         import("@/components/ui/toast")
