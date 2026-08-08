@@ -142,3 +142,9 @@ export interface CreateCustomProductRequest {
   variants: CreateCustomVariantRequest[]
 }
 
+export interface AddProductVariantsRequest {
+  idempotency_key: string
+  product_id: string
+  variants: CreateCustomVariantRequest[]
+}
+

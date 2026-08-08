@@ -6,6 +6,7 @@ import {
 
 import type { BaseResponse, PaginatedResult } from "@/types/core"
 import type {
+  AddProductVariantsRequest,
   CreateCustomProductRequest,
   Product,
   ProductDto,
@@ -142,10 +143,10 @@ async function linkCustomVariantSku(
 }
 
 async function getProductVariants(productId: string): Promise<Product[]> {
-  const response = await apiClient.get<BaseResponse<ProductDto[]>>(
-    `/products/${productId}/variants`
+  const response = await apiClient.get<BaseResponse<ProductDto>>(
+    `/products/${productId}`
   )
-  return response.data ? response.data.flatMap(mapProductListItemToDomain) : []
+  return response.data ? mapProductListItemToDomain(response.data) : []
 }
 
 async function downloadDimensionsTemplate(): Promise<Blob> {
@@ -189,7 +190,24 @@ async function createCustomProduct(
   return response.data
 }
 
+async function addProductVariants(
+  input: AddProductVariantsRequest
+): Promise<ProductDto> {
+  const response = await apiClient.post<BaseResponse<ProductDto>>(
+    `/products/${input.product_id}/variants`,
+    {
+      idempotency_key: input.idempotency_key,
+      variants: input.variants,
+    }
+  )
+  if (!response.data) {
+    throw new Error("Failed to add product variants")
+  }
+  return response.data
+}
+
 export const productsService = {
+  addProductVariants,
   createCustomProduct,
   downloadDimensionsTemplate,
   getCatalogProducts,

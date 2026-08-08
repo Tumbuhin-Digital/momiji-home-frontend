@@ -24,6 +24,7 @@ import type {
   UpdateVariantStatusRequest,
   UpdateVariantLtlRequest,
   CreateCustomProductRequest,
+  AddProductVariantsRequest,
   LinkCustomVariantSkuRequest,
 } from "@/types/products"
 
@@ -253,6 +254,18 @@ export function useCreateCustomProduct() {
   return useMutation({
     mutationFn: (input: CreateCustomProductRequest) =>
       productsService.createCustomProduct(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalog.all })
+    },
+  })
+}
+
+export function useAddProductVariants() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: AddProductVariantsRequest) =>
+      productsService.addProductVariants(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.catalog.all })

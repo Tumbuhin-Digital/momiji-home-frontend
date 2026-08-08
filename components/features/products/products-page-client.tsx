@@ -446,7 +446,7 @@ export default function ProductsPageClient() {
               className="h-13! w-full sm:w-fit"
             >
               <Plus className="size-4" />
-              Add Custom Product
+              Add Custom / Edit Product
             </Button>
             <Button
               type="button"
