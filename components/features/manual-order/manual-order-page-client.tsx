@@ -57,7 +57,7 @@ const manualOrderSchema = z
     country: z.string().min(1, "Country is required"),
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
-    company: z.string().optional(),
+    company: z.string().min(1, "Company is required"),
     address: z.string().min(1, "Street address is required"),
     city: z.string().min(1, "City is required"),
     state: z.string().min(1, "State is required"),
@@ -88,6 +88,7 @@ const manualOrderSchema = z
       { key: "billingCountry", message: "Country is required" },
       { key: "billingFirstName", message: "First name is required" },
       { key: "billingLastName", message: "Last name is required" },
+      { key: "billingCompany", message: "Company is required" },
       { key: "billingAddress", message: "Street address is required" },
       { key: "billingCity", message: "City is required" },
       { key: "billingState", message: "State is required" },
@@ -127,6 +128,7 @@ function buildManualOrderCreateRequest(
   options: {
     lineItems: ManualLine[]
     origin?: "east" | "west"
+    shipTogether?: boolean
   }
 ): ManualOrderCreateRequest {
   const country = isUSCountry(values.country) ? "US" : values.country
@@ -134,7 +136,7 @@ function buildManualOrderCreateRequest(
     email: values.email,
     first_name: values.firstName,
     last_name: values.lastName,
-    company: values.company?.trim() || undefined,
+    company: values.company.trim(),
     phone: values.phone,
     address1: values.address,
     city: values.city,
@@ -144,6 +146,7 @@ function buildManualOrderCreateRequest(
     same_as_shipping: values.sameAsShipping,
     shipping_method: values.shippingMethod || undefined,
     origin: options.origin,
+    ship_together: options.shipTogether || undefined,
     line_items: options.lineItems.map((l) => ({
       variant_id: l.variantId,
       quantity: l.quantity,
@@ -154,7 +157,7 @@ function buildManualOrderCreateRequest(
     const billingCountry = values.billingCountry || values.country
     payload.billing_first_name = values.billingFirstName
     payload.billing_last_name = values.billingLastName
-    payload.billing_company = values.billingCompany?.trim() || undefined
+    payload.billing_company = values.billingCompany?.trim()
     payload.billing_address1 = values.billingAddress
     payload.billing_city = values.billingCity
     payload.billing_state = getNormalizedState(
@@ -241,6 +244,7 @@ function LineRow({
 export function ManualOrderPageClient() {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [preorderOrigin, setPreorderOrigin] = useState<WarehouseCode>("west")
+  const [shipTogether, setShipTogether] = useState(false)
   const [isParsingAddress, setIsParsingAddress] = useState(false)
   const [parsingProgress, setParsingProgress] = useState(0)
   const [successOpen, setSuccessOpen] = useState(false)
@@ -250,6 +254,15 @@ export function ManualOrderPageClient() {
 
   const { lines, shipReady, preOrder, addProducts, setQuantity, removeLine } =
     useManualOrderLines()
+
+  const isMixedCart = shipReady.length > 0 && preOrder.length > 0
+  const treatAllAsPreOrder = isMixedCart && shipTogether
+
+  useEffect(() => {
+    if (!isMixedCart && shipTogether) {
+      setShipTogether(false)
+    }
+  }, [isMixedCart, shipTogether])
 
   const displayShipReady = useMemo(
     () => lines.filter((l) => l.fulfillmentType === "ship_ready"),
@@ -365,6 +378,10 @@ export function ManualOrderPageClient() {
       })),
     [preOrder]
   )
+  const combinedPreOrderLineItems = useMemo(() => {
+    if (!treatAllAsPreOrder) return preOrderLineItems
+    return [...shipReadyLineItems, ...preOrderLineItems]
+  }, [treatAllAsPreOrder, shipReadyLineItems, preOrderLineItems])
 
   const shipReadyRatesQuery = useShippingRates(
     {
@@ -375,6 +392,7 @@ export function ManualOrderPageClient() {
     {
       enabled:
         ratesAddressReady &&
+        !treatAllAsPreOrder &&
         shipReady.length > 0 &&
         shipReadyLineItems.length > 0,
     }
@@ -385,13 +403,13 @@ export function ManualOrderPageClient() {
       ...ratesAddressInput,
       segment: "pre_order",
       origin: preorderOrigin,
-      line_items: preOrderLineItems,
+      line_items: combinedPreOrderLineItems,
     },
     {
       enabled:
         ratesAddressReady &&
-        preOrder.length > 0 &&
-        preOrderLineItems.length > 0,
+        combinedPreOrderLineItems.length > 0 &&
+        (treatAllAsPreOrder || preOrder.length > 0),
     }
   )
 
@@ -401,10 +419,20 @@ export function ManualOrderPageClient() {
   useEffect(() => {
     if (preOrderRates?.[0]?.serviceCode) {
       setValue("shippingMethod", preOrderRates[0].serviceCode)
-    } else if (shipReadyRates?.[0]?.serviceCode && preOrder.length === 0) {
+    } else if (
+      !treatAllAsPreOrder &&
+      shipReadyRates?.[0]?.serviceCode &&
+      preOrder.length === 0
+    ) {
       setValue("shippingMethod", shipReadyRates[0].serviceCode)
     }
-  }, [preOrderRates, shipReadyRates, preOrder.length, setValue])
+  }, [
+    preOrderRates,
+    shipReadyRates,
+    preOrder.length,
+    setValue,
+    treatAllAsPreOrder,
+  ])
 
   useEffect(() => {
     const normalized = toUSStateAbbr(formValues.state)
@@ -413,7 +441,9 @@ export function ManualOrderPageClient() {
     }
   }, [formValues.state, setValue])
 
-  const shippingCost = parseFloat(shipReadyRates?.[0]?.cost || "0") || 0
+  const shippingCost = treatAllAsPreOrder
+    ? 0
+    : parseFloat(shipReadyRates?.[0]?.cost || "0") || 0
   const shippingPreorder = parseFloat(preOrderRates?.[0]?.cost || "0") || 0
 
   const summary = useMemo(
@@ -423,8 +453,9 @@ export function ManualOrderPageClient() {
         preOrder,
         shippingCost,
         shippingPreorder,
+        shipTogether: treatAllAsPreOrder,
       }),
-    [shipReady, preOrder, shippingCost, shippingPreorder]
+    [shipReady, preOrder, shippingCost, shippingPreorder, treatAllAsPreOrder]
   )
 
   const handleAddressPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -472,7 +503,7 @@ export function ManualOrderPageClient() {
       })
       return
     }
-    if (preOrder.length > 0 && !values.shippingMethod) {
+    if ((preOrder.length > 0 || treatAllAsPreOrder) && !values.shippingMethod) {
       toastManager.add({
         title: "Shipping required",
         description: "Select a shipping method for pre-order items.",
@@ -505,7 +536,11 @@ export function ManualOrderPageClient() {
       const result = await createMutation.mutateAsync(
         buildManualOrderCreateRequest(values, {
           lineItems: lines,
-          origin: preOrder.length > 0 ? preorderOrigin : undefined,
+          origin:
+            preOrder.length > 0 || treatAllAsPreOrder
+              ? preorderOrigin
+              : undefined,
+          shipTogether: treatAllAsPreOrder,
         })
       )
 
@@ -669,16 +704,23 @@ export function ManualOrderPageClient() {
                 )}
               </div>
             </div>
-            <div className={floatingFieldClass}>
-              <input
-                {...register("company")}
-                id="manual-company"
-                placeholder=" "
-                className={floatingInputClass}
-              />
-              <label htmlFor="manual-company" className={floatingLabelClass}>
-                Company (optional)
-              </label>
+            <div>
+              <div className={floatingFieldClass}>
+                <input
+                  {...register("company")}
+                  id="manual-company"
+                  placeholder=" "
+                  className={floatingInputClass}
+                />
+                <label htmlFor="manual-company" className={floatingLabelClass}>
+                  Company
+                </label>
+              </div>
+              {errors.company && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.company.message}
+                </p>
+              )}
             </div>
           </section>
 
@@ -940,19 +982,26 @@ export function ManualOrderPageClient() {
                   </div>
                 </div>
 
-                <div className={floatingFieldClass}>
-                  <input
-                    {...register("billingCompany")}
-                    id="manual-billing-company"
-                    placeholder=" "
-                    className={floatingInputClass}
-                  />
-                  <label
-                    htmlFor="manual-billing-company"
-                    className={floatingLabelClass}
-                  >
-                    Company (optional)
-                  </label>
+                <div>
+                  <div className={floatingFieldClass}>
+                    <input
+                      {...register("billingCompany")}
+                      id="manual-billing-company"
+                      placeholder=" "
+                      className={floatingInputClass}
+                    />
+                    <label
+                      htmlFor="manual-billing-company"
+                      className={floatingLabelClass}
+                    >
+                      Company
+                    </label>
+                  </div>
+                  {errors.billingCompany && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.billingCompany.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className={floatingFieldClass}>
@@ -1086,7 +1135,44 @@ export function ManualOrderPageClient() {
           </section>
 
           <section className="space-y-4">
-            {shipReady.length > 0 && (
+            {isMixedCart && (
+              <div
+                role="button"
+                tabIndex={0}
+                aria-pressed={shipTogether}
+                onClick={() => setShipTogether((prev) => !prev)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault()
+                    setShipTogether((prev) => !prev)
+                  }
+                }}
+                className="cursor-pointer rounded-lg border border-black/10 bg-black/[0.02] p-4 transition-colors hover:border-black/20 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              >
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="manualShipTogether"
+                    checked={shipTogether}
+                    onCheckedChange={(checked) =>
+                      setShipTogether(checked === true)
+                    }
+                    onClick={(event) => event.stopPropagation()}
+                    className="mt-0.5 size-4.5 cursor-pointer rounded border-neutral-300"
+                  />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium leading-snug">
+                      Ship all items together with pre-order batch
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      All items are charged as pre-order (50% deposit now).
+                      Ship-ready stock and Shopify inventory are not reserved.
+                      Shipping is billed with the second payment.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {shipReady.length > 0 && !treatAllAsPreOrder && (
               <CheckoutShippingSegment
                 title="Ship Ready Items"
                 batchLabel={segmentBatchLabel(shipReady, "Ship Ready")}
@@ -1097,16 +1183,26 @@ export function ManualOrderPageClient() {
                 rates={shipReadyRates}
               />
             )}
-            {preOrder.length > 0 && (
+            {(preOrder.length > 0 || treatAllAsPreOrder) && (
               <CheckoutShippingSegment
-                title="Pre-Order Items"
+                title={
+                  treatAllAsPreOrder
+                    ? "All Items (Ship Together)"
+                    : "Pre-Order Items"
+                }
                 description={
-                  checkoutNotes?.preOrderShippingNote ||
-                  "You will be notified when our next shipment arrives in the US"
+                  treatAllAsPreOrder
+                    ? "All items ship together with your pre-order batch. Shipping is billed with the second payment."
+                    : checkoutNotes?.preOrderShippingNote ||
+                      "You will be notified when our next shipment arrives in the US"
                 }
                 batchLabel={segmentBatchLabel(
-                  preOrder,
-                  preOrder[0]?.batchLabel || "Pre-Order"
+                  treatAllAsPreOrder
+                    ? [...shipReady, ...preOrder]
+                    : preOrder,
+                  treatAllAsPreOrder
+                    ? "Combined Pre-Order"
+                    : preOrder[0]?.batchLabel || "Pre-Order"
                 )}
                 warehouseValue={preorderOrigin}
                 onWarehouseChange={setPreorderOrigin}
@@ -1125,27 +1221,35 @@ export function ManualOrderPageClient() {
               <CardContent className="space-y-2 p-4">
                 <p className="font-medium text-alternate/80">Due Now</p>
                 <div className="space-y-0.5">
-                  <div className="flex justify-between">
-                    <span className="text-alternate/60">ShipReady Total</span>
-                    <span className="text-alternate/60">
-                      {formatCurrency(summary.shipReadyTotal)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-alternate/60">+ Shipping</span>
-                    <span className="text-right text-alternate/60">
-                      {shipReady.length === 0 ? (
-                        formatCurrency(0)
-                      ) : shipReadyRatesQuery.isLoading ? (
-                        <Loader2 className="inline size-4 animate-spin" />
-                      ) : shipReadyRates?.[0] ? (
-                        formatCurrency(shipReadyRates[0].cost)
-                      ) : (
-                        <span className="italic">Calculated at checkout</span>
-                      )}
-                    </span>
-                  </div>
-                  {preOrder.length > 0 && (
+                  {!treatAllAsPreOrder && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-alternate/60">
+                          ShipReady Total
+                        </span>
+                        <span className="text-alternate/60">
+                          {formatCurrency(summary.shipReadyTotal)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-alternate/60">+ Shipping</span>
+                        <span className="text-right text-alternate/60">
+                          {shipReady.length === 0 ? (
+                            formatCurrency(0)
+                          ) : shipReadyRatesQuery.isLoading ? (
+                            <Loader2 className="inline size-4 animate-spin" />
+                          ) : shipReadyRates?.[0] ? (
+                            formatCurrency(shipReadyRates[0].cost)
+                          ) : (
+                            <span className="italic">
+                              Calculated at checkout
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  {(preOrder.length > 0 || treatAllAsPreOrder) && (
                     <div className="flex justify-between">
                       <span className="text-alternate/60">
                         Pre-Order - 50% Deposit
@@ -1164,7 +1268,7 @@ export function ManualOrderPageClient() {
               </CardContent>
             </Card>
 
-            {preOrder.length > 0 && (
+            {(preOrder.length > 0 || treatAllAsPreOrder) && (
               <Card className="gap-1 rounded-xl border-l-4 border-black/20 bg-muted shadow-none">
                 <CardContent className="space-y-2 p-4">
                   <p className="font-medium text-alternate/80">Due Later</p>
@@ -1227,7 +1331,8 @@ export function ManualOrderPageClient() {
               </p>
             </div>
 
-            {preOrder.length > 0 && summary.totalDueLater > 0 && (
+            {(preOrder.length > 0 || treatAllAsPreOrder) &&
+              summary.totalDueLater > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between pb-px">
                   <h3 className="text-xl font-medium text-black sm:text-2xl">

@@ -97,6 +97,37 @@ function isUnlistedStatus(status?: string) {
   return (status || "").toLowerCase() === "unlisted"
 }
 
+/** Parent title when variants are "Product Title - Option" (product titles may already contain " - "). */
+function inferParentProductTitle(titles: string[]): string {
+  if (titles.length === 0) return ""
+  const sorted = [...titles].sort((a, b) => a.length - b.length)
+  for (const candidate of sorted) {
+    if (
+      titles.every((t) => t === candidate || t.startsWith(`${candidate} - `))
+    ) {
+      return candidate
+    }
+  }
+  const withDash = titles.find((t) => t.includes(" - "))
+  if (withDash) {
+    return withDash.split(" - ").slice(0, -1).join(" - ")
+  }
+  return titles[0]!
+}
+
+/** Option label for a variant row under a multi-variant product group. */
+function variantOptionLabel(variantTitle: string, parentTitle: string): string {
+  const prefix = `${parentTitle} - `
+  if (variantTitle.startsWith(prefix)) {
+    return variantTitle.slice(prefix.length)
+  }
+  if (variantTitle === parentTitle) {
+    return "Default Title"
+  }
+  const parts = variantTitle.split(" - ")
+  return parts.length > 1 ? parts[parts.length - 1]! : variantTitle
+}
+
 function LtlStatusToggle({
   checked,
   disabled,
@@ -281,15 +312,16 @@ export default function ProductsPageClient() {
     // Multi-variant Shopify products are shown as "Parent - Option"; strip the
     // option for the parent row. Single-SKU products often bake size into the
     // product title itself (e.g. "... Mint Green - Extra Large") — keep it.
+    // Parent titles may already contain " - " (e.g. "... Mint Green - Small"),
+    // so do not take split(" - ")[0] — that would drop the size segment.
     return Object.values(groups).map((group) => {
       if (group.variants.length <= 1) {
         return { ...group, title: group.variants[0]?.title ?? group.title }
       }
-      const firstTitle = group.variants[0]?.title ?? group.title
-      const parentTitle = firstTitle.includes(" - ")
-        ? firstTitle.split(" - ")[0]
-        : firstTitle
-      return { ...group, title: parentTitle }
+      const parentTitle = inferParentProductTitle(
+        group.variants.map((v) => v.title)
+      )
+      return { ...group, title: parentTitle || group.title }
     })
   }, [productsQuery.data])
 
@@ -936,8 +968,10 @@ export default function ProductsPageClient() {
                           {hasVariants &&
                             isExpanded &&
                             group.variants.map((variant) => {
-                              const variantName =
-                                variant.title.split(" - ")[1] || variant.title
+                              const variantName = variantOptionLabel(
+                                variant.title,
+                                group.title
+                              )
                               const variantSpecs = formatVariantSpecs(variant)
                               return (
                                 <tr

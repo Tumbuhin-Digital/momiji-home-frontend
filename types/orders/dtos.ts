@@ -133,6 +133,7 @@ export interface OrderFulfillmentSegmentDto {
   second_payment_status?: string
   group_balance_due?: string | null
   group_shipping?: string | null
+  includes_ship_ready?: boolean
 }
 
 export interface RequestSecondPaymentRequest {
@@ -203,6 +204,8 @@ export interface OrderResponseDto {
   fulfillment_groups?: OrderFulfillmentSegmentDto[]
   second_payment?: SecondPaymentSummaryDto
   fulfillments?: FulfillmentDto[]
+  ship_together?: boolean
+  hold_until_batch?: string
 }
 
 export interface FulfillmentLineItemDto {

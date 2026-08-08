@@ -218,6 +218,14 @@ export function ManageOrderModal({
             <span className="text-sm text-[#7F8C8D]">
               {totalItems} items - {formatCurrency(currentOrder.totalPrice)} USD
             </span>
+            {currentOrder.shipTogether && (
+              <p className="mt-1 text-xs font-medium text-amber-700">
+                Held for combined shipment
+                {currentOrder.holdUntilBatch
+                  ? ` until ${currentOrder.holdUntilBatch}`
+                  : " until pre-order batch is ready"}
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <Button

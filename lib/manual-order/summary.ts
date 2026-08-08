@@ -42,6 +42,7 @@ export interface ManualOrderSummaryInput {
   preOrder: ManualLine[]
   shippingCost: number
   shippingPreorder: number
+  shipTogether?: boolean
 }
 
 export interface ManualOrderSummary {
@@ -57,7 +58,7 @@ export interface ManualOrderSummary {
 export function computeManualOrderSummary(
   input: ManualOrderSummaryInput
 ): ManualOrderSummary {
-  const shipReadyTotal = input.shipReady.reduce(
+  const shipReadyFull = input.shipReady.reduce(
     (sum, line) => sum + line.wsPrice * line.quantity,
     0
   )
@@ -65,17 +66,30 @@ export function computeManualOrderSummary(
     (sum, line) => sum + line.wsPrice * line.quantity,
     0
   )
-  const preorderDeposit = preorderFull * 0.5
-  const preorderBalance = preorderFull * 0.5
+
+  const treatAllAsPreOrder =
+    Boolean(input.shipTogether) &&
+    input.shipReady.length > 0 &&
+    input.preOrder.length > 0
+
+  const shipReadyTotal = treatAllAsPreOrder ? 0 : shipReadyFull
+  const preorderDeposit = treatAllAsPreOrder
+    ? (preorderFull + shipReadyFull) * 0.5
+    : preorderFull * 0.5
+  const preorderBalance = treatAllAsPreOrder
+    ? (preorderFull + shipReadyFull) * 0.5
+    : preorderFull * 0.5
+  const shippingCost = treatAllAsPreOrder ? 0 : input.shippingCost
+  const shippingPreorder = input.shippingPreorder
 
   return {
     shipReadyTotal,
     preorderDeposit,
     preorderBalance,
-    shippingCost: input.shippingCost,
-    shippingPreorder: input.shippingPreorder,
-    totalDueNow: shipReadyTotal + input.shippingCost + preorderDeposit,
-    totalDueLater: preorderBalance + input.shippingPreorder,
+    shippingCost,
+    shippingPreorder,
+    totalDueNow: shipReadyTotal + shippingCost + preorderDeposit,
+    totalDueLater: preorderBalance + shippingPreorder,
   }
 }
 

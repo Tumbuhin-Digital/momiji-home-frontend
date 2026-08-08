@@ -373,6 +373,16 @@ export function PreorderCalculateShippingModal({
                 Untick items nested inside another box
               </span>
             </div>
+            {order.shipTogether &&
+              items.some(
+                (item) =>
+                  item.type === "ship-ready" || item.type === "ship_ready"
+              ) && (
+                <p className="mb-3 text-xs text-amber-700">
+                  Ship together: ship-ready items are included in this combined
+                  shipment weight and rate.
+                </p>
+              )}
 
             <div className="space-y-2">
               {items.map((item) => {
@@ -381,6 +391,8 @@ export function PreorderCalculateShippingModal({
                 )
                 const isNested = pack?.isNested ?? false
                 const boxCount = pack?.boxCount ?? item.quantity
+                const isShipReady =
+                  item.type === "ship-ready" || item.type === "ship_ready"
 
                 return (
                   <label
@@ -406,6 +418,11 @@ export function PreorderCalculateShippingModal({
                         >
                           {item.title}
                         </p>
+                        {isShipReady && (
+                          <span className="rounded bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-700">
+                            SHIP READY
+                          </span>
+                        )}
                         {isNested && (
                           <span className="rounded bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700">
                             NESTED

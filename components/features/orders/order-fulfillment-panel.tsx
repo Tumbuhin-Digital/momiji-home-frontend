@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-img-element */
 import dynamic from "next/dynamic"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { useQueryClient } from "@tanstack/react-query"
 
@@ -45,7 +45,10 @@ import { queryKeys } from "@/lib/query/query-keys"
 import { formatCurrency } from "@/lib/utils"
 
 import type { Order, OrderFulfillmentSegment } from "@/types/orders"
-import { orderLineDisplayUnitPrice } from "@/types/orders/entities"
+import {
+  isShipReadyLineItem,
+  orderLineDisplayUnitPrice,
+} from "@/types/orders/entities"
 import type { OrderLineItem } from "@/types/orders/entities"
 import type { CreateFulfillmentDto } from "@/types/orders/dtos"
 
@@ -181,6 +184,20 @@ export function OrderFulfillmentPanel({
   const items = segment.lineItems
   const isPreOrder = segmentIsPreOrder(segment)
   const shipment = segment.shipment
+
+  const shippingPackingItems = useMemo(() => {
+    if (!isPreOrder || !order.shipTogether) return items
+    const includeCombined =
+      segment.includesShipReady ||
+      (order.fulfillmentSegments ?? []).filter(segmentIsPreOrder).length <= 1
+    if (!includeCombined) return items
+    const existing = new Set(items.map((item) => item.productId))
+    const shipReady = order.lineItems.filter(
+      (item) => isShipReadyLineItem(item) && !existing.has(item.productId)
+    )
+    if (shipReady.length === 0) return items
+    return [...items, ...shipReady]
+  }, [isPreOrder, items, order.fulfillmentSegments, order.lineItems, order.shipTogether, segment.includesShipReady])
 
   const maxItemStep = items.reduce(
     (max, item) => Math.max(max, item.fulfillmentStep || 1),
@@ -1014,7 +1031,7 @@ export function OrderFulfillmentPanel({
       <PreorderCalculateShippingModal
         key={`calc-ship-${order.id}-${segment.key}-${calculateShippingModalKey}`}
         order={order}
-        items={items}
+        items={shippingPackingItems}
         isOpen={showCalculateShippingModal}
         onClose={() => setShowCalculateShippingModal(false)}
         mode={calculateShippingMode}

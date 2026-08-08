@@ -26,6 +26,7 @@ export interface ManualOrderCreateRequest {
   billing_phone?: string
   shipping_method?: string
   origin?: "east" | "west"
+  ship_together?: boolean
   line_items: ManualOrderLineItemDto[]
 }
 

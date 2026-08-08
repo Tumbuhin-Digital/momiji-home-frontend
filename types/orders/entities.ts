@@ -124,6 +124,7 @@ export interface OrderFulfillmentSegment {
   secondPaymentStatus?: "pending" | "ready" | "invoiced" | "paid" | string
   groupBalanceDue?: number
   groupShipping?: number
+  includesShipReady?: boolean
 }
 
 export interface SecondPaymentSummary {
@@ -234,6 +235,8 @@ export interface Order {
   fulfillmentSegments?: OrderFulfillmentSegment[]
   secondPayment?: SecondPaymentSummary
   fulfillments?: FulfillmentGroup[]
+  shipTogether?: boolean
+  holdUntilBatch?: string
 }
 
 import type {
@@ -393,6 +396,7 @@ function mapSegmentDto(
     groupShipping: dto.group_shipping
       ? parseFloat(dto.group_shipping)
       : undefined,
+    includesShipReady: Boolean(dto.includes_ship_ready),
   }
 }
 
@@ -482,6 +486,8 @@ export function mapOrderResponseToOrder(dto: OrderResponseDto): Order {
     currency: (dto.currency as CurrencyCode) ?? "USD",
     paymentStatus: mapFinancialStatus(dto.financial_status),
     fulfillmentStatus: mapFulfillmentStatus(dto.fulfillment_status),
+    shipTogether: Boolean(dto.ship_together),
+    holdUntilBatch: dto.hold_until_batch || undefined,
     preOrderState: undefined,
     preOrderInfo: hasPreOrder
       ? {

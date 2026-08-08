@@ -67,6 +67,7 @@ export interface CheckoutCreateInput {
   billing_zip?: string
   billing_country?: string
   billing_phone?: string
+  ship_together?: boolean
 }
 
 export interface CheckoutCreateResult {
