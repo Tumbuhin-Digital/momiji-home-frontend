@@ -35,29 +35,51 @@ export function SecondPaymentConfirmationModal({
         (item) => item.type === "pre-order" || item.type === "pre_order"
       )
 
+  // Order-level totals are a last resort for the legacy view that has no group context.
+  // Reaching for them from inside a group would bill this invoice for the whole order.
+  const orderWideBalance =
+    order.totalBalanceDue ||
+    order.preOrderInfo?.remainingAmount ||
+    order.totalPrice - (order.totalDepositPaid || 0)
+
   const remainingBalance =
     groupBalanceDue ??
     segment?.groupBalanceDue ??
-    (order.totalBalanceDue ||
-      order.preOrderInfo?.remainingAmount ||
-      order.totalPrice - (order.totalDepositPaid || 0))
+    (segment ? 0 : orderWideBalance)
 
+  // Deliberately not falling back to order.secondPayment.shippingTotal: that sums the
+  // final price of every group, which would be paired with a single group's prepaid
+  // deduction below and understate the invoice. Group-scoped sources only.
   const shippingAmount =
     shippingTotal ??
     segment?.groupShipping ??
     segment?.shipment?.finalShippingPrice ??
-    order.secondPayment?.shippingTotal ??
-    order.preorderShipment?.finalShippingPrice ??
     0
-  const totalDue = remainingBalance + shippingAmount
+
+  // Half the carrier estimate was already charged at checkout, so the invoice bills
+  // only the difference. Mirrors the backend rounding in RequestSecondPayment so this
+  // dialog always shows the exact amount the customer will be sent.
+  // 0 for legacy orders placed before the split-shipping scheme — those bill in full.
+  // Group-scoped only. The order-level shipment carries the whole order's prepayment,
+  // which another group may already have consumed — falling back to it would credit this
+  // invoice with money that is not its own and under-bill the customer.
+  const prepaidShipping = segment?.shipment?.prepaidShipping ?? 0
+  const hasPrepaidShipping = prepaidShipping > 0
+  const shippingToBill = Math.max(
+    0,
+    Math.round((shippingAmount - prepaidShipping) * 100) / 100
+  )
+  const totalDue = remainingBalance + shippingToBill
 
   const groupLabel =
     segment?.kind === "preorder_batch" && segment.batchName
       ? segment.batchName
       : segment?.title || "Pre-Order"
 
-  const shippingNotes =
-    segment?.shipment?.shippingNotes || order.preorderShipment?.shippingNotes
+  // Notes reach the customer on the invoice, so never show another group's.
+  const shippingNotes = segment
+    ? segment.shipment?.shippingNotes
+    : order.preorderShipment?.shippingNotes
 
   return (
     <Dialog
@@ -119,13 +141,21 @@ export function SecondPaymentConfirmationModal({
           </div>
 
           {shippingAmount > 0 && (
-            <div className="flex items-center justify-between rounded border border-slate-200 bg-slate-50 px-4 py-3">
-              <span className="text-sm font-medium text-neutral-600">
-                Shipping
-              </span>
-              <span className="font-bold text-neutral-900">
-                {formatCurrency(shippingAmount)} USD
-              </span>
+            <div className="rounded border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-neutral-600">
+                  {hasPrepaidShipping ? "Shipping - Remaining 50%" : "Shipping"}
+                </span>
+                <span className="font-bold text-neutral-900">
+                  {formatCurrency(shippingToBill)} USD
+                </span>
+              </div>
+              {hasPrepaidShipping && (
+                <p className="mt-1 text-xs text-neutral-500">
+                  Final {formatCurrency(shippingAmount)} −{" "}
+                  {formatCurrency(prepaidShipping)} already paid at checkout
+                </p>
+              )}
             </div>
           )}
 

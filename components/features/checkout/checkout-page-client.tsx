@@ -82,6 +82,7 @@ import { useCheckoutNotes } from "@/hooks/use-settings"
 import { checkoutService } from "@/lib/services/checkout.service"
 import { writePreparingCheckoutDocument } from "@/lib/checkout/preparing-checkout-document"
 import { parseAddressPaste } from "@/lib/checkout/address-paste"
+import { splitShippingHalf } from "@/lib/checkout/shipping-split"
 import { extractBatchDepletionFromError } from "@/lib/domain/batch.adapter"
 import { extractShipReadyInventoryDepletionFromError } from "@/lib/domain/inventory.adapter"
 import type { ShipReadyInventoryDepletion } from "@/lib/domain/inventory.adapter"
@@ -96,7 +97,10 @@ import { formatCurrency } from "@/lib/utils"
 
 const checkoutSchema = z
   .object({
-    email: z.string().min(1, "Email is required").email("Invalid email address"),
+    email: z
+      .string()
+      .min(1, "Email is required")
+      .email("Invalid email address"),
     acceptsMarketing: z.boolean().optional(),
     country: z.string().min(1, "Country is required"),
     firstName: z.string().min(1, "First name is required"),
@@ -222,6 +226,26 @@ const floatingInputClass =
   "w-full bg-transparent font-inter text-base leading-[140%] font-normal text-foreground outline-none [&:-webkit-autofill]:shadow-[0_0_0_1000px_white_inset]"
 const floatingFieldClass =
   "group relative flex h-17.5 w-full flex-col justify-end rounded border border-black/20 bg-white px-4 pb-3 transition-colors focus-within:border-primary"
+
+/** Pre-order shipping is split 50/50 across the two payments, same as the goods. */
+function computeCheckoutTotals(parts: {
+  shipReadyTotal: number
+  shipReadyShipping: number
+  preorderDeposit: number
+  preorderBalance: number
+  preorderShipping: number
+}) {
+  const shippingHalves = splitShippingHalf(parts.preorderShipping)
+  return {
+    totalDueNow: String(
+      parts.shipReadyTotal +
+        parts.shipReadyShipping +
+        parts.preorderDeposit +
+        shippingHalves.upfront
+    ),
+    totalDueLater: String(parts.preorderBalance + shippingHalves.remaining),
+  }
+}
 
 function openCheckoutPaymentWindow(): Window | null {
   const win = window.open("", CHECKOUT_PAYMENT_WINDOW, CHECKOUT_WINDOW_FEATURES)
@@ -463,9 +487,7 @@ export default function CheckoutPageClient() {
     "Ship Ready Items"
   )
   const preOrderBatchLabel = segmentBatchLabel(
-    treatAllAsPreOrder
-      ? [...shipReadyItems, ...preOrderItems]
-      : preOrderItems,
+    treatAllAsPreOrder ? [...shipReadyItems, ...preOrderItems] : preOrderItems,
     treatAllAsPreOrder ? "Combined Pre-Order Items" : "Pre-Order Items"
   )
 
@@ -609,10 +631,13 @@ export default function CheckoutPageClient() {
         shipReadyTotal: String(shipReadyTotal),
         preorderDeposit: String(preorderDeposit),
         preorderBalance: String(preorderBalance),
-        totalDueNow: String(
-          shipReadyTotal + shipReadyShipping + preorderDeposit
-        ),
-        totalDueLater: String(preorderBalance + preOrderShipping),
+        ...computeCheckoutTotals({
+          shipReadyTotal,
+          shipReadyShipping,
+          preorderDeposit,
+          preorderBalance,
+          preorderShipping: preOrderShipping,
+        }),
       }
     })
   }, [cartData, deferShipReadyShipping, treatAllAsPreOrder])
@@ -644,10 +669,13 @@ export default function CheckoutPageClient() {
         ...prev,
         shippingCost: String(shipReadyShipping),
         shippingPreorder: String(preOrderShipping),
-        totalDueNow: String(
-          shipReadyTotal + shipReadyShipping + preorderDeposit
-        ),
-        totalDueLater: String(preorderBalance + preOrderShipping),
+        ...computeCheckoutTotals({
+          shipReadyTotal,
+          shipReadyShipping,
+          preorderDeposit,
+          preorderBalance,
+          preorderShipping: preOrderShipping,
+        }),
       }
     })
   }, [shipReadyRates, preOrderRates, deferShipReadyShipping])
@@ -680,9 +708,7 @@ export default function CheckoutPageClient() {
             ? 0
             : parseFloat(prev.shippingCost || "0")
           const preOrderShipping = parseFloat(prev.shippingPreorder || "0")
-          const cartShipReady = parseFloat(
-            summary.dueNow.shipReadyTotal || "0"
-          )
+          const cartShipReady = parseFloat(summary.dueNow.shipReadyTotal || "0")
           const cartDeposit = parseFloat(summary.dueNow.preorderDeposit || "0")
           const cartBalance = parseFloat(
             summary.dueAugust.preorderBalance || "0"
@@ -699,12 +725,15 @@ export default function CheckoutPageClient() {
             shippingCost: String(shipReadyShipping),
             shipReadyTotal: String(shipReadyTotal),
             preorderDeposit: String(preorderDeposit),
-            totalDueNow: String(
-              shipReadyTotal + shipReadyShipping + preorderDeposit
-            ),
             preorderBalance: String(preorderBalance),
             shippingPreorder: prev.shippingPreorder,
-            totalDueLater: String(preorderBalance + preOrderShipping),
+            ...computeCheckoutTotals({
+              shipReadyTotal,
+              shipReadyShipping,
+              preorderDeposit,
+              preorderBalance,
+              preorderShipping: preOrderShipping,
+            }),
           }
         })
       } catch (err) {
@@ -857,7 +886,8 @@ export default function CheckoutPageClient() {
         setPendingCheckoutValues(values)
         return
       }
-      const inventoryDepletion = extractShipReadyInventoryDepletionFromError(err)
+      const inventoryDepletion =
+        extractShipReadyInventoryDepletionFromError(err)
       if (inventoryDepletion) {
         await queryClient.invalidateQueries({ queryKey: queryKeys.cart.all() })
         setShipReadyInventoryDepletion(inventoryDepletion)
@@ -1767,7 +1797,7 @@ export default function CheckoutPageClient() {
                       setShipTogether((prev) => !prev)
                     }
                   }}
-                  className="cursor-pointer rounded-lg border border-black/10 bg-black/[0.02] p-4 transition-colors hover:border-black/20 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  className="cursor-pointer rounded-lg border border-black/10 bg-black/[0.02] p-4 transition-colors hover:border-black/20 hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
                 >
                   <div className="flex items-start gap-3">
                     <Checkbox
@@ -1780,7 +1810,7 @@ export default function CheckoutPageClient() {
                       className="mt-0.5 size-4.5 cursor-pointer rounded border-neutral-300"
                     />
                     <div className="space-y-1">
-                      <p className="text-sm font-medium leading-snug">
+                      <p className="text-sm leading-snug font-medium">
                         Ship all items together with pre-order batch
                         {shipTogetherBatchLabels.length > 0
                           ? ` (${shipTogetherBatchLabels.join(", ")})`
@@ -1788,8 +1818,6 @@ export default function CheckoutPageClient() {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         All items are charged as pre-order (50% deposit now).
-                        Ship-ready stock and Shopify inventory are not reserved.
-                        Shipping is billed with the second payment.
                       </p>
                     </div>
                   </div>
@@ -2020,16 +2048,38 @@ export default function CheckoutPageClient() {
                           </>
                         )}
                         {(preOrderItems.length > 0 || treatAllAsPreOrder) && (
-                          <div className="flex justify-between">
-                            <span className="text-alternate/60">
-                              Pre-Order - 50% Deposit
-                            </span>
-                            <span className="text-alternate/60">
-                              {formatCurrency(
-                                parseFloat(summaryState.preorderDeposit || "0")
-                              )}
-                            </span>
-                          </div>
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-alternate/60">
+                                Pre-Order - 50% Deposit
+                              </span>
+                              <span className="text-alternate/60">
+                                {formatCurrency(
+                                  parseFloat(summaryState.preorderDeposit || "0")
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-alternate/60">
+                                + Shipping (Pre-Order) - 50%
+                              </span>
+                              <span className="text-right text-alternate/60">
+                                {preOrderAllLtl ? (
+                                  <span className="italic">
+                                    Calculated by our team
+                                  </span>
+                                ) : (
+                                  formatCurrency(
+                                    splitShippingHalf(
+                                      parseFloat(
+                                        summaryState.shippingPreorder || "0"
+                                      )
+                                    ).upfront
+                                  )
+                                )}
+                              </span>
+                            </div>
+                          </>
                         )}
                       </div>
                       <Separator className="my-2 bg-black/20" />
@@ -2064,7 +2114,7 @@ export default function CheckoutPageClient() {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-alternate/60">
-                              + Shipping (Pre-Order)
+                              + Shipping - Remaining 50%
                             </span>
                             <span className="text-right text-alternate/60">
                               {preOrderAllLtl ? (
@@ -2073,9 +2123,11 @@ export default function CheckoutPageClient() {
                                 </span>
                               ) : (
                                 formatCurrency(
-                                  parseFloat(
-                                    summaryState.shippingPreorder || "0"
-                                  )
+                                  splitShippingHalf(
+                                    parseFloat(
+                                      summaryState.shippingPreorder || "0"
+                                    )
+                                  ).remaining
                                 )
                               )}
                             </span>

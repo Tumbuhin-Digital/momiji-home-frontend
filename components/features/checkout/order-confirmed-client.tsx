@@ -150,6 +150,15 @@ export default function OrderConfirmedClient({
     })
   }
 
+  if (data.preorderShippingPrepaid > 0 && !allLtl) {
+    paidItems.push({
+      title: "Shipping (Pre-Order) - 50%",
+      amount: data.preorderShippingPrepaid,
+      isPaid: true,
+      isShipping: true,
+    })
+  }
+
   if (data.items) {
     data.items.forEach((item) => {
       if (item.type === "pre_order" && item.balanceDue > 0) {
@@ -169,12 +178,12 @@ export default function OrderConfirmedClient({
   // Auto estimate only for non-LTL (or mixed) carts — never for all-LTL orders.
   if (
     hasPreOrderItems &&
-    data.preorderShippingEstimate > 0 &&
+    data.preorderShippingRemaining > 0 &&
     !allLtl
   ) {
     unpaidItems.push({
-      title: "Pre-Order Shipping (Estimation)",
-      amount: data.preorderShippingEstimate,
+      title: "Shipping (Pre-Order) - Remaining 50% (Estimation)",
+      amount: data.preorderShippingRemaining,
       isPaid: false,
       isShipping: true,
     })

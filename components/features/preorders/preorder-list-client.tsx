@@ -105,9 +105,7 @@ export function PreorderListClient() {
     : undefined
 
   const dateParams =
-    startDate && endDate
-      ? { start_date: startDate, end_date: endDate }
-      : {}
+    startDate && endDate ? { start_date: startDate, end_date: endDate } : {}
 
   const { data: queryData, isLoading } = usePreorders({
     page,

@@ -53,7 +53,10 @@ import type { ManualLine, ManualOrderCreateRequest } from "@/types/manual-order"
 
 const manualOrderSchema = z
   .object({
-    email: z.string().min(1, "Email is required").email("Invalid email address"),
+    email: z
+      .string()
+      .min(1, "Email is required")
+      .email("Invalid email address"),
     country: z.string().min(1, "Country is required"),
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
@@ -1147,7 +1150,7 @@ export function ManualOrderPageClient() {
                     setShipTogether((prev) => !prev)
                   }
                 }}
-                className="cursor-pointer rounded-lg border border-black/10 bg-black/[0.02] p-4 transition-colors hover:border-black/20 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="cursor-pointer rounded-lg border border-black/10 bg-black/[0.02] p-4 transition-colors hover:border-black/20 hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
               >
                 <div className="flex items-start gap-3">
                   <Checkbox
@@ -1160,13 +1163,11 @@ export function ManualOrderPageClient() {
                     className="mt-0.5 size-4.5 cursor-pointer rounded border-neutral-300"
                   />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium leading-snug">
+                    <p className="text-sm leading-snug font-medium">
                       Ship all items together with pre-order batch
                     </p>
                     <p className="text-xs text-muted-foreground">
                       All items are charged as pre-order (50% deposit now).
-                      Ship-ready stock and Shopify inventory are not reserved.
-                      Shipping is billed with the second payment.
                     </p>
                   </div>
                 </div>
@@ -1197,9 +1198,7 @@ export function ManualOrderPageClient() {
                       "You will be notified when our next shipment arrives in the US"
                 }
                 batchLabel={segmentBatchLabel(
-                  treatAllAsPreOrder
-                    ? [...shipReady, ...preOrder]
-                    : preOrder,
+                  treatAllAsPreOrder ? [...shipReady, ...preOrder] : preOrder,
                   treatAllAsPreOrder
                     ? "Combined Pre-Order"
                     : preOrder[0]?.batchLabel || "Pre-Order"
@@ -1250,14 +1249,28 @@ export function ManualOrderPageClient() {
                     </>
                   )}
                   {(preOrder.length > 0 || treatAllAsPreOrder) && (
-                    <div className="flex justify-between">
-                      <span className="text-alternate/60">
-                        Pre-Order - 50% Deposit
-                      </span>
-                      <span className="text-alternate/60">
-                        {formatCurrency(summary.preorderDeposit)}
-                      </span>
-                    </div>
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-alternate/60">
+                          Pre-Order - 50% Deposit
+                        </span>
+                        <span className="text-alternate/60">
+                          {formatCurrency(summary.preorderDeposit)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-alternate/60">
+                          + Shipping (Pre-Order) - 50%
+                        </span>
+                        <span className="text-right text-alternate/60">
+                          {preOrderRatesQuery.isLoading ? (
+                            <Loader2 className="inline size-4 animate-spin" />
+                          ) : (
+                            formatCurrency(summary.shippingPreorderDeposit)
+                          )}
+                        </span>
+                      </div>
+                    </>
                   )}
                 </div>
                 <Separator className="my-2 bg-black/20" />
@@ -1283,15 +1296,13 @@ export function ManualOrderPageClient() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-alternate/60">
-                        + Shipping (Pre-Order)
+                        + Shipping - Remaining 50%
                       </span>
                       <span className="text-right text-alternate/60">
                         {preOrderRatesQuery.isLoading ? (
                           <Loader2 className="inline size-4 animate-spin" />
-                        ) : preOrderRates?.[0] ? (
-                          formatCurrency(preOrderRates[0].cost)
                         ) : (
-                          formatCurrency(0)
+                          formatCurrency(summary.shippingPreorderBalance)
                         )}
                       </span>
                     </div>
@@ -1333,21 +1344,21 @@ export function ManualOrderPageClient() {
 
             {(preOrder.length > 0 || treatAllAsPreOrder) &&
               summary.totalDueLater > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between pb-px">
-                  <h3 className="text-xl font-medium text-black sm:text-2xl">
-                    Due Later
-                  </h3>
-                  <span className="text-xl font-medium text-black sm:text-2xl">
-                    {formatCurrency(summary.totalDueLater)}
-                  </span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between pb-px">
+                    <h3 className="text-xl font-medium text-black sm:text-2xl">
+                      Due Later
+                    </h3>
+                    <span className="text-xl font-medium text-black sm:text-2xl">
+                      {formatCurrency(summary.totalDueLater)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-alternate/80 sm:text-base">
+                    {checkoutNotes?.dueLaterNote ??
+                      "You will be notified when our next shipment arrives in the US"}
+                  </p>
                 </div>
-                <p className="text-sm text-alternate/80 sm:text-base">
-                  {checkoutNotes?.dueLaterNote ??
-                    "You will be notified when our next shipment arrives in the US"}
-                </p>
-              </div>
-            )}
+              )}
 
             <Button
               type="submit"

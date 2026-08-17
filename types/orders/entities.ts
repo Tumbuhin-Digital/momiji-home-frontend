@@ -93,6 +93,8 @@ export interface PreorderShipment {
   batchId?: string | null
   estimatedShipping?: number
   finalShippingPrice?: number
+  /** Shipping already collected at checkout (50%). 0 for orders placed before the split scheme. */
+  prepaidShipping?: number
   shippingNotes?: string
   creditAmount?: number
   totalBoxes: number
@@ -290,6 +292,9 @@ function mapShipmentDto(dto: PreorderShipmentDto): PreorderShipment {
       : undefined,
     finalShippingPrice: dto.final_shipping_price
       ? parseFloat(dto.final_shipping_price)
+      : undefined,
+    prepaidShipping: dto.prepaid_shipping
+      ? parseFloat(dto.prepaid_shipping)
       : undefined,
     shippingNotes: dto.shipping_notes,
     creditAmount: dto.credit_amount

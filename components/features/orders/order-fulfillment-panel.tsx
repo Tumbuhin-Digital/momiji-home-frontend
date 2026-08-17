@@ -215,6 +215,17 @@ export function OrderFulfillmentPanel({
   const finalShippingCost =
     segment.groupShipping ?? shipment?.finalShippingPrice
 
+  // Shipping is split 50/50 across the two payments, so the final price alone does not
+  // say what is still owed. 0 prepaid = legacy order, billed in full on settlement.
+  const prepaidShipping = shipment?.prepaidShipping ?? 0
+  const shippingStillDue =
+    finalShippingCost != null && prepaidShipping > 0
+      ? Math.max(
+          0,
+          Math.round((finalShippingCost - prepaidShipping) * 100) / 100
+        )
+      : undefined
+
   const panelTitle = segment.title
   const batchSubtitle =
     segment.kind === "preorder_batch" && segment.batchName
@@ -821,11 +832,23 @@ export function OrderFulfillmentPanel({
         )}
 
         {isPreOrder && finalShippingCost != null && (
-          <div className="mb-6 flex items-center justify-between rounded-lg border border-[#D9E2E8] bg-white px-4 py-3">
-            <span className="text-sm text-slate-600">Final shipping</span>
-            <span className="text-sm font-bold text-slate-900">
-              {formatCurrency(finalShippingCost)} USD
-            </span>
+          <div className="mb-6 rounded-lg border border-[#D9E2E8] bg-white px-4 py-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">Final shipping</span>
+              <span className="text-sm font-bold text-slate-900">
+                {formatCurrency(finalShippingCost)} USD
+              </span>
+            </div>
+            {shippingStillDue != null && (
+              <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
+                <span>
+                  −{formatCurrency(prepaidShipping)} paid at checkout (50%)
+                </span>
+                <span className="font-medium">
+                  {formatCurrency(shippingStillDue)} due on settlement
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -877,6 +900,16 @@ export function OrderFulfillmentPanel({
                   </span>
                 )}
                 .{" "}
+                {shippingStillDue != null && (
+                  <span className="text-slate-500">
+                    Customer already paid{" "}
+                    {formatCurrency(prepaidShipping)} at checkout, so{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatCurrency(shippingStillDue)} USD
+                    </span>{" "}
+                    will be billed on the settlement invoice.{" "}
+                  </span>
+                )}
                 {canRequestSecondPayment
                   ? "Ready — use Request Second Payment for this group."
                   : paymentLocked

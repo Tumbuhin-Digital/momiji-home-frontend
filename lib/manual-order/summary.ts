@@ -1,3 +1,5 @@
+import { splitShippingHalf } from "@/lib/checkout/shipping-split"
+
 import type { ManualLine } from "@/types/manual-order"
 
 export interface ManualOrderSegments {
@@ -51,6 +53,10 @@ export interface ManualOrderSummary {
   preorderBalance: number
   shippingCost: number
   shippingPreorder: number
+  /** Half of shippingPreorder, charged upfront. */
+  shippingPreorderDeposit: number
+  /** The other half, billed with the settlement invoice. */
+  shippingPreorderBalance: number
   totalDueNow: number
   totalDueLater: number
 }
@@ -81,6 +87,7 @@ export function computeManualOrderSummary(
     : preorderFull * 0.5
   const shippingCost = treatAllAsPreOrder ? 0 : input.shippingCost
   const shippingPreorder = input.shippingPreorder
+  const shippingHalves = splitShippingHalf(shippingPreorder)
 
   return {
     shipReadyTotal,
@@ -88,8 +95,11 @@ export function computeManualOrderSummary(
     preorderBalance,
     shippingCost,
     shippingPreorder,
-    totalDueNow: shipReadyTotal + shippingCost + preorderDeposit,
-    totalDueLater: preorderBalance + shippingPreorder,
+    shippingPreorderDeposit: shippingHalves.upfront,
+    shippingPreorderBalance: shippingHalves.remaining,
+    totalDueNow:
+      shipReadyTotal + shippingCost + preorderDeposit + shippingHalves.upfront,
+    totalDueLater: preorderBalance + shippingHalves.remaining,
   }
 }
 

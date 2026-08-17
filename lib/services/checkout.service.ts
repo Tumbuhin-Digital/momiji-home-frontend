@@ -35,6 +35,7 @@ function mapCheckoutSummaryToDomain(dto: CheckoutSummaryDto): CheckoutSummary {
       shipReadyTotal: dto.due_now.ship_ready_total,
       preorderDeposit: dto.due_now.preorder_deposit,
       shipping: dto.due_now.shipping,
+      shippingPreorderDeposit: dto.due_now.shipping_preorder_deposit,
       total: dto.due_now.total,
     },
     dueAugust: {
@@ -124,6 +125,8 @@ async function getCheckoutConfirm(
     totalPrice: parseFloat(d.total_price || "0"),
     shipReadyShipping: parseFloat(d.ship_ready_shipping || "0"),
     preorderShippingEstimate: parseFloat(d.preorder_shipping_estimate || "0"),
+    preorderShippingPrepaid: parseFloat(d.preorder_shipping_prepaid || "0"),
+    preorderShippingRemaining: parseFloat(d.preorder_shipping_remaining || "0"),
     hasLtl: Boolean(d.has_ltl),
     allLtl: Boolean(d.all_ltl),
     items: (d.items || []).map((item) => ({

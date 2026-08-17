@@ -23,6 +23,7 @@ export interface CheckoutSummary {
     preorderDeposit: string
     shipReadyTotal: string
     shipping: string
+    shippingPreorderDeposit: string
     total: string
   }
   preOrder: {
@@ -96,6 +97,8 @@ export interface CheckoutConfirmResult {
   totalPrice: number
   shipReadyShipping: number
   preorderShippingEstimate: number
+  preorderShippingPrepaid: number
+  preorderShippingRemaining: number
   hasLtl: boolean
   allLtl: boolean
   items: CheckoutConfirmItem[]

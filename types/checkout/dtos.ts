@@ -23,6 +23,7 @@ export interface CheckoutSummaryDto {
     preorder_deposit: string
     ship_ready_total: string
     shipping: string
+    shipping_preorder_deposit: string
     total: string
   }
   pre_order: {
@@ -65,6 +66,8 @@ export interface CheckoutConfirmResponseDto {
   order_id: string
   order_number: string
   preorder_shipping_estimate?: string | null
+  preorder_shipping_prepaid?: string | null
+  preorder_shipping_remaining?: string | null
   ship_ready_shipping?: string | null
   total_balance_due: string | null
   total_charged_now: string | null

@@ -131,13 +131,23 @@ export function PreorderCalculateShippingModal({
   const calculateShipping = useCalculatePreorderShipping(order.id)
   const updateShipping = useUpdatePreorderShipping(order.id)
 
-  const shipment = shipmentProp ?? order.preorderShipment
+  // order.preorderShipment is the unbatched/checkout row. A batch group has no row until its
+  // first calculation, and falling back would seed this group's final price, packing and
+  // prepaid credit from a different group's shipment — one click from saving another group's
+  // shipping price onto this one. Order-level facts are read explicitly below instead.
+  const shipment = shipmentProp ?? (batchId ? undefined : order.preorderShipment)
 
   const [packing, setPacking] = useState<PreorderPackingItem[]>(() =>
     mergePacking(items, shipment?.packing)
   )
 
-  const warehouseOrigin = shipment?.warehouseOrigin ?? "east"
+  // Origin is an order-level fact, not a per-group amount: the backend inherits it from the
+  // checkout row when rating a batch group that has no shipment yet, so mirror that instead
+  // of falling back to the "east" default and labelling the wrong warehouse.
+  const warehouseOrigin =
+    shipment?.warehouseOrigin ??
+    order.preorderShipment?.warehouseOrigin ??
+    "east"
   const checkoutEstimate = shipment?.estimatedShipping
   const [finalPrice, setFinalPrice] = useState<string>(() =>
     initialFinalPrice(shipment)
@@ -177,7 +187,16 @@ export function PreorderCalculateShippingModal({
   // Batch groups often only have a prior admin calc, not the original checkout quote.
   const priorEstimateLabel = batchId
     ? "Prior estimate"
-    : "Checkout estimate — due later (UPS Ground)"
+    : "Checkout estimate — full (UPS Ground)"
+
+  // The customer already paid 50% of the checkout estimate. The settlement invoice
+  // bills the full final price minus that, so the admin still enters the FULL price.
+  // Legacy orders (pre-split scheme) have no prepaid amount and bill the full price.
+  const prepaidShipping = shipment?.prepaidShipping ?? 0
+  const hasPrepaidShipping = prepaidShipping > 0
+  const remainingToBill = hasValidFinalPrice
+    ? Math.max(0, Math.round((parsedFinalPrice - prepaidShipping) * 100) / 100)
+    : undefined
   const rateCalculatedLabel = formatRateCalculatedAt(rateCalculatedAt)
 
   const toggleNested = (lineItemId: string, checked: boolean) => {
@@ -495,6 +514,7 @@ export function PreorderCalculateShippingModal({
 
             {(hasCheckoutEstimate ||
               hasCurrentEstimate ||
+              hasPrepaidShipping ||
               hasValidFinalPrice) && (
               <div className="mb-4 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
                 {hasCheckoutEstimate ? (
@@ -570,6 +590,26 @@ export function PreorderCalculateShippingModal({
                     </span>
                   </div>
                 )}
+                {hasPrepaidShipping && (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-slate-600">
+                      Already paid at checkout (50%)
+                    </span>
+                    <span className="font-medium text-emerald-700">
+                      −{formatCurrency(prepaidShipping)} USD
+                    </span>
+                  </div>
+                )}
+                {hasPrepaidShipping && remainingToBill != null && (
+                  <div className="flex justify-between gap-4 border-t border-slate-200 pt-3">
+                    <span className="font-medium text-slate-700">
+                      Billed on settlement invoice
+                    </span>
+                    <span className="font-semibold text-slate-900">
+                      {formatCurrency(remainingToBill)} USD
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -595,6 +635,14 @@ export function PreorderCalculateShippingModal({
                   placeholder="0.00"
                   className="**:data-[slot=input]:h-11 **:data-[slot=input]:px-3 **:data-[slot=input]:text-lg **:data-[slot=input]:leading-11 **:data-[slot=input]:font-medium"
                 />
+                {hasPrepaidShipping && (
+                  <p className="text-xs text-slate-500">
+                    Enter the <strong>full</strong> shipping price. The{" "}
+                    {formatCurrency(prepaidShipping)} already collected at
+                    checkout is deducted automatically on the settlement
+                    invoice.
+                  </p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label htmlFor="modal-shipping-notes">
