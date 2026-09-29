@@ -142,6 +142,11 @@ export interface RequestSecondPaymentRequest {
   batch_id?: string | null
 }
 
+export interface RequestSecondPaymentResponse {
+  invoice_url: string
+  draft_order_id: string
+}
+
 export interface SecondPaymentSummaryDto {
   total_balance_due: string
   shipping_total: string
@@ -273,4 +278,61 @@ export interface UpdateTrackingDto {
   item_ids: string[]
   tracking_number: string
   tracking_url: string
+}
+
+export interface WebsiteDraftOrderDto {
+  id: string
+  name: string
+  status: string
+  email: string
+  invoice_url: string
+  created_at: string
+  total: string
+  currency: string
+}
+
+export interface WebsiteDraftAddressDto {
+  first_name: string
+  last_name: string
+  company?: string
+  address1: string
+  address2?: string
+  city: string
+  province: string
+  country: string
+  zip: string
+  phone?: string
+}
+
+export interface WebsiteDraftLineItemDto {
+  title: string
+  sku?: string
+  quantity: number
+  unit_price: string
+  line_total: string
+  variant_id?: string
+  kind: "ship_ready" | "pre_order" | "shipping_deposit" | string
+}
+
+export interface WebsiteDraftOrderDetailDto {
+  id: string
+  name: string
+  status: string
+  email: string
+  invoice_url: string
+  created_at: string
+  note?: string
+  currency: string
+  subtotal: string
+  total_tax: string
+  total: string
+  shipping_title?: string
+  shipping_amount?: string
+  shipping_method?: string
+  origin?: string
+  ship_together: boolean
+  order_name?: string
+  shipping_address?: WebsiteDraftAddressDto
+  billing_address?: WebsiteDraftAddressDto
+  line_items: WebsiteDraftLineItemDto[]
 }

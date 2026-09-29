@@ -23,6 +23,35 @@ import type {
   CreateFulfillmentDto,
 } from "@/types/orders/dtos"
 
+export function useWebsiteDraftOrders() {
+  return useQuery({
+    queryKey: queryKeys.orders.drafts(),
+    queryFn: () => ordersService.getWebsiteDraftOrders(),
+    staleTime: 0,
+    refetchOnMount: "always",
+  })
+}
+
+export function useWebsiteDraftOrder(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.orders.draft(id),
+    queryFn: () => ordersService.getWebsiteDraftOrder(id),
+    enabled: enabled && id.length > 0,
+    staleTime: 0,
+  })
+}
+
+export function useUpdateDraftOrderItems() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ordersService.updateWebsiteDraftItems,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.drafts() })
+    },
+  })
+}
+
 export function useAcceptOrder() {
   const queryClient = useQueryClient()
 
@@ -262,6 +291,15 @@ export function useRequestSecondPayment(orderId: string) {
         queryKey: queryKeys.orders.detail(orderId),
       })
     },
+  })
+}
+
+export function useResendSecondPaymentInvoice(orderId: string) {
+  return useMutation({
+    mutationFn: (input?: { batchId?: string | null }) =>
+      ordersService.resendSecondPaymentInvoice(orderId, {
+        batch_id: input?.batchId ?? null,
+      }),
   })
 }
 

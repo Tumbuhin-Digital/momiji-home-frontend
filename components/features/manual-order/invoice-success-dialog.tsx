@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 
-import { Check, Copy, ExternalLink } from "lucide-react"
+import { Check, Copy, ExternalLink, Mail } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,21 +15,25 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { toastManager } from "@/components/ui/toast"
+import { useSendManualOrderInvoice } from "@/hooks/use-manual-order"
 
 interface InvoiceSuccessDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   invoiceUrl: string
-  invoiceEmailSent: boolean
+  draftOrderId: string
+  email: string
 }
 
 export function InvoiceSuccessDialog({
   open,
   onOpenChange,
   invoiceUrl,
-  invoiceEmailSent,
+  draftOrderId,
+  email,
 }: InvoiceSuccessDialogProps) {
   const [copied, setCopied] = useState(false)
+  const sendInvoice = useSendManualOrderInvoice()
 
   const handleCopy = async () => {
     try {
@@ -50,15 +54,35 @@ export function InvoiceSuccessDialog({
     }
   }
 
+  const handleSendInvoice = async () => {
+    try {
+      await sendInvoice.mutateAsync({ draftOrderId, email })
+      toastManager.add({
+        title: "Invoice sent",
+        description: `Shopify emailed the invoice to ${email}.`,
+        type: "success",
+      })
+    } catch (err: any) {
+      toastManager.add({
+        title: "Failed to send invoice",
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Shopify could not send the email. You can still copy the payment link.",
+        type: "error",
+      })
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md gap-0 overflow-hidden sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Invoice created</DialogTitle>
           <DialogDescription className="text-pretty">
-            {invoiceEmailSent
-              ? "Shopify emailed the invoice to the customer. You can also copy or open the payment link below."
-              : "The draft invoice was created, but Shopify could not send the email. Copy the link and share it with the customer."}
+            The invoice was created and the email has not been sent. Copy or
+            open the payment link below, or send the invoice when you are
+            ready.
           </DialogDescription>
         </DialogHeader>
 
@@ -86,6 +110,17 @@ export function InvoiceSuccessDialog({
               )}
             </Button>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 w-full"
+            loading={sendInvoice.isPending}
+            disabled={!draftOrderId || !email}
+            onClick={handleSendInvoice}
+          >
+            <Mail className="mr-2 size-4" />
+            Send invoice
+          </Button>
         </DialogPanel>
 
         <DialogFooter variant="bare" className="gap-2 sm:gap-2">

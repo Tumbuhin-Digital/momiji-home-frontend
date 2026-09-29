@@ -17,7 +17,10 @@ export function OrderManagementClient() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useInfiniteOrders()
+  } = useInfiniteOrders(
+    {},
+    { staleTime: 0, refetchOnMount: "always" }
+  )
 
   const orders = data?.pages.flatMap((page) => page.orders) || []
   const totalOrders = data?.pages[0]?.total || 0

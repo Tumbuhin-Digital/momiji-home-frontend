@@ -30,8 +30,10 @@ export interface SecondPaymentConfirmationModalProps {
   segment?: OrderFulfillmentSegment | null
   isOpen: boolean
   onClose: () => void
-  onConfirm: (orderId: string, batchId?: string | null) => Promise<void>
-  isConfirming: boolean
+  onCopyLink: () => Promise<void>
+  onResendInvoice: () => Promise<void>
+  isCopying: boolean
+  isResending: boolean
   error?: string
   shippingTotal?: number
   groupBalanceDue?: number

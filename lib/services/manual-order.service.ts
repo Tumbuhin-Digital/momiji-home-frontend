@@ -30,6 +30,17 @@ async function createManualOrder(
   return mapResponse(response.data)
 }
 
+async function sendManualOrderInvoice(input: {
+  draftOrderId: string
+  email: string
+}): Promise<void> {
+  await apiClient.post("/orders/manual/invoice/send", {
+    draft_order_id: input.draftOrderId,
+    email: input.email,
+  })
+}
+
 export const manualOrderService = {
   createManualOrder,
+  sendManualOrderInvoice,
 }

@@ -57,6 +57,8 @@ const queryKeys = {
     list: (params: OrderQueryParams = {}) =>
       ["orders", "list", params] as const,
     detail: (orderId: string) => ["orders", "detail", orderId] as const,
+    drafts: () => ["orders", "drafts"] as const,
+    draft: (id: string) => ["orders", "drafts", id] as const,
     tracking: (orderId: string, itemId: string) =>
       ["orders", "detail", orderId, "item", itemId, "tracking"] as const,
   },

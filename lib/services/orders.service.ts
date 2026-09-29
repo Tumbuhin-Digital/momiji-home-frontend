@@ -12,10 +12,13 @@ import type {
   FulfillmentDto,
   OrderResponseDto,
   PreorderShipmentDto,
+  RequestSecondPaymentResponse,
   UpdatePreorderShippingRequest,
   UpdateReceivedDto,
   UpdateStepDto,
   UpdateTrackingDto,
+  WebsiteDraftOrderDetailDto,
+  WebsiteDraftOrderDto,
 } from "@/types/orders/dtos"
 
 export interface PaginatedOrders {
@@ -181,9 +184,22 @@ async function updatePreorderShipping(
 async function requestSecondPayment(
   orderId: string,
   body?: { batch_id?: string | null }
+): Promise<RequestSecondPaymentResponse> {
+  const response = await apiClient.post<
+    BaseResponse<RequestSecondPaymentResponse>
+  >(`/orders/${orderId}/preorder/request-second-payment`, body ?? {})
+  if (!response.data?.invoice_url) {
+    throw new Error("Payment link was not returned")
+  }
+  return response.data
+}
+
+async function resendSecondPaymentInvoice(
+  orderId: string,
+  body?: { batch_id?: string | null }
 ): Promise<void> {
   await apiClient.post(
-    `/orders/${orderId}/preorder/request-second-payment`,
+    `/orders/${orderId}/preorder/resend-second-payment`,
     body ?? {}
   )
 }
@@ -211,6 +227,41 @@ async function markFulfillmentDelivered(
   )
 }
 
+async function getWebsiteDraftOrders(): Promise<WebsiteDraftOrderDto[]> {
+  const response = await apiClient.get<BaseResponse<WebsiteDraftOrderDto[]>>(
+    "/orders/drafts"
+  )
+  return response.data ?? []
+}
+
+async function updateWebsiteDraftItems(input: {
+  draftOrderId: string
+  shippingMethod?: string
+  lineItems: Array<{ variantId: string; quantity: number }>
+}): Promise<void> {
+  await apiClient.put("/orders/drafts/items", {
+    draft_order_id: input.draftOrderId,
+    shipping_method: input.shippingMethod,
+    line_items: input.lineItems.map((line) => ({
+      variant_id: line.variantId,
+      quantity: line.quantity,
+    })),
+  })
+}
+
+async function getWebsiteDraftOrder(
+  id: string
+): Promise<WebsiteDraftOrderDetailDto> {
+  const response = await apiClient.get<BaseResponse<WebsiteDraftOrderDetailDto>>(
+    "/orders/drafts/detail",
+    { params: { id } }
+  )
+  if (!response.data) {
+    throw new Error("Failed to load draft order")
+  }
+  return response.data
+}
+
 export const ordersService = {
   acceptOrder,
   cancelOrder,
@@ -219,6 +270,9 @@ export const ordersService = {
   getOrderById,
   getOrders,
   getOrdersPaginated,
+  getWebsiteDraftOrders,
+  getWebsiteDraftOrder,
+  updateWebsiteDraftItems,
   getItemTracking,
   updateItemReceived,
   updateItemStep,
@@ -226,6 +280,7 @@ export const ordersService = {
   calculatePreorderShipping,
   updatePreorderShipping,
   requestSecondPayment,
+  resendSecondPaymentInvoice,
   createFulfillment,
   markFulfillmentDelivered,
 }

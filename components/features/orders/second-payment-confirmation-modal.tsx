@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertCircle, CheckCircle2, Package } from "lucide-react"
+import { AlertCircle, Copy, Mail, Package } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -23,8 +23,10 @@ export function SecondPaymentConfirmationModal({
   segment,
   isOpen,
   onClose,
-  onConfirm,
-  isConfirming,
+  onCopyLink,
+  onResendInvoice,
+  isCopying,
+  isResending,
   error,
   shippingTotal,
   groupBalanceDue,
@@ -70,6 +72,7 @@ export function SecondPaymentConfirmationModal({
     Math.round((shippingAmount - prepaidShipping) * 100) / 100
   )
   const totalDue = remainingBalance + shippingToBill
+  const isBusy = isCopying || isResending
 
   const groupLabel =
     segment?.kind === "preorder_batch" && segment.batchName
@@ -84,7 +87,7 @@ export function SecondPaymentConfirmationModal({
   return (
     <Dialog
       open={isOpen}
-      onOpenChange={(open) => !open && !isConfirming && onClose()}
+      onOpenChange={(open) => !open && !isBusy && onClose()}
     >
       <DialogContent className="sm:max-w-2xl" showCloseButton={false}>
         <DialogPanel className="flex flex-col items-center gap-6 p-4!">
@@ -97,12 +100,12 @@ export function SecondPaymentConfirmationModal({
                 Request Second Payment for #{order.orderNumber}?
               </DialogTitle>
               <DialogDescription className="text-[15px] leading-relaxed">
-                Send a settlement invoice to{" "}
+                Copy the payment link for{" "}
                 <span className="font-bold text-slate-800">
                   {order.customer?.name || "Customer"}
                 </span>{" "}
-                for <strong>{groupLabel}</strong> remaining balance and
-                shipping.
+                for <strong>{groupLabel}</strong>. The invoice email is sent
+                only when you choose Resend invoice.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -178,9 +181,10 @@ export function SecondPaymentConfirmationModal({
           <div className="flex items-start gap-2.5 rounded border border-[#FF850D] bg-[#FF850D1A] p-3.5 text-xs leading-normal text-[#FF850D]">
             <AlertCircle className="mt-0.5 size-4 shrink-0 text-[#FF850D]" />
             <span>
-              This will send a Shopify invoice for this group&apos;s remaining
-              balance plus shipping. Other groups can be invoiced separately
-              once their shipping is configured.
+              Copy payment link creates this group&apos;s invoice if it does
+              not exist yet, then copies the link. It does not email the
+              customer. Resend invoice sends that link by email. Other groups
+              stay separate.
             </span>
           </div>
 
@@ -203,7 +207,7 @@ export function SecondPaymentConfirmationModal({
                 size="lg"
                 className="w-full font-medium text-slate-500"
                 onClick={onClose}
-                disabled={isConfirming}
+                disabled={isBusy}
               />
             }
           >
@@ -211,20 +215,40 @@ export function SecondPaymentConfirmationModal({
           </DialogClose>
           <Button
             type="button"
+            variant="outline"
             size="lg"
             className="w-full font-medium"
-            onClick={() => onConfirm(order.id, segment?.batchId ?? null)}
-            disabled={isConfirming}
+            onClick={() => void onResendInvoice()}
+            disabled={isBusy}
           >
-            {isConfirming ? (
+            {isResending ? (
               <>
                 <Spinner className="mr-2" />
-                Processing...
+                Sending...
               </>
             ) : (
               <>
-                <CheckCircle2 className="mr-2 size-4" />
-                Send Invoice
+                <Mail className="mr-2 size-4" />
+                Resend invoice
+              </>
+            )}
+          </Button>
+          <Button
+            type="button"
+            size="lg"
+            className="w-full font-medium"
+            onClick={() => void onCopyLink()}
+            disabled={isBusy}
+          >
+            {isCopying ? (
+              <>
+                <Spinner className="mr-2" />
+                Copying...
+              </>
+            ) : (
+              <>
+                <Copy className="mr-2 size-4" />
+                Copy payment link
               </>
             )}
           </Button>

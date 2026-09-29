@@ -11,6 +11,7 @@ import { AnimatePresence, motion } from "motion/react"
 import { Boxes, CheckCircle2, XCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { toastManager } from "@/components/ui/toast"
 import {
   Carousel,
   CarouselContent,
@@ -37,6 +38,7 @@ import {
   useCreateFulfillment,
   useMarkFulfillmentDelivered,
   useRequestSecondPayment,
+  useResendSecondPaymentInvoice,
   useUpdateItemReceived,
   useUpdateItemStep,
   useUpdateItemTracking,
@@ -180,6 +182,7 @@ export function OrderFulfillmentPanel({
   const createFulfillment = useCreateFulfillment(order.id)
   const markDelivered = useMarkFulfillmentDelivered(order.id)
   const requestSecondPayment = useRequestSecondPayment(order.id)
+  const resendSecondPayment = useResendSecondPaymentInvoice(order.id)
 
   const items = segment.lineItems
   const isPreOrder = segmentIsPreOrder(segment)
@@ -352,34 +355,66 @@ export function OrderFulfillmentPanel({
     !paymentLocked &&
     shipment?.finalShippingPrice != null
 
-  const showRequestSecondPayment =
-    isPreOrder && !isCancelled && canRequestSecondPayment && !paymentLocked
+  const paymentPaid =
+    segment.secondPaymentStatus === "paid" || Boolean(shipment?.invoicePaidAt)
+  const hasPaymentLink = Boolean(shipment?.invoiceUrl || shipment?.invoiceSentAt)
 
-  const handleRequestSecondPayment = async (
-    _orderId: string,
-    batchId?: string | null
-  ) => {
+  const showRequestSecondPayment =
+    isPreOrder &&
+    !isCancelled &&
+    shipment?.finalShippingPrice != null &&
+    !paymentPaid
+
+  const secondPaymentErrorMessage = (error: unknown, fallback: string) => {
+    const err = error as {
+      payload?: { message?: string; error?: { message?: string } }
+      response?: { data?: { message?: string } }
+      message?: string
+    }
+    return (
+      err?.payload?.error?.message ||
+      err?.payload?.message ||
+      err?.response?.data?.message ||
+      err?.message ||
+      fallback
+    )
+  }
+
+  const handleCopyPaymentLink = async () => {
     setSecondPaymentError(undefined)
     try {
-      await requestSecondPayment.mutateAsync({ batchId: batchId ?? null })
-      setShowSecondPaymentModal(false)
-      setInvoiceSuccess(true)
-      setTimeout(() => {
-        setInvoiceSuccess(false)
-        onOrderActioned?.()
-      }, 2000)
+      const result = await requestSecondPayment.mutateAsync({
+        batchId: segment.batchId ?? null,
+      })
+      await navigator.clipboard.writeText(result.invoice_url)
+      toastManager.add({
+        title: "Copied",
+        description: "Payment link copied to clipboard",
+        type: "success",
+      })
+      onOrderActioned?.()
     } catch (error: unknown) {
-      const err = error as {
-        payload?: { message?: string; error?: { message?: string } }
-        response?: { data?: { message?: string } }
-        message?: string
-      }
       setSecondPaymentError(
-        err?.payload?.error?.message ||
-          err?.payload?.message ||
-          err?.response?.data?.message ||
-          err?.message ||
-          "Failed to send second payment invoice."
+        secondPaymentErrorMessage(error, "Failed to copy the payment link.")
+      )
+    }
+  }
+
+  const handleResendSecondPaymentInvoice = async () => {
+    setSecondPaymentError(undefined)
+    try {
+      await resendSecondPayment.mutateAsync({
+        batchId: segment.batchId ?? null,
+      })
+      toastManager.add({
+        title: "Invoice sent",
+        description: "The invoice email was sent to the customer.",
+        type: "success",
+      })
+      onOrderActioned?.()
+    } catch (error: unknown) {
+      setSecondPaymentError(
+        secondPaymentErrorMessage(error, "Failed to send the invoice email.")
       )
     }
   }
@@ -714,13 +749,15 @@ export function OrderFulfillmentPanel({
               type="button"
               size="sm"
               className="shrink-0 bg-primary px-2 text-[11px] leading-none text-white hover:bg-primary/90 sm:text-[11px]"
-              disabled={requestSecondPayment.isPending}
+              disabled={
+                requestSecondPayment.isPending || resendSecondPayment.isPending
+              }
               onClick={() => {
                 setSecondPaymentError(undefined)
                 setShowSecondPaymentModal(true)
               }}
             >
-              Request Second Payment
+              {hasPaymentLink ? "Payment Link" : "Request Second Payment"}
             </Button>
           )}
           {!showCalculateShipping &&
@@ -910,11 +947,13 @@ export function OrderFulfillmentPanel({
                     will be billed on the settlement invoice.{" "}
                   </span>
                 )}
-                {canRequestSecondPayment
-                  ? "Ready — use Request Second Payment for this group."
-                  : paymentLocked
-                    ? "Second payment invoice sent for this group."
-                    : "Finish setting the final shipping price, then request second payment for this group."}
+                {paymentPaid
+                  ? "Second payment received for this group."
+                  : hasPaymentLink
+                    ? "Payment link is ready. Open Payment Link to copy it or resend the invoice."
+                    : canRequestSecondPayment
+                      ? "Ready — open Request Second Payment to copy the payment link. The invoice email is sent only if you choose Resend invoice."
+                      : "Finish setting the final shipping price, then request second payment for this group."}
               </p>
             ) : shipment?.estimatedShipping != null ? (
               <p>
@@ -1099,8 +1138,10 @@ export function OrderFulfillmentPanel({
             setShowSecondPaymentModal(false)
             setSecondPaymentError(undefined)
           }}
-          onConfirm={handleRequestSecondPayment}
-          isConfirming={requestSecondPayment.isPending}
+          onCopyLink={handleCopyPaymentLink}
+          onResendInvoice={handleResendSecondPaymentInvoice}
+          isCopying={requestSecondPayment.isPending}
+          isResending={resendSecondPayment.isPending}
           error={secondPaymentError}
           shippingTotal={segment.groupShipping ?? shipment?.finalShippingPrice}
           groupBalanceDue={segment.groupBalanceDue}

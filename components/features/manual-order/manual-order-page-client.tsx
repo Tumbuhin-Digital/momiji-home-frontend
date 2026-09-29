@@ -253,7 +253,8 @@ export function ManualOrderPageClient() {
   const [successOpen, setSuccessOpen] = useState(false)
   const { data: checkoutNotes } = useCheckoutNotes()
   const [invoiceUrl, setInvoiceUrl] = useState("")
-  const [invoiceEmailSent, setInvoiceEmailSent] = useState(true)
+  const [draftOrderId, setDraftOrderId] = useState("")
+  const [invoiceEmail, setInvoiceEmail] = useState("")
 
   const { lines, shipReady, preOrder, addProducts, setQuantity, removeLine } =
     useManualOrderLines()
@@ -548,23 +549,16 @@ export function ManualOrderPageClient() {
       )
 
       setInvoiceUrl(result.invoiceUrl)
-      setInvoiceEmailSent(result.invoiceEmailSent)
+      setDraftOrderId(result.draftOrderId)
+      setInvoiceEmail(values.email)
       setSuccessOpen(true)
 
-      if (result.invoiceEmailSent) {
-        toastManager.add({
-          title: "Invoice created",
-          description: "Shopify emailed the invoice to the customer.",
-          type: "success",
-        })
-      } else {
-        toastManager.add({
-          title: "Invoice created",
-          description:
-            "Invoice created but email failed — copy the link to share with the customer.",
-          type: "warning",
-        })
-      }
+      toastManager.add({
+        title: "Invoice created",
+        description:
+          "Copy the payment link or send the invoice when you are ready.",
+        type: "success",
+      })
     } catch (err: any) {
       toastManager.add({
         title: "Failed to create invoice",
@@ -1396,7 +1390,8 @@ export function ManualOrderPageClient() {
         open={successOpen}
         onOpenChange={setSuccessOpen}
         invoiceUrl={invoiceUrl}
-        invoiceEmailSent={invoiceEmailSent}
+        draftOrderId={draftOrderId}
+        email={invoiceEmail}
       />
     </div>
   )
