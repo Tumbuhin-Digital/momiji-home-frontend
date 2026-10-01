@@ -8,6 +8,11 @@ import type { InternalAxiosRequestConfig } from "axios"
 type ApiErrorPayload = {
   message?: string
   errors?: Record<string, string[]>
+  error?: {
+    code?: string
+    message?: string
+    details?: string | Record<string, string> | unknown
+  }
 }
 
 class ApiError extends Error {

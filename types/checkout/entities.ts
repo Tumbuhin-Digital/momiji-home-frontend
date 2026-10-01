@@ -32,15 +32,33 @@ export interface CheckoutSummary {
     items: CheckoutItem[]
   }
   shipReady: { items: CheckoutItem[]; subtotal: string }
-  shipping: { cost: string; estimatedArrival: string; method: string }
+  shipping: {
+    cost: string
+    estimatedArrival: string
+    method: string
+    shipReadyError?: ShippingLookupError | null
+    preOrderError?: ShippingLookupError | null
+  }
+}
+
+export interface ShippingLookupError {
+  code: string
+  message: string
+  details?: Record<string, string>
 }
 
 export interface CheckoutSummaryInput {
   address_id: number
-  shipping_method?: string
-  zip_code?: string
+  address1?: string
+  city?: string
   country?: string
+  name?: string
   origin?: "east" | "west"
+  phone?: string
+  shipping_method?: string
+  state?: string
+  zip?: string
+  zip_code?: string
 }
 
 export interface CheckoutCreateInput {

@@ -12,6 +12,12 @@ export interface CheckoutItemDto {
   variant_id: string
 }
 
+export interface ShippingLookupErrorDto {
+  code: string
+  message: string
+  details?: Record<string, string>
+}
+
 export interface CheckoutSummaryDto {
   currency: string
   due_august: {
@@ -32,7 +38,13 @@ export interface CheckoutSummaryDto {
     items: CheckoutItemDto[]
   }
   ship_ready: { items: CheckoutItemDto[]; subtotal: string }
-  shipping: { cost: string; estimated_arrival: string; method: string }
+  shipping: {
+    cost: string
+    estimated_arrival: string
+    method: string
+    ship_ready_error?: ShippingLookupErrorDto | null
+    preorder_error?: ShippingLookupErrorDto | null
+  }
 }
 
 export interface CheckoutCreateResponseDto {

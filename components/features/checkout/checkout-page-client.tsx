@@ -78,6 +78,10 @@ import {
   useReleaseCheckout,
 } from "@/hooks/use-checkout"
 import { useShippingRates, useValidateAddress } from "@/hooks/use-shipping"
+import {
+  applyAddressFieldErrors,
+  shippingErrorDescription,
+} from "@/lib/shipping-error"
 import { useCheckoutNotes } from "@/hooks/use-settings"
 import { checkoutService } from "@/lib/services/checkout.service"
 import { writePreparingCheckoutDocument } from "@/lib/checkout/preparing-checkout-document"
@@ -437,6 +441,8 @@ export default function CheckoutPageClient() {
     city: formValues.city || "",
     state: normalizedState,
     address1: formValues.address || "",
+    name: `${formValues.firstName || ""} ${formValues.lastName || ""}`.trim(),
+    phone: formValues.phone || "",
   }
 
   const ratesEnabledBase =
@@ -447,8 +453,12 @@ export default function CheckoutPageClient() {
     !!formValues.city &&
     !!normalizedState
 
-  const { data: shipReadyRates, isFetching: isLoadingShipReadyRates } =
-    useShippingRates(
+  const {
+    data: shipReadyRates,
+    isFetching: isLoadingShipReadyRates,
+    isError: isShipReadyRatesError,
+    error: shipReadyRatesError,
+  } = useShippingRates(
       { ...ratesAddressInput, segment: "ship_ready" },
       {
         enabled:
@@ -463,6 +473,7 @@ export default function CheckoutPageClient() {
     data: preOrderRates,
     isFetching: isLoadingPreOrderRates,
     isError: isPreOrderRatesError,
+    error: preOrderRatesError,
   } = useShippingRates(
     {
       ...ratesAddressInput,
@@ -693,8 +704,14 @@ export default function CheckoutPageClient() {
       try {
         const payload: CheckoutSummaryInput = {
           address_id: 0,
+          zip: formValues.zipCode,
           zip_code: formValues.zipCode,
           country: mappedCountryForRates,
+          address1: formValues.address,
+          city: formValues.city,
+          state: normalizedState,
+          name: `${formValues.firstName || ""} ${formValues.lastName || ""}`.trim(),
+          phone: formValues.phone,
         }
         if (formValues.shippingMethod) {
           payload.shipping_method = formValues.shippingMethod
@@ -747,6 +764,12 @@ export default function CheckoutPageClient() {
     formValues.shippingMethod,
     formValues.country,
     formValues.zipCode,
+    formValues.address,
+    formValues.city,
+    formValues.state,
+    formValues.firstName,
+    formValues.lastName,
+    formValues.phone,
     preOrderItems.length,
     preorderOrigin,
     treatAllAsPreOrder,
@@ -835,14 +858,7 @@ export default function CheckoutPageClient() {
     } catch (err: any) {
       paymentWindow?.close()
       console.error("Address validation failed:", err)
-      const errorMsg =
-        err?.response?.data?.message ||
-        "Invalid address details. Please verify your shipping address."
-
-      setError("address", { type: "manual", message: errorMsg })
-      setError("city", { type: "manual", message: errorMsg })
-      setError("state", { type: "manual", message: errorMsg })
-      setError("zipCode", { type: "manual", message: errorMsg })
+      applyAddressFieldErrors(err, setError)
 
       window.scrollTo({ top: 0, behavior: "smooth" })
       return
@@ -1831,6 +1847,12 @@ export default function CheckoutPageClient() {
                   locked
                   ratesEnabled={ratesEnabledBase}
                   isLoading={isLoadingShipReadyRates}
+                  isError={isShipReadyRatesError}
+                  errorMessage={
+                    isShipReadyRatesError
+                      ? shippingErrorDescription(shipReadyRatesError)
+                      : undefined
+                  }
                   rates={shipReadyRates}
                   hasLtl={shipReadyHasLtl}
                   allLtl={shipReadyAllLtl}
@@ -1856,6 +1878,11 @@ export default function CheckoutPageClient() {
                   ratesEnabled={ratesEnabledBase}
                   isLoading={isLoadingPreOrderRates}
                   isError={isPreOrderRatesError}
+                  errorMessage={
+                    isPreOrderRatesError
+                      ? shippingErrorDescription(preOrderRatesError)
+                      : undefined
+                  }
                   rates={preOrderRates}
                   hasLtl={preOrderHasLtl}
                   allLtl={preOrderAllLtl}
@@ -2029,6 +2056,10 @@ export default function CheckoutPageClient() {
                                   </span>
                                 ) : isLoadingShipReadyRates ? (
                                   <Loader2 className="inline size-4 animate-spin" />
+                                ) : isShipReadyRatesError ? (
+                                  <span className="italic text-red-600">
+                                    {shippingErrorDescription(shipReadyRatesError)}
+                                  </span>
                                 ) : shipReadyRates?.[0] ? (
                                   formatCurrency(
                                     parseFloat(shipReadyRates[0].cost)
@@ -2067,6 +2098,10 @@ export default function CheckoutPageClient() {
                                 {preOrderAllLtl ? (
                                   <span className="italic">
                                     Calculated by our team
+                                  </span>
+                                ) : isPreOrderRatesError ? (
+                                  <span className="italic text-red-600">
+                                    {shippingErrorDescription(preOrderRatesError)}
                                   </span>
                                 ) : (
                                   formatCurrency(
@@ -2120,6 +2155,10 @@ export default function CheckoutPageClient() {
                               {preOrderAllLtl ? (
                                 <span className="italic">
                                   Calculated by our team
+                                </span>
+                              ) : isPreOrderRatesError ? (
+                                <span className="italic text-red-600">
+                                  {shippingErrorDescription(preOrderRatesError)}
                                 </span>
                               ) : (
                                 formatCurrency(

@@ -35,6 +35,7 @@ type CheckoutShippingSegmentProps = {
   ratesEnabled: boolean
   isLoading: boolean
   isError?: boolean
+  errorMessage?: string
   rates?: ShippingRate[]
   /** Segment contains at least one LTL item */
   hasLtl?: boolean
@@ -132,12 +133,19 @@ function RatesPanel({
   ratesEnabled,
   isLoading,
   isError,
+  errorMessage,
   rates,
   hasLtl,
   allLtl,
 }: Pick<
   CheckoutShippingSegmentProps,
-  "ratesEnabled" | "isLoading" | "isError" | "rates" | "hasLtl" | "allLtl"
+  | "ratesEnabled"
+  | "isLoading"
+  | "isError"
+  | "errorMessage"
+  | "rates"
+  | "hasLtl"
+  | "allLtl"
 >) {
   if (allLtl) {
     return (
@@ -166,7 +174,7 @@ function RatesPanel({
   if (isError) {
     return (
       <div className="flex h-17.5 min-w-0 flex-1 items-center rounded border border-red-200 bg-red-50 px-3 py-2 text-left text-xs leading-snug text-red-600 sm:px-4 sm:text-sm lg:flex-none lg:justify-center lg:text-center">
-        Failed to load shipping rates. Please check your address and try again.
+        {errorMessage || "Shipping rates could not be loaded."}
       </div>
     )
   }
@@ -216,6 +224,7 @@ export function CheckoutShippingSegment({
   ratesEnabled,
   isLoading,
   isError,
+  errorMessage,
   rates,
   hasLtl = false,
   allLtl = false,
@@ -245,6 +254,7 @@ export function CheckoutShippingSegment({
           ratesEnabled={ratesEnabled}
           isLoading={isLoading}
           isError={isError}
+          errorMessage={errorMessage}
           rates={rates}
           hasLtl={hasLtl}
           allLtl={allLtl}

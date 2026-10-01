@@ -198,6 +198,12 @@ export function DraftOrderEditPanel({
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button type="button" variant="outline" onClick={() => setPickerOpen(true)}>
+          Add product
+        </Button>
+      </div>
+
       <div className="overflow-hidden rounded-xl border border-[#EBEBEB]">
         <table className="w-full text-left text-sm">
           <thead className="bg-[#F2EDE4]">
@@ -262,10 +268,6 @@ export function DraftOrderEditPanel({
           </tbody>
         </table>
       </div>
-
-      <Button type="button" variant="outline" onClick={() => setPickerOpen(true)}>
-        Add product
-      </Button>
 
       <div className="space-y-2">
         <p className="text-xs font-semibold tracking-wide text-[#4A4A4A] uppercase">

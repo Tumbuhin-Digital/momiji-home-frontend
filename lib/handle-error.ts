@@ -3,6 +3,19 @@ import { toastManager } from "@/components/ui/toast"
 import { deleteCookie } from "./cookie"
 import { ApiError } from "@/lib/api/axios"
 
+function formatErrorDetails(details: unknown): string {
+  if (typeof details === "string") return details
+  if (Array.isArray(details)) return details.map(String).join(", ")
+  if (details && typeof details === "object") {
+    return Object.entries(details as Record<string, unknown>)
+      .filter(([key]) => !key.startsWith("expected_"))
+      .map(([, value]) => (value == null ? "" : String(value)))
+      .filter(Boolean)
+      .join(" ")
+  }
+  return String(details)
+}
+
 export function isAbortError(error: unknown): boolean {
   if (isCancel(error)) return true
   if (error instanceof Error && error.name === "AbortError") return true
@@ -29,9 +42,7 @@ export function getErrorMessage(error: unknown): {
       const nestedError = errorData.error as Record<string, unknown> | undefined
       const details = nestedError?.details || errorData.details
       if (details) {
-        descriptionFromPayload = Array.isArray(details)
-          ? details.join(", ")
-          : String(details)
+        descriptionFromPayload = formatErrorDetails(details)
       } else if (errorData.message) {
         descriptionFromPayload = String(errorData.message)
       }

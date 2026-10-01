@@ -12,6 +12,8 @@ export interface ShippingRatesRequest {
   address1?: string
   city?: string
   country?: string
+  name?: string
+  phone?: string
   state?: string
   zip: string
   segment?: "ship_ready" | "pre_order"

@@ -39,6 +39,10 @@ import { toastManager } from "@/components/ui/toast"
 import { useCreateManualOrder } from "@/hooks/use-manual-order"
 import { useCheckoutNotes } from "@/hooks/use-settings"
 import { useShippingRates, useValidateAddress } from "@/hooks/use-shipping"
+import {
+  applyAddressFieldErrors,
+  shippingErrorDescription,
+} from "@/lib/shipping-error"
 import { parseAddressPaste } from "@/lib/checkout/address-paste"
 import { computeManualOrderSummary } from "@/lib/manual-order/summary"
 import { formatCurrency } from "@/lib/utils"
@@ -356,6 +360,8 @@ export function ManualOrderPageClient() {
         formValues.state ||
         "",
       address1: formValues.address || "",
+      name: `${formValues.firstName || ""} ${formValues.lastName || ""}`.trim(),
+      phone: formValues.phone || "",
     }),
     [
       formValues.zipCode,
@@ -363,6 +369,9 @@ export function ManualOrderPageClient() {
       formValues.city,
       formValues.state,
       formValues.address,
+      formValues.firstName,
+      formValues.lastName,
+      formValues.phone,
     ]
   )
 
@@ -523,11 +532,8 @@ export function ManualOrderPageClient() {
         city: values.city,
         zip: values.zipCode,
       })
-    } catch (err: any) {
-      const errorMsg =
-        err?.response?.data?.message ||
-        "Address could not be validated. Please check and try again."
-      setError("address", { type: "manual", message: errorMsg })
+    } catch (err: unknown) {
+      const errorMsg = applyAddressFieldErrors(err, setError)
       toastManager.add({
         title: "Invalid address",
         description: errorMsg,
@@ -1175,6 +1181,11 @@ export function ManualOrderPageClient() {
                 ratesEnabled={ratesAddressReady}
                 isLoading={shipReadyRatesQuery.isLoading}
                 isError={shipReadyRatesQuery.isError}
+                errorMessage={
+                  shipReadyRatesQuery.isError
+                    ? shippingErrorDescription(shipReadyRatesQuery.error)
+                    : undefined
+                }
                 rates={shipReadyRates}
               />
             )}
@@ -1202,6 +1213,11 @@ export function ManualOrderPageClient() {
                 ratesEnabled={ratesAddressReady}
                 isLoading={preOrderRatesQuery.isLoading}
                 isError={preOrderRatesQuery.isError}
+                errorMessage={
+                  preOrderRatesQuery.isError
+                    ? shippingErrorDescription(preOrderRatesQuery.error)
+                    : undefined
+                }
                 rates={preOrderRates}
               />
             )}
@@ -1231,6 +1247,10 @@ export function ManualOrderPageClient() {
                             formatCurrency(0)
                           ) : shipReadyRatesQuery.isLoading ? (
                             <Loader2 className="inline size-4 animate-spin" />
+                          ) : shipReadyRatesQuery.isError ? (
+                            <span className="italic text-red-600">
+                              {shippingErrorDescription(shipReadyRatesQuery.error)}
+                            </span>
                           ) : shipReadyRates?.[0] ? (
                             formatCurrency(shipReadyRates[0].cost)
                           ) : (
@@ -1259,6 +1279,10 @@ export function ManualOrderPageClient() {
                         <span className="text-right text-alternate/60">
                           {preOrderRatesQuery.isLoading ? (
                             <Loader2 className="inline size-4 animate-spin" />
+                          ) : preOrderRatesQuery.isError ? (
+                            <span className="italic text-red-600">
+                              {shippingErrorDescription(preOrderRatesQuery.error)}
+                            </span>
                           ) : (
                             formatCurrency(summary.shippingPreorderDeposit)
                           )}
@@ -1295,6 +1319,10 @@ export function ManualOrderPageClient() {
                       <span className="text-right text-alternate/60">
                         {preOrderRatesQuery.isLoading ? (
                           <Loader2 className="inline size-4 animate-spin" />
+                        ) : preOrderRatesQuery.isError ? (
+                          <span className="italic text-red-600">
+                            {shippingErrorDescription(preOrderRatesQuery.error)}
+                          </span>
                         ) : (
                           formatCurrency(summary.shippingPreorderBalance)
                         )}
@@ -1357,7 +1385,7 @@ export function ManualOrderPageClient() {
             <Button
               type="submit"
               disabled={isSubmitting || lines.length === 0}
-              className="h-14 w-full bg-[#5B7C8A] text-base font-medium text-white hover:bg-[#4d6a76]"
+              className="h-16 w-full bg-[#5B7C8A] text-base font-medium text-white hover:bg-[#4d6a76] sm:h-16 sm:text-base"
             >
               {isSubmitting ? (
                 <>

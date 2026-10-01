@@ -10,7 +10,7 @@ export interface BaseResponse<T = undefined> {
   data?: T
   error?: {
     code: string
-    details: string
+    details?: string | Record<string, string>
   }
   message: string
   status: string

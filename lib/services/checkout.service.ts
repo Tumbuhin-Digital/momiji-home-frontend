@@ -56,6 +56,20 @@ function mapCheckoutSummaryToDomain(dto: CheckoutSummaryDto): CheckoutSummary {
       method: dto.shipping.method,
       cost: dto.shipping.cost,
       estimatedArrival: dto.shipping.estimated_arrival,
+      shipReadyError: dto.shipping.ship_ready_error
+        ? {
+            code: dto.shipping.ship_ready_error.code,
+            message: dto.shipping.ship_ready_error.message,
+            details: dto.shipping.ship_ready_error.details,
+          }
+        : null,
+      preOrderError: dto.shipping.preorder_error
+        ? {
+            code: dto.shipping.preorder_error.code,
+            message: dto.shipping.preorder_error.message,
+            details: dto.shipping.preorder_error.details,
+          }
+        : null,
     },
   }
 }

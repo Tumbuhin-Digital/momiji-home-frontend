@@ -12,6 +12,7 @@ import { Boxes, CheckCircle2, XCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { toastManager } from "@/components/ui/toast"
+import { CopyFailedError, copyTextFromPromise } from "@/lib/copy-text"
 import {
   Carousel,
   CarouselContent,
@@ -382,11 +383,16 @@ export function OrderFulfillmentPanel({
 
   const handleCopyPaymentLink = async () => {
     setSecondPaymentError(undefined)
-    try {
-      const result = await requestSecondPayment.mutateAsync({
+    // The clipboard write has to start in this click. Awaiting the invoice
+    // request first drops the browser's user gesture, so writeText is denied.
+    const pendingUrl = requestSecondPayment
+      .mutateAsync({
         batchId: segment.batchId ?? null,
       })
-      await navigator.clipboard.writeText(result.invoice_url)
+      .then((result) => result.invoice_url)
+
+    try {
+      await copyTextFromPromise(pendingUrl)
       toastManager.add({
         title: "Copied",
         description: "Payment link copied to clipboard",
@@ -394,6 +400,13 @@ export function OrderFulfillmentPanel({
       })
       onOrderActioned?.()
     } catch (error: unknown) {
+      if (error instanceof CopyFailedError) {
+        onOrderActioned?.()
+        setSecondPaymentError(
+          `The invoice was created, but the payment link could not be copied. Copy this link manually: ${error.text}`
+        )
+        return
+      }
       setSecondPaymentError(
         secondPaymentErrorMessage(error, "Failed to copy the payment link.")
       )

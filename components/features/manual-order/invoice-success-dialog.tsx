@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { toastManager } from "@/components/ui/toast"
 import { useSendManualOrderInvoice } from "@/hooks/use-manual-order"
+import { copyText } from "@/lib/copy-text"
 
 interface InvoiceSuccessDialogProps {
   open: boolean
@@ -37,7 +38,7 @@ export function InvoiceSuccessDialog({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(invoiceUrl)
+      await copyText(invoiceUrl)
       setCopied(true)
       toastManager.add({
         title: "Copied",
@@ -80,9 +81,8 @@ export function InvoiceSuccessDialog({
         <DialogHeader>
           <DialogTitle>Invoice created</DialogTitle>
           <DialogDescription className="text-pretty">
-            The invoice was created and the email has not been sent. Copy or
-            open the payment link below, or send the invoice when you are
-            ready.
+            Copy the payment link below for payment or send the invoice if
+            needed.
           </DialogDescription>
         </DialogHeader>
 
@@ -92,7 +92,7 @@ export function InvoiceSuccessDialog({
           </p>
           <div className="flex items-stretch gap-2">
             <div className="min-w-0 flex-1 rounded-lg border border-black/10 bg-muted/50 px-3 py-2.5">
-              <p className="break-all font-mono text-xs leading-relaxed text-alternate">
+              <p className="font-mono text-xs leading-relaxed break-all text-alternate">
                 {invoiceUrl}
               </p>
             </div>

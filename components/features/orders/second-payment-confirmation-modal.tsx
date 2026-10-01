@@ -191,7 +191,7 @@ export function SecondPaymentConfirmationModal({
           {error && (
             <div className="flex items-start gap-3 rounded border border-destructive/20 bg-destructive/5 p-3">
               <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
-              <p className="text-xs text-destructive">{error}</p>
+              <p className="text-xs break-all text-destructive">{error}</p>
             </div>
           )}
         </div>

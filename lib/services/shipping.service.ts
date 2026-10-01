@@ -46,6 +46,8 @@ async function getShippingRates(
       city: input.city,
       state: input.state,
       address1: input.address1,
+      name: input.name,
+      phone: input.phone,
       segment: input.segment,
       origin: input.origin,
       line_items: input.line_items,

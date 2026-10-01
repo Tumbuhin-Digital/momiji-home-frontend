@@ -21,6 +21,7 @@ import {
   useCalculatePreorderShipping,
   useUpdatePreorderShipping,
 } from "@/hooks/use-orders"
+import { shippingErrorDescription } from "@/lib/shipping-error"
 import { formatCurrency } from "@/lib/utils"
 import { warehouseLabel } from "@/lib/warehouse"
 
@@ -259,15 +260,7 @@ export function PreorderCalculateShippingModal({
         setFinalPrice(res.estimated_shipping)
       }
     } catch (error: unknown) {
-      const err = error as {
-        response?: { data?: { message?: string } }
-        message?: string
-      }
-      setSaveError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to calculate shipping"
-      )
+      setSaveError(shippingErrorDescription(error))
     }
   }
 
@@ -307,15 +300,7 @@ export function PreorderCalculateShippingModal({
       onShippingConfigured?.()
       onClose()
     } catch (error: unknown) {
-      const err = error as {
-        response?: { data?: { message?: string } }
-        message?: string
-      }
-      setSaveError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to save shipping"
-      )
+      setSaveError(shippingErrorDescription(error))
     }
   }
 
@@ -659,7 +644,7 @@ export function PreorderCalculateShippingModal({
             </div>
 
             {saveError && (
-              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm whitespace-pre-line text-red-700">
                 {saveError}
               </div>
             )}
