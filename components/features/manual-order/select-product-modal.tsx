@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { Check, Search, XIcon } from "lucide-react"
 
@@ -15,8 +15,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 
-import { useProducts } from "@/hooks/use-products"
-import { formatProductDims } from "@/lib/manual-order/summary"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useInfiniteProducts } from "@/hooks/use-products"
+import { formatVariantSpecs } from "@/lib/units"
 import { cn, formatCurrency } from "@/lib/utils"
 
 import type { Product } from "@/types/products"
@@ -33,47 +34,68 @@ export function SelectProductModal({
   onSave,
 }: SelectProductModalProps) {
   const [search, setSearch] = useState("")
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const debouncedSearch = useDebouncedValue(search.trim())
+  // Keep the full product so selections survive search changes and paging.
+  const [selected, setSelected] = useState<Map<string, Product>>(new Map())
+  const listRef = useRef<HTMLDivElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
-  const productsQuery = useProducts(
+  const {
+    data: productsPages,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteProducts(
     {
-      search: search || undefined,
+      search: debouncedSearch || undefined,
       sort: "name_asc",
-      page: 1,
       limit: 50,
     },
     { enabled: open }
   )
 
   const products = useMemo(() => {
-    const items = productsQuery.data?.data ?? []
+    const items = productsPages?.pages.flatMap((page) => page.data) ?? []
     return items.filter((p) => p.category !== "inactive")
-  }, [productsQuery.data])
+  }, [productsPages])
 
-  const selectedProducts = useMemo(
-    () => products.filter((p) => selectedIds.has(p.id)),
-    [products, selectedIds]
-  )
+  useEffect(() => {
+    const root = listRef.current
+    const target = sentinelRef.current
+    if (!root || !target || !open) return
 
-  const toggle = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage()
+        }
+      },
+      { root, threshold: 0.1, rootMargin: "80px" }
+    )
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [open, hasNextPage, isFetchingNextPage, fetchNextPage, products.length])
+
+  const toggle = (product: Product) => {
+    setSelected((prev) => {
+      const next = new Map(prev)
+      if (next.has(product.id)) next.delete(product.id)
+      else next.set(product.id, product)
       return next
     })
   }
 
   const handleSave = () => {
-    onSave(selectedProducts)
-    setSelectedIds(new Set())
+    onSave(Array.from(selected.values()))
+    setSelected(new Map())
     setSearch("")
     onOpenChange(false)
   }
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {
-      setSelectedIds(new Set())
+      setSelected(new Map())
       setSearch("")
     }
     onOpenChange(next)
@@ -121,8 +143,8 @@ export function SelectProductModal({
               <span className="text-right">WS$ Price</span>
             </div>
 
-            <div className="max-h-[420px] overflow-y-auto">
-              {productsQuery.isLoading ? (
+            <div ref={listRef} className="max-h-[420px] overflow-y-auto">
+              {isLoading ? (
                 <div className="flex items-center justify-center py-16">
                   <Spinner className="size-6" />
                 </div>
@@ -132,28 +154,28 @@ export function SelectProductModal({
                 </p>
               ) : (
                 products.map((product) => {
-                  const selected = selectedIds.has(product.id)
-                  const dims = formatProductDims(product)
+                  const isSelected = selected.has(product.id)
+                  const dims = formatVariantSpecs(product)
                   return (
                     <button
                       key={product.id}
                       type="button"
-                      onClick={() => toggle(product.id)}
+                      onClick={() => toggle(product)}
                       className={cn(
                         "grid w-full grid-cols-[1fr_88px_100px_100px] items-center border-b px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/60",
-                        selected && "bg-muted/80"
+                        isSelected && "bg-muted/80"
                       )}
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <span
                           className={cn(
                             "flex size-5 shrink-0 items-center justify-center rounded border",
-                            selected
+                            isSelected
                               ? "border-[#5B7C8A] bg-[#5B7C8A] text-white"
                               : "border-muted-foreground/40"
                           )}
                         >
-                          {selected ? <Check className="size-3" /> : null}
+                          {isSelected ? <Check className="size-3" /> : null}
                         </span>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -185,16 +207,23 @@ export function SelectProductModal({
                   )
                 })
               )}
+              <div
+                ref={sentinelRef}
+                className="flex h-8 items-center justify-center"
+                aria-hidden
+              >
+                {isFetchingNextPage ? <Spinner className="size-4" /> : null}
+              </div>
             </div>
           </div>
 
           <Button
             type="button"
             className="h-12 w-full bg-[#5B7C8A] text-white hover:bg-[#4d6a76]"
-            disabled={selectedIds.size === 0}
+            disabled={selected.size === 0}
             onClick={handleSave}
           >
-            Save product
+            Save product{selected.size > 0 ? ` (${selected.size})` : ""}
           </Button>
         </div>
       </DialogContent>

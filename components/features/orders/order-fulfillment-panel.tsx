@@ -344,20 +344,22 @@ export function OrderFulfillmentPanel({
       !shipment?.invoiceSentAt &&
       !shipment?.invoicePaidAt)
 
+  const paymentPaid =
+    segment.secondPaymentStatus === "paid" || Boolean(shipment?.invoicePaidAt)
+
   const showCalculateShipping =
     isPreOrder &&
     !isCancelled &&
     !paymentLocked &&
     shipment?.finalShippingPrice == null
 
+  // Shipping stays editable until the second payment is paid. Once the payment link
+  // exists, saving re-prices that same invoice (same link) without emailing anyone.
   const showEditShipping =
     isPreOrder &&
     !isCancelled &&
-    !paymentLocked &&
+    !paymentPaid &&
     shipment?.finalShippingPrice != null
-
-  const paymentPaid =
-    segment.secondPaymentStatus === "paid" || Boolean(shipment?.invoicePaidAt)
   const hasPaymentLink = Boolean(shipment?.invoiceUrl || shipment?.invoiceSentAt)
 
   const showRequestSecondPayment =

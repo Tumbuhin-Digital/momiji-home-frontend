@@ -95,6 +95,11 @@ export interface PreorderShipment {
   finalShippingPrice?: number
   /** Shipping already collected at checkout (50%). 0 for orders placed before the split scheme. */
   prepaidShipping?: number
+  /**
+   * Most of the prepayment this group could deduct if its final price were raised.
+   * The deduction on the invoice is min(this, final price).
+   */
+  prepaidShippingLimit?: number
   shippingNotes?: string
   creditAmount?: number
   totalBoxes: number
@@ -295,6 +300,9 @@ function mapShipmentDto(dto: PreorderShipmentDto): PreorderShipment {
       : undefined,
     prepaidShipping: dto.prepaid_shipping
       ? parseFloat(dto.prepaid_shipping)
+      : undefined,
+    prepaidShippingLimit: dto.prepaid_shipping_limit
+      ? parseFloat(dto.prepaid_shipping_limit)
       : undefined,
     shippingNotes: dto.shipping_notes,
     creditAmount: dto.credit_amount

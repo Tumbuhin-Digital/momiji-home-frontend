@@ -102,22 +102,3 @@ export function computeManualOrderSummary(
     totalDueLater: preorderBalance + shippingHalves.remaining,
   }
 }
-
-export function formatProductDims(line: {
-  weightKg?: number
-  widthCm?: number
-  heightCm?: number
-  depthCm?: number
-}): string {
-  const parts: string[] = []
-  if (line.weightKg != null && line.weightKg > 0) {
-    parts.push(`${line.weightKg} kg`)
-  }
-  const w = line.widthCm
-  const h = line.heightCm
-  const d = line.depthCm
-  if (w && h && d) {
-    parts.push(`${w} × ${h} × ${d} cm (W×H×D)`)
-  }
-  return parts.join(" · ")
-}

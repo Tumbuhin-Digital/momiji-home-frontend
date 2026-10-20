@@ -53,6 +53,8 @@ export interface PreorderShipmentDto {
   final_shipping_price?: string
   /** 50% of the carrier estimate already charged at checkout. Omitted (legacy) or "0.00" for pre-split orders. */
   prepaid_shipping?: string
+  /** Most of the prepayment this group could deduct at a higher final price. */
+  prepaid_shipping_limit?: string
   shipping_notes?: string
   credit_amount?: string
   total_boxes: number

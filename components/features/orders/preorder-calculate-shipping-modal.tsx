@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 
-import { Package, XIcon } from "lucide-react"
+import { AlertCircle, Package, XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -193,12 +193,24 @@ export function PreorderCalculateShippingModal({
   // The customer already paid 50% of the checkout estimate. The settlement invoice
   // bills the full final price minus that, so the admin still enters the FULL price.
   // Legacy orders (pre-split scheme) have no prepaid amount and bill the full price.
-  const prepaidShipping = shipment?.prepaidShipping ?? 0
-  const hasPrepaidShipping = prepaidShipping > 0
+  // The deduction follows the price being typed: up to the group's limit, never more
+  // than the price itself — the same rule the backend applies when it saves.
+  const prepaidLimit =
+    shipment?.prepaidShippingLimit ?? shipment?.prepaidShipping ?? 0
+  const hasPrepaidShipping = prepaidLimit > 0
+  const prepaidShipping = hasValidFinalPrice
+    ? Math.min(prepaidLimit, Math.round(parsedFinalPrice * 100) / 100)
+    : prepaidLimit
   const remainingToBill = hasValidFinalPrice
     ? Math.max(0, Math.round((parsedFinalPrice - prepaidShipping) * 100) / 100)
     : undefined
   const rateCalculatedLabel = formatRateCalculatedAt(rateCalculatedAt)
+
+  // Request Second Payment already created this group's invoice. Saving re-prices that
+  // same invoice, so the link the customer may hold keeps working with the new total.
+  const updatesPaymentLink =
+    Boolean(shipment?.invoiceUrl || shipment?.invoiceSentAt) &&
+    !shipment?.invoicePaidAt
 
   const toggleNested = (lineItemId: string, checked: boolean) => {
     setPacking((prev) =>
@@ -623,9 +635,8 @@ export function PreorderCalculateShippingModal({
                 {hasPrepaidShipping && (
                   <p className="text-xs text-slate-500">
                     Enter the <strong>full</strong> shipping price. The{" "}
-                    {formatCurrency(prepaidShipping)} already collected at
-                    checkout is deducted automatically on the settlement
-                    invoice.
+                    {formatCurrency(prepaidLimit)} already collected at checkout
+                    is deducted automatically on the settlement invoice.
                   </p>
                 )}
               </div>
@@ -642,6 +653,19 @@ export function PreorderCalculateShippingModal({
                 />
               </div>
             </div>
+
+            {updatesPaymentLink && (
+              <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-[#FF850D] bg-[#FF850D1A] p-3 text-xs leading-normal text-[#FF850D]">
+                <AlertCircle className="mt-0.5 size-4 shrink-0 text-[#FF850D]" />
+                <span>
+                  The payment link for this group already exists. Saving updates
+                  that same invoice: the link stays the same and shows the new
+                  total. The customer is not emailed — if they already received
+                  the invoice, open <strong>Payment Link</strong> and choose{" "}
+                  <strong>Resend invoice</strong> so they get the new breakdown.
+                </span>
+              </div>
+            )}
 
             {saveError && (
               <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm whitespace-pre-line text-red-700">
@@ -670,6 +694,8 @@ export function PreorderCalculateShippingModal({
                 <Spinner className="mr-2" />
                 Saving...
               </>
+            ) : updatesPaymentLink ? (
+              "Save & update invoice"
             ) : mode === "edit" ? (
               "Save changes"
             ) : (
