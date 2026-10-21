@@ -74,6 +74,15 @@ const FulfillItemsModal = dynamic(
   { ssr: false }
 )
 
+class NoPaymentLinkError extends Error {
+  constructor() {
+    super(
+      "The balance was added to the customer's Shopify order, but Shopify returned no payment link to copy. Shopify emails the invoice instead; use Resend invoice to send it again."
+    )
+    this.name = "NoPaymentLinkError"
+  }
+}
+
 const shipReadySteps = [
   { step: 1, title: "Order Placed" },
   { step: 2, title: "Shipped" },
@@ -391,7 +400,14 @@ export function OrderFulfillmentPanel({
       .mutateAsync({
         batchId: segment.batchId ?? null,
       })
-      .then((result) => result.invoice_url)
+      .then((result) => {
+        // A balance billed on the original Shopify order may come back without a link;
+        // Shopify then emails the invoice itself.
+        if (!result.invoice_url?.trim()) {
+          throw new NoPaymentLinkError()
+        }
+        return result.invoice_url
+      })
 
     try {
       await copyTextFromPromise(pendingUrl)
@@ -407,6 +423,11 @@ export function OrderFulfillmentPanel({
         setSecondPaymentError(
           `The invoice was created, but the payment link could not be copied. Copy this link manually: ${error.text}`
         )
+        return
+      }
+      if (error instanceof NoPaymentLinkError) {
+        onOrderActioned?.()
+        setSecondPaymentError(error.message)
         return
       }
       setSecondPaymentError(
