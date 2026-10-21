@@ -147,6 +147,8 @@ export interface RequestSecondPaymentRequest {
 export interface RequestSecondPaymentResponse {
   invoice_url: string
   draft_order_id: string
+  // Products Shopify is short on; the balance is still billed and stock may go negative.
+  stock_warnings?: string[]
 }
 
 export interface SecondPaymentSummaryDto {

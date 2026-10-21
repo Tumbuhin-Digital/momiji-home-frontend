@@ -394,6 +394,17 @@ export function OrderFulfillmentPanel({
 
   const handleCopyPaymentLink = async () => {
     setSecondPaymentError(undefined)
+    let stockWarnings: string[] = []
+    // Short stock does not block the balance; the admin is told so they can restock.
+    const showStockWarnings = () => {
+      if (stockWarnings.length === 0) return
+      toastManager.add({
+        title: "Check Shopify stock",
+        description: stockWarnings.join(" "),
+        type: "warning",
+      })
+    }
+
     // The clipboard write has to start in this click. Awaiting the invoice
     // request first drops the browser's user gesture, so writeText is denied.
     const pendingUrl = requestSecondPayment
@@ -401,6 +412,7 @@ export function OrderFulfillmentPanel({
         batchId: segment.batchId ?? null,
       })
       .then((result) => {
+        stockWarnings = result.stock_warnings ?? []
         // A balance billed on the original Shopify order may come back without a link;
         // Shopify then emails the invoice itself.
         if (!result.invoice_url?.trim()) {
@@ -416,9 +428,11 @@ export function OrderFulfillmentPanel({
         description: "Payment link copied to clipboard",
         type: "success",
       })
+      showStockWarnings()
       onOrderActioned?.()
     } catch (error: unknown) {
       if (error instanceof CopyFailedError) {
+        showStockWarnings()
         onOrderActioned?.()
         setSecondPaymentError(
           `The invoice was created, but the payment link could not be copied. Copy this link manually: ${error.text}`
@@ -426,6 +440,7 @@ export function OrderFulfillmentPanel({
         return
       }
       if (error instanceof NoPaymentLinkError) {
+        showStockWarnings()
         onOrderActioned?.()
         setSecondPaymentError(error.message)
         return
