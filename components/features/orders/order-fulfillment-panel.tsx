@@ -40,6 +40,7 @@ import {
   useMarkFulfillmentDelivered,
   useRequestSecondPayment,
   useResendSecondPaymentInvoice,
+  useSyncOrderFulfillments,
   useUpdateItemReceived,
   useUpdateItemStep,
   useUpdateItemTracking,
@@ -193,6 +194,29 @@ export function OrderFulfillmentPanel({
   const markDelivered = useMarkFulfillmentDelivered(order.id)
   const requestSecondPayment = useRequestSecondPayment(order.id)
   const resendSecondPayment = useResendSecondPaymentInvoice(order.id)
+  const syncFulfillments = useSyncOrderFulfillments(order.id)
+
+  const handleSyncFromShopify = () => {
+    syncFulfillments.mutate(undefined, {
+      onSuccess: (r) => {
+        const parts = [`${r.created} new`, `${r.updated} updated`]
+        if (r.unmatched_lines > 0) parts.push(`${r.unmatched_lines} not matched`)
+        toastManager.add({
+          title:
+            r.created > 0 ? "Tracking synced from Shopify" : "Already up to date",
+          description: parts.join(", "),
+          type: r.unmatched_lines > 0 ? "warning" : "success",
+        })
+      },
+      onError: (err) => {
+        toastManager.add({
+          title: "Sync from Shopify failed",
+          description: err instanceof Error ? err.message : undefined,
+          type: "error",
+        })
+      },
+    })
+  }
 
   const items = segment.lineItems
   const isPreOrder = segmentIsPreOrder(segment)
@@ -819,6 +843,19 @@ export function OrderFulfillmentPanel({
                   <span className="shrink-0 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
                     Waiting for payment
                   </span>
+                )}
+
+                {isPreOrder && currentStep >= trackingActionStep && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 border-[#A2D2FF] bg-white text-[#0052CC] hover:bg-[#EEF5FF]"
+                    onClick={handleSyncFromShopify}
+                    disabled={syncFulfillments.isPending}
+                    title="Pull tracking numbers already created in Shopify (e.g. by the 3PL)"
+                  >
+                    {syncFulfillments.isPending ? "Syncing…" : "Sync from Shopify"}
+                  </Button>
                 )}
 
                 {isPreOrder &&

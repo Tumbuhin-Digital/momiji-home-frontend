@@ -1,13 +1,39 @@
 "use client"
 
+import { useState } from "react"
+
 import { Button } from "@/components/ui/button"
+import { toastManager } from "@/components/ui/toast"
 
 import { OrderManagementTable } from "@/components/features/orders/order-management-table"
+import { OrderSyncResultModal } from "@/components/features/orders/order-sync-result-modal"
 
-import { useInfiniteOrders } from "@/hooks/use-orders"
+import { Iconsax3dRotate } from "@/public/icons/iconsax-3d-rotate"
+
+import { useInfiniteOrders, useSyncOrdersFromShopify } from "@/hooks/use-orders"
 import { formatLastSynced } from "@/lib/utils"
 
+import type { OrderSyncResultDto } from "@/types/orders"
+
 export function OrderManagementClient() {
+  const syncMutation = useSyncOrdersFromShopify()
+  const [syncResult, setSyncResult] = useState<OrderSyncResultDto | null>(
+    null
+  )
+  const isSyncing = syncMutation.isPending
+
+  const handleSync = async () => {
+    try {
+      setSyncResult(await syncMutation.mutateAsync())
+    } catch {
+      toastManager.add({
+        title: "Sync failed",
+        description: "Could not read orders from Shopify. Nothing was changed.",
+        type: "error",
+      })
+    }
+  }
+
   const {
     data,
     isLoading,
@@ -36,7 +62,25 @@ export function OrderManagementClient() {
             {formatLastSynced(new Date())} · {totalOrders} orders in total
           </p>
         </div>
+        <Button
+          type="button"
+          onClick={handleSync}
+          disabled={isSyncing}
+          className="h-10! w-full gap-1.5 rounded-full border-none bg-primary/20 px-4 py-2 text-primary hover:bg-primary/30 hover:text-primary sm:w-fit"
+        >
+          <Iconsax3dRotate
+            className={`size-6 ${isSyncing ? "animate-spin" : ""}`}
+          />
+          <span className="text-sm">
+            {isSyncing ? "Syncing Shopify Orders" : "Sync Shopify Orders"}
+          </span>
+        </Button>
       </div>
+
+      <OrderSyncResultModal
+        result={syncResult}
+        onClose={() => setSyncResult(null)}
+      />
 
       {isError ? (
         <div className="flex h-64 flex-col items-center justify-center rounded-xl border border-destructive/20 bg-destructive/5 text-center">

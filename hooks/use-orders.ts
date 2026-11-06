@@ -52,6 +52,18 @@ export function useUpdateDraftOrderItems() {
   })
 }
 
+export function useSyncOrdersFromShopify() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ordersService.syncOrdersFromShopify,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
+    },
+  })
+}
+
 export function useAcceptOrder() {
   const queryClient = useQueryClient()
 
@@ -309,6 +321,21 @@ export function useCreateFulfillment(orderId: string) {
   return useMutation({
     mutationFn: (body: CreateFulfillmentDto) =>
       ordersService.createFulfillment(orderId, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.orders.detail(orderId),
+      })
+    },
+  })
+}
+
+export function useSyncOrderFulfillments(orderId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => ordersService.syncOrderFulfillments(orderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })

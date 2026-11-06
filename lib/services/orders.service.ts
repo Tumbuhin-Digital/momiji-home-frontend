@@ -10,7 +10,9 @@ import type {
   CreateOrderInput,
   CreateFulfillmentDto,
   FulfillmentDto,
+  FulfillmentSyncResultDto,
   OrderResponseDto,
+  OrderSyncResultDto,
   PreorderShipmentDto,
   RequestSecondPaymentResponse,
   UpdatePreorderShippingRequest,
@@ -227,6 +229,27 @@ async function markFulfillmentDelivered(
   )
 }
 
+async function syncOrderFulfillments(
+  orderId: string
+): Promise<FulfillmentSyncResultDto> {
+  const response = await apiClient.post<BaseResponse<FulfillmentSyncResultDto>>(
+    `/orders/${orderId}/fulfillments/sync`
+  )
+  if (!response.data) {
+    throw new Error("Fulfillment sync returned no result")
+  }
+  return response.data
+}
+
+async function syncOrdersFromShopify(): Promise<OrderSyncResultDto> {
+  const response =
+    await apiClient.post<BaseResponse<OrderSyncResultDto>>("/orders/sync")
+  if (!response.data) {
+    throw new Error("Order sync returned no result")
+  }
+  return response.data
+}
+
 async function getWebsiteDraftOrders(): Promise<WebsiteDraftOrderDto[]> {
   const response = await apiClient.get<BaseResponse<WebsiteDraftOrderDto[]>>(
     "/orders/drafts"
@@ -270,6 +293,7 @@ export const ordersService = {
   getOrderById,
   getOrders,
   getOrdersPaginated,
+  syncOrdersFromShopify,
   getWebsiteDraftOrders,
   getWebsiteDraftOrder,
   updateWebsiteDraftItems,
@@ -283,4 +307,5 @@ export const ordersService = {
   resendSecondPaymentInvoice,
   createFulfillment,
   markFulfillmentDelivered,
+  syncOrderFulfillments,
 }

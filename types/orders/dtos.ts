@@ -284,6 +284,22 @@ export interface UpdateTrackingDto {
   tracking_url: string
 }
 
+export interface OrderSyncEntryDto {
+  order_id: string
+  order_number: string
+  changes?: string[]
+  warnings?: string[]
+}
+
+export interface OrderSyncResultDto {
+  checked: number
+  updated: number
+  skipped: number
+  failed: number
+  /** Only orders that changed or need an admin's attention. */
+  orders: OrderSyncEntryDto[]
+}
+
 export interface WebsiteDraftOrderDto {
   id: string
   name: string
@@ -339,4 +355,13 @@ export interface WebsiteDraftOrderDetailDto {
   shipping_address?: WebsiteDraftAddressDto
   billing_address?: WebsiteDraftAddressDto
   line_items: WebsiteDraftLineItemDto[]
+}
+
+/** Result of POST /orders/:id/fulfillments/sync (re-reads Shopify fulfillments). */
+export interface FulfillmentSyncResultDto {
+  created: number
+  updated: number
+  skipped: number
+  unmatched_lines: number
+  balance_lines_linked: number
 }
