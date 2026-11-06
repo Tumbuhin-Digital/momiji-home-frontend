@@ -1060,6 +1060,9 @@ export function OrderFulfillmentPanel({
         )}
 
         {(() => {
+          // Pre-order shipments already show each tracking number on its own
+          // fulfillment card below; the item-level bill would only repeat one.
+          if (isPreOrder && preOrderFulfillments.length > 0) return null
           const uniqueTrackings = new Map<string, OrderLineItem>()
           items.forEach((item) => {
             const hasTracking =
