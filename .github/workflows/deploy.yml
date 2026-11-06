@@ -20,13 +20,12 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: 2221
-          script_stop: true
           command_timeout: 30m
           script: |
-            set -euo pipefail
+            set -eo pipefail
             # nvm/pm2 tidak otomatis ter-load di sesi SSH non-interaktif
             export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            if [ -s "$NVM_DIR/nvm.sh" ]; then . "$NVM_DIR/nvm.sh"; fi
 
             cd /var/www/momiji/frontend
             git pull --ff-only
